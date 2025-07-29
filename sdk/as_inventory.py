@@ -759,6 +759,12 @@ class AndromedaInventory(dict):
                             ds.IdentityOriginDataConnection.edges.select(
                                 ds.IdentityOriginDataEdge.node.select(
                                     *gql_snippets.list_trivial_fields_IdentityOriginData(ds),
+                                    ds.IdentityOriginData.awsIamData.select(
+                                        ds.IdentityAwsIamData.arn(),
+                                        ds.IdentityAwsIamData.id(),
+                                        ds.IdentityAwsIamData.path(),
+                                        ds.IdentityAwsIamData.username(),
+                                    )
                                 ),
                             ),
                         ),
