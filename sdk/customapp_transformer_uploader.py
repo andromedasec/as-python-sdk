@@ -46,13 +46,13 @@ class CustomAppTransformerUploader:
         # Check for API token first
         api_token = os.getenv('AS_API_TOKEN')
         if api_token:
-            logger.info("Using API token for authentication")
+            logger.debug("Using API token for authentication")
             return self.api_utils.get_api_session_w_api_token(api_token)
 
         # Check for session cookie
         session_cookie = os.getenv('AS_SESSION_COOKIE')
         if session_cookie:
-            logger.info("Using session cookie for authentication")
+            logger.debug("Using session cookie for authentication")
             return self.api_utils.get_api_session_w_cookie(session_cookie)
 
         raise ValueError("Neither AS_API_TOKEN nor AS_SESSION_COOKIE environment variables are set")
@@ -77,7 +77,7 @@ class CustomAppTransformerUploader:
                 file_url, files={'file': f}, data={'fileType': file_type})
             response.raise_for_status()
             rsp_data = response.json()
-            logger.info('Uploaded file %s to provider %s: %s', rsp_data, provider_id, provider_name)
+            logger.debug('Uploaded file %s to provider %s: %s', rsp_data, provider_id, provider_name)
             workday_file_ref = rsp_data['file_id']
         return workday_file_ref
 
@@ -102,7 +102,7 @@ class CustomAppTransformerUploader:
         response = self.api_session.get(url)
         response.raise_for_status()
         current_config = response.json()
-        logger.info("Current config for provider %s: %s \n config:%s",
+        logger.debug("Current config for provider %s: %s \n config:%s",
                     provider_id, provider_name, current_config)
         current_config['translatorFileId'] = file_id
         current_config['translatorFileType'] = file_type
@@ -111,8 +111,8 @@ class CustomAppTransformerUploader:
         status_code, updated_config = self.api_utils.create_or_update_provider_config(
             api_session=self.api_session, provider_id=provider_id,
             provider_obj=current_config, provider_type="customapp")
-        logger.info("provider %s: previous config:%s: updated config: %s error: %s",
-                    provider_id, response.json(), updated_config, status_code)
+        logger.info("provider %s: updated config: %s error: %s",
+                    provider_id, updated_config, status_code)
         return True
 
     def upload_and_update(self, app_names: str, file_name: str) -> None:
@@ -199,8 +199,7 @@ def main() -> None:
     logger.info("Uploading file %s to apps %s", args.file_name, args.app_names)
     uploader = CustomAppTransformerUploader(args.as_api_endpoint, args.as_gql_endpoint)
     uploader.upload_and_update(args.app_names, args.file_name)
-    logger.info("Successfully uploaded and updated custom apps successfully")
-
+    logger.info("Successfully uploaded file %s and updated custom apps successfully", args.file_name)
 
 if __name__ == "__main__":
     main()
