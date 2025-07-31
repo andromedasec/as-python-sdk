@@ -53,7 +53,9 @@ class AndromedaInventory(dict):
         self.gql_client = gql_client
         self.api_session = api_session
         # check and create the output directory
-        self.tenant_id = api_session.get(f"{as_endpoint}/tenantsettings").json()["tenantId"]
+        response = api_session.get(f"{as_endpoint}/tenantsettings")
+        response.raise_for_status()
+        self.tenant_id = response.json()["tenantId"]
         self.output_dir = f"{output_dir}/{self.tenant_id}"
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)

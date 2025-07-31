@@ -25,6 +25,7 @@ def _setup_args() -> argparse.Namespace:
        export AS_API_TOKEN=<api token>
     Example:
         python3 sdk/samples/andromeda_inventory_sample.py --as_ops_insights=ADMIN_ACCOUNT --as_risk_factors=RISK_FACTOR_STALE
+        python3 sdk/samples/andromeda_inventory_sample.py --operation_type=dashboard_summary
     """
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
