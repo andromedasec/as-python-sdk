@@ -7,40 +7,23 @@ Python SDK for Andromeda Security
 ### Create Virtual Environment
 
 ```shell
+setopt interactive_comments
+# Create Virtual Environment
 virtualenv as-python-sdk
-```
-
-### Activate Virtual Environment
-
-```shell
+# Activate Virtual Environment
 source as-python-sdk/bin/activate
-```
-
-### Untar python sdk in linux/mac
-
-```shell
+# Untar python sdk in linux/mac
 tar -xzvf as-python-sdk.tgz
-```
-
-### Export pythonpath in linux/mac
-
-```shell
+# Export pythonpath in linux/mac
 export PYTHONPATH=$PYTHONPATH:`pwd`
 ```
 
-### API Token Authentication
-
-Create API token using the Andromeda UI and export it:
+### API Token Authentication or Session Token
 
 ```shell
+# API Token from
 export AS_API_TOKEN=<from UI>
-```
-
-### Session Token Authentication
-
-Alternatively, use a session token:
-
-```shell
+# Alternatively Session Token Authentication
 export AS_SESSION_COOKIE=<session token>
 ```
 
@@ -92,7 +75,7 @@ Alternatively, use a session token:
 set AS_SESSION_COOKIE="<session token>"
 ```
 
-## Run the Samples
+## Run samples programs
 
 ### Andromeda Inventory Report
 
@@ -143,7 +126,7 @@ python3 samples/andromeda_inventory_report.py --operation_type=dashboard_summary
 
 ```
 
-### Output
+#### Output
 
 The script generates output files in the specified directory (default: `/tmp/andromeda-inventory/andromeda_inventory_sample`):
 
