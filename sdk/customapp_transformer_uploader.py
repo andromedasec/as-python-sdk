@@ -14,10 +14,12 @@
 import argparse
 import logging
 import os
+import platform
 from typing import Optional
 import requests
 from api_utils import APIUtils
 from as_inventory import AndromedaInventory
+
 
 logger = logging.getLogger(__name__)
 
@@ -32,9 +34,11 @@ class CustomAppTransformerUploader:
         self.api_endpoint = as_api_endpoint
         self.api_utils = APIUtils(as_api_endpoint)
         self.api_session: Optional[requests.Session] = self._create_session()
+        output_dir = "/tmp/andromeda-inventory" \
+            if platform.system() != "Windows" else "C:\\tmp\\andromeda-inventory"
         self.as_inventory = AndromedaInventory(
             None, api_session=self.api_session,
-            output_dir="/tmp/andromeda-inventory",
+            output_dir=output_dir,
             as_endpoint=as_api_endpoint, gql_endpoint=as_gql_endpoint)
 
     def _create_session(self) -> requests.Session:

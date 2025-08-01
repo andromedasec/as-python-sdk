@@ -2,37 +2,80 @@
 
 Python SDK for Andromeda Security
 
-## Installation
+## Linxux / Mac Installation
+
+### Create Virtual Environment
 
 ```shell
-virtualenv as-customapp
-source as-customapp/bin/activate
+setopt interactive_comments
+# Create Virtual Environment
+virtualenv as-python-sdk
+# Activate Virtual Environment
+source as-python-sdk/bin/activate
+# Untar python sdk in linux/mac
 tar -xzvf as-python-sdk.tgz
-pip install -r sdk/requirements.txt
+# Export pythonpath in linux/mac
 export PYTHONPATH=$PYTHONPATH:`pwd`
 ```
 
-## Authentication
+### API Token Authentication or Session Token
 
-You can authenticate using either an API token or session token:
+```shell
+# API Token from
+export AS_API_TOKEN=<from UI>
+# Alternatively Session Token Authentication
+export AS_SESSION_COOKIE=<session token>
+```
 
-### API Token Authentication
+## Windows Installation
+
+### Create virtual environment
+
+```shell
+python -m venv as-python-sdk`
+```
+
+### Activate virtual environment
+
+```shell
+as-python-sdk\Scripts\activate`
+```
+
+### Untar python sdk in windows
+
+```shell
+tar -xzvf as-python-sdk.tgz
+```
+
+### Export pythonpath in windows
+
+```shell
+set PYTHONPATH="%PYTHONPATH%;%CD%"
+```
+
+### Install python dependencies in windows
+
+```shell
+pip install -r sdk/requirements.txt
+```
+
+### API Token Authentication in Windows
 
 Create API token using the Andromeda UI and export it:
 
 ```shell
-export AS_API_TOKEN=<from UI>
+set AS_API_TOKEN="<API token from Andromeda dashboard>"
 ```
 
-### Session Token Authentication
+### Session Token Authentication in Windows
 
 Alternatively, use a session token:
 
 ```shell
-export AS_SESSION_COOKIE=<session token>
+set AS_SESSION_COOKIE="<session token>"
 ```
 
-## Run the Samples
+## Run samples programs
 
 ### Andromeda Inventory Report
 
@@ -46,8 +89,8 @@ Export identities matching specific criteria:
 # See the help
 python3 samples/andromeda_inventory_report.py -h
 
-# Get identities with ADMIN level privileges
-python3 samples/andromeda_inventory_report.py --as_ops_insights=ADMIN_ACCOUNT
+# Explicitly specify identity_insights operation (same as default)
+python3 samples/andromeda_inventory_report.py --operation_type=identity_insights --as_ops_insights=ADMIN_ACCOUNT
 
 # Get identities with risk factor STALE
 python3 samples/andromeda_inventory_report.py --as_risk_factors=RISK_FACTOR_STALE
@@ -61,11 +104,6 @@ python3 samples/andromeda_inventory_report.py -t <api_token> --as_ops_insights=A
 # Use session token directly
 python3 samples/andromeda_inventory_report.py -s <session_token> --as_ops_insights=ADMIN_ACCOUNT
 
-# Explicitly specify identity_insights operation (same as default)
-python3 samples/andromeda_inventory_report.py --operation_type=identity_insights --as_ops_insights=ADMIN_ACCOUNT
-
-# Explicitly specify dashboard summary. as_ops_insights arguments are ignored
-python3 samples/andromeda_inventory_report.py --operation_type=dashboard_summary
 ```
 
 #### 2. Dashboard Summary
@@ -85,14 +123,10 @@ python3 samples/andromeda_inventory_report.py --operation_type=dashboard_summary
 # Dashboard summary with custom output directory
 python3 samples/andromeda_inventory_report.py --operation_type=dashboard_summary --as_output_dir=/custom/path
 
-# Dashboard summary with API token
-python3 samples/andromeda_inventory_report.py --operation_type=dashboard_summary -t <api_token>
 
-# Dashboard summary with session token
-python3 samples/andromeda_inventory_report.py --operation_type=dashboard_summary -s <session_token>
 ```
 
-### Output
+#### Output
 
 The script generates output files in the specified directory (default: `/tmp/andromeda-inventory/andromeda_inventory_sample`):
 
