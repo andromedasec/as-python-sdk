@@ -2187,6 +2187,165 @@ class AndromedaInventory(dict):
         for assignment in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
             yield assignment
 
+    def as_user_provider_resolved_assignments_base_fn(
+            self, user_id: str, provider_id: str, assignment_filters: dict,
+            page_size: int, skip: int) -> Generator[list, None, None]:
+        """
+        Fetch the resolved assignments for a user in a provider
+        """
+        logger.debug("Fetching identity active assignments filters %s page_size %s skip %s",
+                    assignment_filters, page_size, skip)
+        ds = DSLSchema(self.gql_client.schema)
+        scope_rg_fragment = DSLInlineFragment()
+        scope_rg_fragment.on(ds.ResourceGroupScopeData)
+        scope_account_fragment = DSLInlineFragment()
+        scope_account_fragment.on(ds.AccountScopeData)
+        scope_folder_fragment = DSLInlineFragment()
+        scope_folder_fragment.on(ds.FolderScopeData)
+        scope_provider_fragment = DSLInlineFragment()
+        scope_provider_fragment.on(ds.ProviderScopeData)
+
+        user_filters = {}
+        if user_id:
+            user_filters['id'] = {'equals': user_id}
+
+        query = dsl_gql(DSLQuery(
+            ds.Query.Users(
+                filters=user_filters
+            ).select(
+                ds.UserConnection.edges.select(
+                    ds.UserEdge.node.select(
+                        *gql_snippets.list_trivial_fields_User(ds),
+                        ds.User.userData.select(
+                            *gql_snippets.list_trivial_fields_IdentityOriginData(ds),
+                        ),
+                        ds.User.userProviderData(
+                            pageArgs={"pageSize": 100},
+                            filters={'providerId': {'equals': provider_id}}
+                        ).select(
+                            ds.UserProviderDataConnection.edges.select(
+                                ds.UserProviderDataEdge.node.select(
+                                    *gql_snippets.list_trivial_fields_Provider(ds),
+                                ),
+                                ds.UserProviderDataEdge.userProviderData.select(
+                                    *gql_snippets.list_trivial_fields_UserProviderData(ds),
+                                    ds.UserProviderData.userResolvedAssignments(
+                                        pageArgs={"pageSize": page_size, "skip": skip},
+                                        filters=assignment_filters
+                                    ).select(
+                                        ds.AccountPolicyUserResolvedAssignmentsConnection.edges.select(
+                                            ds.AccountPolicyUserResolvedAssignmentEdge.node.select(
+                                                *gql_snippets.list_trivial_fields_AccountPolicyUserResolvedAssignment(ds),
+                                            ),
+                                        ),
+                                    )
+                                )
+                            ),
+                            ds.UserProviderDataConnection.pageInfo.select(
+                                *gql_snippets.list_trivial_fields_PageInfo(ds),
+                            ),
+                        )
+                    ),
+                ),
+                ds.UserConnection.pageInfo.select(
+                    *gql_snippets.list_trivial_fields_PageInfo(ds),
+                ),
+            )
+        ))
+        response = self.gql_client.execute(query, get_execution_result=True).formatted
+        try:
+            assignments = response["data"]['Users']['edges'][0]['node']['userProviderData']['edges'][0]['userProviderData']['userResolvedAssignments']['edges']
+        except IndexError:
+            # If there are no assignments, return an empty list
+            assignments = []
+        assignments = [node['node'] for node in assignments]
+        logger.debug("num assignments returned user %s provider %s num %s",
+                     user_id, provider_id, len(assignments))
+        return assignments
+
+    def as_user_provider_resolved_assignments_itr(
+            self, user_id: str, provider_id: str, assignment_filters: dict = None,
+            page_size: int = None) -> Generator[dict, None, None]:
+        """
+        Iterate over the resolved assignments for a user in a provider
+        """
+        page_size = page_size if page_size else self.default_page_size
+        partial_fn_itr = functools.partial(
+            self.as_user_provider_resolved_assignments_base_fn,
+            user_id, provider_id, assignment_filters)
+        for assignment in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
+            yield assignment
+
+    def as_user_providers_with_assignments_base_fn(
+            self, user_id: str, username: str, filters: dict,
+            page_size: int, skip: int) -> Generator[list, None, None]:
+        """
+        Fetch the resolved assignments for a user in a provider
+        """
+        logger.debug("Fetching identity active assignments filters %s page_size %s skip %s",
+                    filters, page_size, skip)
+        ds = DSLSchema(self.gql_client.schema)
+        user_filters = {}
+        assert user_id or username, "user_id or username is required"
+        if user_id:
+            user_filters['id'] = {'equals': user_id}
+        if username:
+            user_filters['username'] = {'equals': username}
+
+        query = dsl_gql(DSLQuery(
+            ds.Query.Users(
+                filters=user_filters
+            ).select(
+                ds.UserConnection.edges.select(
+                    ds.UserEdge.node.select(
+                        *gql_snippets.list_trivial_fields_User(ds),
+                        ds.User.userData.select(
+                            *gql_snippets.list_trivial_fields_IdentityOriginData(ds),
+                        ),
+                        ds.User.userProviderData(
+                            pageArgs={"pageSize": page_size, "skip": skip},
+                            filters=filters,
+                        ).select(
+                            ds.UserProviderDataConnection.edges.select(
+                                ds.UserProviderDataEdge.node.select(
+                                    *gql_snippets.list_trivial_fields_Provider(ds)
+                                ),
+                            ),
+                            ds.UserProviderDataConnection.pageInfo.select(
+                                *gql_snippets.list_trivial_fields_PageInfo(ds),
+                            ),
+                        )
+                    ),
+                ),
+                ds.UserConnection.pageInfo.select(
+                    *gql_snippets.list_trivial_fields_PageInfo(ds),
+                ),
+            )
+        ))
+        response = self.gql_client.execute(query, get_execution_result=True).formatted
+        try:
+            providers = response["data"]['Users']['edges'][0]['node']['userProviderData']['edges']
+        except IndexError:
+            # If there are no assignments, return an empty list
+            providers = []
+        providers = [node['node'] for node in providers]
+        logger.debug("num assignments returned user %s num %s",
+                     user_id, len(providers))
+        return providers
+
+    def as_user_providers_with_assignments_itr(
+            self, user_id: str, username: str = "", filters: dict = None,
+            page_size: int = None) -> Generator[dict, None, None]:
+        """
+        Iterate over the resolved assignments for a user in a provider
+        """
+        page_size = page_size if page_size else self.default_page_size
+        partial_fn_itr = functools.partial(
+            self.as_user_providers_with_assignments_base_fn,
+            user_id, username, filters)
+        for provider in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
+            yield provider
+
     def as_campaign_summary_itr(self, campaign_id: str) -> Generator[dict, None, None]:
         partial_fn_itr = functools.partial(
             self.as_campaign_summary_base_fn, campaign_id)
