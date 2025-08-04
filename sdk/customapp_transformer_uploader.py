@@ -59,7 +59,7 @@ class CustomAppTransformerUploader:
             logger.debug("Using session cookie for authentication")
             return self.api_utils.get_api_session_w_cookie(session_cookie)
 
-        raise ValueError("Neither AS_API_TOKEN nor AS_SESSION_COOKIE environment variables are set")
+        raise ValueError(f"Neither AS_API_TOKEN {api_token} nor AS_SESSION_COOKIE {session_cookie} environment variables are set")
 
     def _upload_file(self, file_path: str, provider_id: str, provider_name: str,
                     file_type: str) -> str:
