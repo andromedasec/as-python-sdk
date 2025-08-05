@@ -14,8 +14,8 @@ import requests
 from gql import Client, gql
 from gql.dsl import (DSLQuery, dsl_gql, DSLSchema, DSLInlineFragment, DSLMetaField)
 from gql.transport.requests import RequestsHTTPTransport
-from api_utils import APIUtils
 from api.graphql import graphql_query_snippets as gql_snippets
+from sdk.api_utils import APIUtils
 
 logger = logging.getLogger(__name__)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
@@ -812,7 +812,6 @@ class AndromedaInventory(dict):
             self.as_humans_base_fn, filters)
         yield from self.as_gql_generic_itr(partial_fn_itr, page_size=page_size)
 
-
     def provider_groups_base_fn(self, provider_id: str, provider_data: dict, filters: dict,
                                 page_size: int = 100, skip: int = 0) ->Generator[list, None, None]:
         ds = DSLSchema(self.gql_client.schema)
@@ -1518,7 +1517,7 @@ class AndromedaInventory(dict):
         ))
         response = self.gql_client.execute(query, get_execution_result=True).formatted
         data = response["data"]
-        logger.info("response data %s", data)
+        #logger.info("response data %s", data)
         response = self.gql_client.execute(query, get_execution_result=True).formatted
         providerNodes = response["data"]['Providers']['edges']
         providers = [node['node'] for node in providerNodes]
@@ -1539,6 +1538,7 @@ class AndromedaInventory(dict):
                     filters, page_size, skip)
         updated_filters = {
             "category": {"equals": "APPLICATION"},
+            #"type": {"equals": "PROVIDER_TYPE_IDP_APPLICATION"},
         }
         if filters:
             updated_filters.update(filters)
@@ -2346,12 +2346,6 @@ class AndromedaInventory(dict):
         for provider in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
             yield provider
 
-    def as_campaign_summary_itr(self, campaign_id: str) -> Generator[dict, None, None]:
-        partial_fn_itr = functools.partial(
-            self.as_campaign_summary_base_fn, campaign_id)
-        for summary in self.as_gql_generic_itr(partial_fn_itr, page_size=self.default_page_size):
-            yield summary
-
     def _fetch_account_policies(self, provider_id: str, account_id: str, account_data: dict) -> dict:
         if 'policies' not in account_data:
             account_data['policies'] = {}
@@ -2852,9 +2846,8 @@ def main():
 
     if not api_session:
         raise Exception("No API session created")
-    gql_client = get_gql_client(api_session, args.gql_endpoint)
-    ai = AndromedaInventory(gql_client, api_session, output_dir=args.output_dir, default_page_size=int(args.page_size),
-                            as_endpoint=args.http_endpoint)
+    ai = AndromedaInventory(None, api_session, output_dir=args.output_dir, default_page_size=int(args.page_size),
+                            as_endpoint=args.http_endpoint, gql_endpoint=args.gql_endpoint)
 
     if not args.development:
         ai.download_inventory(provider_id=args.provider_id)
