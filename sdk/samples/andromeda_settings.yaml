@@ -1,0 +1,29 @@
+settings:
+  name: "Andromeda Configuration"
+  api_endpoint: "http://localhost:8080"
+  user: admin@andromedasecurity-test.com
+  cloud_provider:
+    name: "BAR AWS"
+    provider_type: "PROVIDER_TYPE_AWS"
+    awsConfiguration:
+      accountsConfig:
+        accounts:
+        - accountId: "FIXME"
+          isManagementAccount: true
+        - accountId: "FIXME"
+          isManagementAccount: false
+      cloudtrailConfig:
+        trails:
+        - arn: "aws:cloudtrail:us-east-2:FIXME:trail/acme-demo-org-cloudtrail"
+          s3_bucket_account_id: "FIXME"
+      authConfig:
+        authMode: "AWS_AUTHMODE_ASSUME_ROLE"
+        assumeRole:
+          roleName: "as-andromeda-role"
+          roleAccountId: "*"
+          externalId: "FIXME"
+  environments:
+    - name: Experiments
+      criticality: CRITICALITY_MEDIUM
+    - name: USWest1Production
+      criticality: CRITICALITY_LOW

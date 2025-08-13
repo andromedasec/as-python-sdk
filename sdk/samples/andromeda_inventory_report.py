@@ -7,9 +7,8 @@ import argparse
 import logging
 import json
 import os
-import api_utils
-
-from as_inventory import AndromedaInventory
+from sdk.api_utils import APIUtils
+from sdk.as_inventory import AndromedaInventory
 
 logger = logging.getLogger(__name__)
 
@@ -70,15 +69,15 @@ def _setup_logging():
     logger.addHandler(ch)
 
 
-def _get_api_session(as_api_endpoint: str, as_session_token: str, as_api_token: str) -> api_utils.APIUtils:
+def _get_api_session(as_api_endpoint: str, as_session_token: str, as_api_token: str) -> APIUtils:
     """
     Get the API session from the arguments or environment variables
     Args:
         args: argparse.ArgumentParser
     Returns:
-        api_utils.APIUtils
+        APIUtils
     """
-    au = api_utils.APIUtils(api_endpoint=as_api_endpoint)
+    au = APIUtils(api_endpoint=as_api_endpoint)
     as_session_token = as_session_token or os.getenv("AS_SESSION_COOKIE")
     if as_session_token:
         return au.get_api_session_w_cookie(as_session_token)
