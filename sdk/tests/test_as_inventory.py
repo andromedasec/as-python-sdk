@@ -232,3 +232,60 @@ def test_human_identities(ai: AndromedaInventory):
     }
     hi = next(ai.as_humans_itr(filters=filters))
     assert hi
+
+
+def test_events(ai: AndromedaInventory):
+    """
+    Test the events
+    This test is to ensure that the events are fetched correctly
+    """
+    as_enable_skipped_assertions = False
+    for event in ai.as_events_itr():
+        logger.debug("Event: %s", event)
+        assert event["id"], f"Event ID is missing for {event}"
+        assert event.get("type", None), f"Event type is missing for {event}"
+        assert event.get("subtype", None), f"Event subtype is missing for {event}"
+        assert event["data"], f"Event data is missing for {event}"
+        assert event["time"], f"Event time is missing for {event}"
+
+    filters = {
+        "eventSubtype": {"equals": "ACCESS_REQUEST"},
+    }
+    jit_txns = {}
+    for event in ai.as_events_itr(filters=filters):
+        logger.debug("Event: %s", event)
+        assert event["id"], f"Event ID is missing for {event}"
+        assert event["type"], f"Event type is missing for {event}"
+        assert event["subtype"] == "ACCESS_REQUEST", f"Event subtype is missing for {event}"
+        assert event["data"], f"Event data is missing for {event}"
+        assert event["time"], f"Event time is missing for {event}"
+        if 'eventPrimaryKey' in event:
+            if event['eventPrimaryKey'] not in jit_txns:
+                jit_txns[event['eventPrimaryKey']] = set()
+            jit_txns[event['eventPrimaryKey']].add(event['id'])
+        else:
+            logger.debug("Event primary key is missing for access request %s", event)
+        assert event.get("eventPrimaryKey", None) or not as_enable_skipped_assertions, (
+            f"Event primary key is missing for access request {json.dumps(event, indent=2)}"
+        )
+
+    logger.debug("JIT txns: %s", len(jit_txns))
+    jit_event_txn = next(iter(jit_txns.keys()))
+    # check filters this jit event
+    filters = {
+        "eventPrimaryKey": {"equals": jit_event_txn},
+    }
+    for event in ai.as_events_itr(filters=filters):
+        logger.debug("Event: %s", event)
+        assert event["id"], f"Event ID is missing for {event}"
+        assert event["type"], f"Event type is missing for {event}"
+        assert event["subtype"] == "ACCESS_REQUEST", f"Event subtype is missing for {event}"
+        assert event["data"], f"Event data is missing for {event}"
+        assert event["time"], f"Event time is missing for {event}"
+        assert event.get("eventPrimaryKey", None), f"Event primary key is missing for {event}"
+        assert event["eventPrimaryKey"] in jit_txns, (
+            f"Event primary key {event['eventPrimaryKey']} is not in the jit txns"
+        )
+        assert event["id"] in jit_txns[event["eventPrimaryKey"]], (
+            f"Event ID {event['id']} is not in the jit txns"
+        )
