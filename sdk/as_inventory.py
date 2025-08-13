@@ -3,7 +3,7 @@
 import argparse
 import os
 import logging
-from typing import Generator
+from typing import Generator, Optional
 import functools
 import json
 import csv
@@ -811,6 +811,75 @@ class AndromedaInventory(dict):
         partial_fn_itr = functools.partial(
             self.as_humans_base_fn, filters)
         yield from self.as_gql_generic_itr(partial_fn_itr, page_size=page_size)
+
+    def as_non_humans_identities_base_fn(
+            self, filters: dict, page_size: int = 100, skip: int = 0) ->Generator[list, None, None]:
+        """
+        Get all non humans from the inventory
+        :param filters: filters to apply to the query
+        :param page_size: page size to use for the query
+        :param args: additional arguments to pass to the query
+        :param kwargs: additional keyword arguments to pass to the query
+        :return: generator of non human dictionaries
+        """
+        ds = DSLSchema(self.gql_client.schema)
+        query = dsl_gql(DSLQuery(
+            ds.Query.ServiceIdentities(
+                pageArgs={"pageSize": page_size, "skip": skip},
+                filters=filters
+            ).select(
+                ds.ServiceIdentitiesConnection.edges.select(
+                    ds.ServiceIdentityEdge.node.select(
+                        *gql_snippets.list_trivial_fields_ServiceIdentity(ds),
+
+                        ds.ServiceIdentity.opsInsights.select(
+                            *gql_snippets.list_trivial_fields_ServiceIdentityOpsInsightData(ds),
+                        ),
+                        ds.ServiceIdentity.riskFactorsData.select(
+                            *gql_snippets.list_trivial_fields_ServiceIdentityRiskFactorData(ds),
+                        ),
+                        ds.ServiceIdentity.knownDevices.select(
+                            ds.KnownDevicesConnection.edges.select(
+                                ds.KnownDeviceEdge.node.select(
+                                    *gql_snippets.list_trivial_fields_KnownDevice(ds),
+                                ),
+                            ),
+                        ),
+                        ds.ServiceIdentity.lastActivity.select(
+                            *gql_snippets.list_trivial_fields_Activity(ds),
+                        ),
+                    ),
+                ),
+                ds.ServiceIdentitiesConnection.pageInfo.select(
+                    *gql_snippets.list_trivial_fields_PageInfo(ds),
+                )
+            )
+        ))
+
+        response = self.gql_client.execute(query, get_execution_result=True).formatted
+        identity_nodes = response["data"]['ServiceIdentities']['edges']
+        non_humans = []
+        for item in identity_nodes:
+            non_human = item['node']
+            non_humans.append(non_human)
+        logger.debug("num identities returned %s", len(identity_nodes))
+        return non_humans
+
+    def as_non_humans_identities_itr(self, filters=None, page_size: int = None, *args, **kwargs) -> Generator[dict, None, None]:
+        """
+        Get all non humans from the inventory
+        :param filters: filters to apply to the query
+        :param page_size: page size to use for the query
+        :param args: additional arguments to pass to the query
+        :param kwargs: additional keyword arguments to pass to the query
+        :return: generator of human dictionaries
+        """
+        page_size = page_size if page_size else self.default_page_size
+        partial_fn_itr = functools.partial(
+            self.as_non_humans_identities_base_fn, filters)
+        yield from self.as_gql_generic_itr(partial_fn_itr, page_size=page_size)
+
+
 
     def provider_groups_base_fn(self, provider_id: str, provider_data: dict, filters: dict,
                                 page_size: int = 100, skip: int = 0) ->Generator[list, None, None]:
@@ -2562,6 +2631,202 @@ class AndromedaInventory(dict):
         logger.debug("response data %s", data)
         return data
 
+    def as_identity_eligibility_details_base_fn(self, identity_id: str, filters: Optional[dict]=None, page_size: Optional[int]=None, skip: Optional[int]=None) -> Generator[dict, None, None]:
+        """Base function to iterate through identity eligibility."""
+        filters = filters if filters else {}
+        assert self.gql_client.schema is not None, "GQL client schema is not set"
+        ds = DSLSchema(self.gql_client.schema)
+
+        role_eligibility_fragment = DSLInlineFragment()
+        role_eligibility_fragment.on(ds.IdentityProviderEligibilityPolicyData)
+        resource_set_eligibility_fragment = DSLInlineFragment()
+        resource_set_eligibility_fragment.on(ds.ResourceSetEligibilityData)
+        resource_eligibility_fragment = DSLInlineFragment()
+        resource_eligibility_fragment.on(ds.IdentityResourceEligibilityData)
+
+        query = dsl_gql(DSLQuery(
+            ds.Query.Identity(
+                id=identity_id
+            ).select(
+                ds.Identity.id(),
+                ds.Identity.name(),
+                ds.Identity.username(),
+                ds.Identity.email(),
+                ds.Identity.state(),
+                ds.Identity.type(),
+                ds.Identity.eligibilityDetails.select(
+                    ds.IdentityProviderEligibilityDataConnection.edges.select(
+                        ds.IdentityProviderEligibilityDataEdge.node.select(
+                            *gql_snippets.list_trivial_fields_IdentityProviderEligibilityData(ds),
+                            ds.IdentityProviderEligibilityData.eligibleUser.select(
+                                ds.IdentityOriginData.originUserId(),
+                                ds.IdentityOriginData.originUserName(),
+                                ds.IdentityOriginData.originUserUsername(),
+                            ),
+                            ds.IdentityProviderEligibilityData.accountData.select(
+                                *gql_snippets.list_trivial_fields_IdentityProviderEligibilityAccountData(ds)
+                            ),
+                            ds.IdentityProviderEligibilityData.eligibilityData.select(
+                                role_eligibility_fragment.select(
+                                    *gql_snippets.list_trivial_fields_IdentityProviderEligibilityPolicyData(ds),
+                                ),
+                                resource_set_eligibility_fragment.select(
+                                    *gql_snippets.list_trivial_fields_ResourceSetEligibilityData(ds),
+                                ),
+                                # resource_eligibility_fragment.select(
+                                #     *gql_snippets.list_trivial_fields_IdentityResourceEligibilityData(ds),
+                                # ),
+                            )
+                        )
+                    ),
+                    ds.IdentityProviderEligibilityDataConnection.pageInfo.select(
+                        *gql_snippets.list_trivial_fields_PageInfo(ds)
+                    )
+                )
+            )
+        ))
+        response = self.gql_client.execute(query, get_execution_result=True).formatted
+        eligibilityDataNodes = response["data"]["Identity"]["eligibilityDetails"]["edges"]
+        eligibility = [node["node"] for node in eligibilityDataNodes]
+        logger.debug("num providers returned %s", len(eligibility))
+        return eligibility
+
+    def as_identity_eligibility_details_itr(self, identity_id: str, filters: Optional[dict]=None, page_size: Optional[int]=None, skip: Optional[int]=None) -> Generator[dict, None, None]:
+        """Iterate through identity eligibility."""
+        page_size = page_size if page_size else self.default_page_size
+        partial_fn_itr = functools.partial(
+            self.as_identity_eligibility_details_base_fn,
+            identity_id, filters)
+        for eligibility in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
+            yield eligibility
+
+    def as_identity_eligible_providers_base_fn(self, identity_id: str, filters: Optional[dict]=None, page_size: Optional[int]=None, skip: Optional[int]=None) -> Generator[dict, None, None]:
+        """Base function to iterate through identity eligible providers."""
+        filters = filters if filters else {}
+        assert self.gql_client.schema is not None, "GQL client schema is not set"
+        ds = DSLSchema(self.gql_client.schema)
+        query = dsl_gql(DSLQuery(
+            ds.Query.Identity(
+                id=identity_id
+            ).select(
+                ds.Identity.id(),
+                ds.Identity.name(),
+                ds.Identity.email(),
+                ds.Identity.state(),
+                ds.Identity.type(),
+                ds.Identity.eligibleProviders.select(
+                    ds.IdentityEligibleProvidersConnection.edges.select(
+                        ds.IdentityEligibleProvidersEdge.node.select(
+                            *gql_snippets.list_trivial_fields_Provider(ds),
+                        )
+                    ),
+                    ds.IdentityEligibleProvidersConnection.pageInfo.select(
+                        *gql_snippets.list_trivial_fields_PageInfo(ds)
+                    )
+                )
+            )
+        ))
+        response = self.gql_client.execute(query, get_execution_result=True).formatted
+        providerNodes = response["data"]["Identity"]["eligibleProviders"]["edges"]
+        providers = [node["node"] for node in providerNodes]
+        logger.debug("num providers returned %s", len(providers))
+        return providers
+
+
+    def as_identity_eligible_providers_itr(
+            self, identity_id: str, page_size: Optional[int] = None,
+            filters: Optional[dict] = None) -> Generator[dict, None, None]:
+        """Iterate through identity eligible providers."""
+        page_size = page_size if page_size else self.default_page_size
+        partial_fn_itr = functools.partial(
+            self.as_identity_eligible_providers_base_fn,
+            identity_id, filters)
+        for provider in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
+            yield provider
+
+    def as_identity_access_requests_base_fn(self, identity_id: str, filters: dict,
+            page_size: int, skip: int) -> Generator[list, None, None]:
+        logger.debug("Fetching access requests identity %s page_size %s skip %s",
+                    identity_id, page_size, skip)
+        ds = DSLSchema(self.gql_client.schema)
+        query = dsl_gql(DSLQuery(
+            ds.Query.Identity(
+                id=identity_id
+            ).select(
+                ds.Identity.id(),
+                ds.Identity.name(),
+                ds.Identity.email(),
+                ds.Identity.username(),
+                ds.Identity.requests(
+                    pageArgs={"pageSize": page_size, "skip": skip},
+                    filters=filters).select(
+                    ds.IdentityAccessRequestDataConnection.edges.select(
+                        ds.IdentityAccessRequestDataEdge.node.select(
+                            *gql_snippets.list_trivial_fields_IdentityAccessRequestData(ds),
+                            ds.IdentityAccessRequestData.requestScope.select(
+                                *gql_snippets.list_trivial_fields_AccessRequestScope(ds),
+                            ),
+                            ds.IdentityAccessRequestData.providerDetailsData.select(
+                                *gql_snippets.list_trivial_fields_ProviderDetailsData(ds),
+                            ),
+                            ds.IdentityAccessRequestData.requester.select(
+                                *gql_snippets.list_trivial_fields_IdentityAccessRequestRequesterData(ds),
+                            ),
+                            ds.IdentityAccessRequestData.createdBy.select(
+                                *gql_snippets.list_trivial_fields_IdentityAccessRequestRequesterData(ds),
+                            ),
+                            ds.IdentityAccessRequestData.requesterUser.select(
+                                *gql_snippets.list_trivial_fields_IdentityAccessRequestRequesterUserData(ds),
+                            ),
+                            ds.IdentityAccessRequestData.status.select(
+                                *gql_snippets.list_trivial_fields_JitPolicyTransactionStatus(ds),
+                            ),
+                            ds.IdentityAccessRequestData.sessionAnalysis.select(
+                                *gql_snippets.list_trivial_fields_JitSessionAnalysis(ds),
+                            ),
+                            ds.IdentityAccessRequestData.provisioningDetails.select(
+                                *gql_snippets.list_trivial_fields_AccessRequestProvisioningDetails(ds),
+                                ds.AccessRequestProvisioningDetails.provisioningGroup.select(
+                                    *gql_snippets.list_trivial_fields_AccessRequestProvisioningGroup(ds),
+                                ),
+                            ),
+                            ds.IdentityAccessRequestData.itsmData.select(
+                                *gql_snippets.list_trivial_fields_AccessRequestItsmData(ds),
+                            ),
+                            ds.IdentityAccessRequestData.reviews.select(
+                                *gql_snippets.list_trivial_fields_IdentityAccessRequestReviewData(ds),
+                            ),
+                            ds.IdentityAccessRequestData.requestAnalysis.select(
+                                *gql_snippets.list_trivial_fields_JitPolicyRequestAnalysis(ds),
+                                ds.JitPolicyRequestAnalysis.checks.select(
+                                    *gql_snippets.list_trivial_fields_JitPolicyRequestAnalysisCheck(ds),
+                                ),
+                            ),
+                            ds.IdentityAccessRequestData.sessionAnalysis.select(
+                                *gql_snippets.list_trivial_fields_JitSessionAnalysis(ds),
+                            ),
+                        ),
+                    ),
+                    ds.IdentityAccessRequestDataConnection.pageInfo.select(
+                        *gql_snippets.list_trivial_fields_PageInfo(ds),
+                    )
+                )
+            )
+        ))
+        response = self.gql_client.execute(query, get_execution_result=True).formatted
+        nodes = response["data"]['Identity']['requests']['edges']
+        requests = [node['node'] for node in nodes]
+        logger.debug("num requests returned %s", len(requests))
+        return requests
+
+    def as_identity_access_requests_itr(self, identity_id: str, filters: Optional[dict]=None,
+                                        page_size: Optional[int]=None) -> Generator[dict, None, None]:
+        """Iterate through access requests."""
+        page_size = page_size if page_size else self.default_page_size
+        partial_fn_itr = functools.partial(
+            self.as_identity_access_requests_base_fn, identity_id, filters)
+        for request in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
+            yield request
 
     def _fetch_application_assignments(self, provider_id: str, provider_data: dict) -> dict:
         for assignment in self.provider_application_assignments_itr(provider_id, provider_data):

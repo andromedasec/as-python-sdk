@@ -159,3 +159,76 @@ def test_user_provider_resolved_assignments(ai: AndromedaInventory):
                 assert assignment["principalUsername"]
                 assert assignment["providerName"]
                 assert assignment["roleName"]
+
+def test_identity_eligible_providers(ai: AndromedaInventory):
+    """
+    Test the identity eligible providers
+    This test is to ensure that the identity eligible providers are fetched correctly
+    """
+    identity_filter = {"email": {"icontains": "mike.richard@beatles.ai"}}
+    identity = next(ai.as_humans_itr(filters=identity_filter))
+    logger.debug("Identity: %s eligible providers count %s", identity["id"],
+        len(list(ai.as_identity_eligible_providers_itr(identity["id"]))))
+    for provider in ai.as_identity_eligible_providers_itr(identity["id"]):
+        logger.debug("Identity eligible providers: %s", provider)
+        assert provider["id"]
+        assert provider["name"]
+        assert provider["type"]
+        assert provider["category"]
+        assert provider["mode"]
+
+def test_identity_eligibility_details(ai: AndromedaInventory):
+    """
+    Test the identity eligibility details
+    This test is to ensure that the identity eligibility details are fetched correctly
+    """
+    identity_filter = {"email": {"icontains": "mike.richard@beatles.ai"}}
+    identity = next(ai.as_humans_itr(filters=identity_filter))
+    logger.debug("Identity: %s eligibility details %s", identity["id"],
+        len(list(ai.as_identity_eligibility_details_itr(identity["id"]))))
+    for eligibility in ai.as_identity_eligibility_details_itr(identity["id"]):
+        logger.debug("Identity eligibility details: %s", eligibility)
+        assert eligibility["providerId"]
+        assert eligibility["providerName"]
+        assert eligibility["eligibleUser"]
+
+def test_identity_access_requests(ai: AndromedaInventory):
+    """
+    Test the identity eligibility details
+    This test is to ensure that the identity eligibility details are fetched correctly
+    """
+    identity_filter = {"email": {"icontains": "mike.richard@beatles.ai"}}
+    identity = next(ai.as_humans_itr(filters=identity_filter))
+    logger.debug("Identity: %s eligibility details %s", identity["id"],
+        len(list(ai.as_identity_access_requests_itr(identity["id"]))))
+    for request in ai.as_identity_access_requests_itr(identity["id"]):
+        logger.debug("Identity access request: %s", request)
+        assert request["requestId"], f"Request ID is missing for {request}"
+        assert request["providerDetailsData"]['id'], f"Provider ID is missing for {request}"
+        assert request["providerDetailsData"]['name'], f"Provider name is missing for {request}"
+        assert request["requesterUser"], f"requester user is missing for {request}"
+
+def test_non_human_identities(ai: AndromedaInventory):
+    """
+    Test the non human identities
+    This test is to ensure that the non human identities are fetched correctly
+    """
+    for nhi in ai.as_non_humans_identities_itr():
+        logger.debug("Non human identities: %s", nhi)
+        assert nhi["id"]
+        assert nhi["serviceIdentityType"]
+        assert nhi["username"]
+
+def test_human_identities(ai: AndromedaInventory):
+    """
+    Test the non human identities
+    This test is to ensure that the non human identities are fetched correctly
+    """
+    filters = {
+        "or": {
+            "email": {"icontains": "mike"},
+            "name": {"icontains": "mike"},
+        }
+    }
+    hi = next(ai.as_humans_itr(filters=filters))
+    assert hi

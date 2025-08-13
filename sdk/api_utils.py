@@ -313,7 +313,7 @@ class APIUtils:
             api_session: requests.Session,
             provider_id,
             provider_config,
-            provider_url: str) -> None:
+            provider_url: str) -> tuple[int, dict]:
 
         logger.info("creating config for provider %s: %s", provider_id, provider_config)
         # check if the aws config is already present
@@ -463,9 +463,10 @@ class APIUtils:
                     {
                         "accountId": mgmt_account_id,
                         "isManagementAccount": True
-                    }
+                    },
                 ],
             },
+
             "cloudtrailConfig": {
                 "trails": [],
             },
