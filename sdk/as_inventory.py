@@ -3004,6 +3004,53 @@ class AndromedaInventory(dict):
         for identity in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
             yield identity
 
+    def as_events_base_fn(self, filters: dict, page_size: int, skip: int) -> Generator[list, None, None]:
+        """Fetch events with username, id, and name."""
+        logger.debug("Fetching events with filters %s page_size %s skip %s",
+                    filters, page_size, skip)
+        ds = DSLSchema(self.gql_client.schema)
+        query = dsl_gql(DSLQuery(
+            ds.Query.AndromedaEvents(
+                pageArgs={"pageSize": page_size, "skip": skip},
+                filters=filters
+            ).select(
+                ds.AndromedaEventsConnection.edges.select(
+                    ds.AndromedaEventsEdge.node.select(
+                        *gql_snippets.list_trivial_fields_AndromedaEventsNode(ds),
+                    )
+                )
+            )
+        ))
+        response = self.gql_client.execute(query, get_execution_result=True).formatted
+        if response.get("errors"):
+            logger.error("errors in the response %s", response["errors"])
+        eventNodes = response["data"]["AndromedaEvents"]["edges"]
+        events = []
+        for node in eventNodes:
+            try:
+                event = node["node"]
+                # unpack the data from the event
+                event['data'] = json.loads(event['data'])
+                if 'value' in event['data']:
+                    event['data'] = json.loads(event['data']['value'])
+                if 'payload' in event['data']:
+                    event['data'] = json.loads(event['data']['payload'])
+                events.append(event)
+            except KeyError as e:
+                logger.error("error unpacking event %s", e)
+                continue
+        logger.debug("num events returned %s", len(events))
+        return events
+
+    def as_events_itr(self, filters: dict = None, page_size: int = None) -> Generator[dict, None, None]:
+        """Iterate through events."""
+        page_size = page_size if page_size else self.default_page_size
+        partial_fn_itr = functools.partial(
+            self.as_events_base_fn, filters)
+        for event in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
+            yield event
+
+
 def dev_download_resolved_resolved_bindings(ai: AndromedaInventory) -> None:
     """ Download the resolved active bindings for all providers """
     logger.info("Downloading resolved active bindings for all providers")
