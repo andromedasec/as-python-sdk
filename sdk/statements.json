@@ -1,0 +1,113 @@
+{
+	"Version": "2012-10-17",
+	"Statement": [
+		{
+			"Sid": "BasePermissions",
+			"Effect": "Allow",
+			"Action": [
+				"cloudformation:CreateChangeSet",
+				"cloudformation:DescribeChangeSet",
+				"cloudformation:DescribeStackResource",
+				"cloudformation:DescribeStacks",
+				"cloudformation:ExecuteChangeSet",
+				"docdb-elastic:GetCluster",
+				"docdb-elastic:ListClusters",
+				"ec2:DescribeSecurityGroups",
+				"ec2:DescribeSubnets",
+				"ec2:DescribeVpcs",
+				"kms:DescribeKey",
+				"kms:ListAliases",
+				"kms:ListKeys",
+				"lambda:ListFunctions",
+				"rds:DescribeDBClusters",
+				"rds:DescribeDBInstances",
+				"redshift:DescribeClusters",
+				"redshift-serverless:ListWorkgroups",
+				"redshift-serverless:GetNamespace",
+				"tag:GetResources"
+			],
+			"Resource": "*"
+		},
+		{
+			"Sid": "LambdaPermissions",
+			"Effect": "Allow",
+			"Action": [
+				"lambda:AddPermission",
+				"lambda:CreateFunction",
+				"lambda:GetFunction",
+				"lambda:InvokeFunction",
+				"lambda:UpdateFunctionConfiguration"
+			],
+			"Resource": "arn:aws:lambda:*:*:function:SecretsManager*"
+		},
+		{
+			"Sid": "SARPermissions",
+			"Effect": "Allow",
+			"Action": [
+				"serverlessrepo:CreateCloudFormationChangeSet",
+				"serverlessrepo:GetApplication"
+			],
+			"Resource": "arn:aws:serverlessrepo:*:*:applications/SecretsManager*"
+		},
+		{
+			"Sid": "S3Permissions",
+			"Effect": "Allow",
+			"Action": [
+				"s3:GetObject"
+			],
+			"Resource": [
+				"arn:aws:s3:::awsserverlessrepo-changesets*",
+				"arn:aws:s3:::secrets-manager-rotation-apps-*/*"
+			]
+		},
+		{
+			"Sid": "JIT2",
+			"Effect": "Allow",
+			"Action": [
+				"secretsmanager:BatchGetSecretValue",
+				"secretsmanager:DescribeSecret",
+				"secretsmanager:GetRandomPassword",
+				"secretsmanager:GetResourcePolicy",
+				"secretsmanager:GetSecretValue",
+				"secretsmanager:ListSecretVersionIds",
+				"secretsmanager:CancelRotateSecret",
+				"secretsmanager:DeleteSecret",
+				"secretsmanager:PutSecretValue",
+				"secretsmanager:RemoveRegionsFromReplication",
+				"secretsmanager:ReplicateSecretToRegions",
+				"secretsmanager:RestoreSecret",
+				"secretsmanager:RotateSecret",
+				"secretsmanager:StopReplicationToReplica",
+				"secretsmanager:UpdateSecret",
+				"secretsmanager:UpdateSecretVersionStage",
+				"secretsmanager:DeleteResourcePolicy",
+				"secretsmanager:PutResourcePolicy",
+				"secretsmanager:ValidateResourcePolicy",
+				"secretsmanager:TagResource",
+				"secretsmanager:UntagResource"
+			],
+			"Resource": [
+        "{{ JIT_RESOURCE_ARNS }}",
+				"arn:aws:secretsmanager:us-west-2:580801067037:secret:jib/lab-1-IT6xwE",
+				"arn:aws:secretsmanager:us-west-2:580801067037:secret:rds!db-f0ddbc10-dc46-42c4-9c79-dc13c4a4387b-5wo26V",
+				"arn:aws:secretsmanager:us-west-2:580801067037:secret:lab-1/jit2-4zTXOY"
+			]
+		}
+	]
+}
+
+
+{
+	"Version": "2012-10-17",
+	"Statement": [
+		{
+			"Sid": "JITTXN",
+			"Effect": "Allow",
+			"Action": [
+				"secretsmanager:CreateSecret",
+				"secretsmanager:TagResource"
+			],
+			"Resource": "*"
+		}
+	]
+}
