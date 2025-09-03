@@ -1471,6 +1471,9 @@ class AndromedaInventory(dict):
                     ds.PolicyEligibilityMappingsConnection.edges.select(
                         ds.PolicyEligibilityMappingEdge.node.select(
                             *gql_snippets.list_trivial_fields_PolicyEligibilityMapping(ds),
+                            ds.PolicyEligibilityMapping.provisioningGroupConfiguration.select(
+                                *gql_snippets.list_trivial_fields_ProvisioningGroupConfiguration(ds),
+                            ),
                         ),
                     ),
                     ds.PolicyEligibilityMappingsConnection.pageInfo.select(
