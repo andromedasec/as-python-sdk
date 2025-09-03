@@ -1,0 +1,7 @@
+Application,Eligibility Group,provisioning_group_name,role_name
+Getting Started Application,Beatles PingOne Getting Started Eligibility Group,Another Sample Group,
+Test SAML App,Another Sample Group,SamlApp Provisioning Group,
+Unknown Application,Unknown Eligibility Group,Unknown Provisioning Group,Unknown Role
+unknown,Beatles PingOne Admins,Beatles PingOne Getting Started Provisioning Group,
+Getting Started Application,Bad Eligibility Group,Beatles PingOne Getting Started Provisioning Group,
+Getting Started Application,Beatles PingOne Admins,Bad Provisioning Group,
