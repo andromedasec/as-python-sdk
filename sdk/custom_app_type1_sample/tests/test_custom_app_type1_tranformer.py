@@ -6,6 +6,7 @@ import json
 from dataclasses import asdict
 from deepdiff import DeepDiff
 from sdk.custom_app_type1_sample.custom_app_type1_transformer import CustomAppSampleTransformer, CustomAppRoleAssignment
+from sdk.custom_app_type1_sample.custom_app_okta_bookmark import CustomAppOktaBookmarkTransformer
 
 
 logger = logging.getLogger(__name__)
@@ -106,3 +107,19 @@ def test_inventory_invalid_assignment_validation():
         assert False, "Expected ValueError"
     except ValueError as e:
         assert str(e).find("invalid_principal") != -1
+
+
+def test_okta_bookmark_torq():
+    """
+    Test the Okta Bookmark Torq transformer
+    """
+    inventory_file = "beatles-okta-bookmark-torq.csv"
+    csv_transformer = CustomAppOktaBookmarkTransformer(
+        app_name="beatles",
+        inventory_file=inventory_file,
+        output_dir="/tmp/customapp_export"
+    )
+        # modify the inventory to be invalid
+    inventory, errors = csv_transformer.transform()
+    assert inventory
+    assert not errors, f"Errors: {errors}"

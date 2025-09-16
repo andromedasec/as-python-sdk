@@ -448,7 +448,7 @@ class APIUtils:
             self, auth_mode: str, mgmt_account_id: str, role_name: str,
             acc_key_id: str, sec_acc_key: str, trails: list,
             external_id: str="andromeda-test", iam_sso_integration_data: dict = None,
-            deployment_modes: list = None, enable_resource_inventory: bool = False) -> dict:
+            deployment_modes: list = None, enable_resource_inventory: bool = False, enable_eks_provider_creation: bool = False) -> dict:
         """ Create provider config object """
         # auth_mode = "AWS_AUTHMODE_ASSUME_ROLE_WITH_CREDENTIALS"
         aws_provider = {
@@ -467,7 +467,8 @@ class APIUtils:
             "authConfig": {
                 "authMode": auth_mode
             },
-            "enableResourceInventory": enable_resource_inventory
+            "enableResourceInventory": enable_resource_inventory,
+            "enableEksProviderCreation": enable_eks_provider_creation
         }
         if deployment_modes:
             aws_provider["deploymentModes"] = deployment_modes
@@ -620,6 +621,32 @@ class APIUtils:
                 resoure_type=f"providers/{provider_id}/gcp/config")
         return self.create_or_update_provider(
             api_session=api_session, provider_id=provider_id, provider_config=gcp_provider_obj,
+            provider_url=url)
+
+    def create_or_update_keeper_provider_config(
+            self, api_session: requests.Session, provider_id: str, keeper_provider_obj: dict) -> tuple[int, dict]:
+        """
+        This function creates or updates the keeper specific settings for a provider
+        """
+        #logger.info("creating keeper config for provider %s", provider_id)
+        # check if the keeper config is already present
+        url = self.get_resource_url(
+                resoure_type=f"providers/{provider_id}/keeper/config")
+        return self.create_or_update_provider(
+            api_session=api_session, provider_id=provider_id, provider_config=keeper_provider_obj,
+            provider_url=url)
+
+    def create_or_update_github_provider_config(
+            self, api_session: requests.Session, provider_id: str, github_provider_obj: dict) -> tuple[int, dict]:
+        """
+        This function creates or updates the github specific settings for a provider
+        """
+        #logger.info("creating github config for provider %s", provider_id)
+        # check if the github config is already present
+        url = self.get_resource_url(
+                resoure_type=f"providers/{provider_id}/github/config")
+        return self.create_or_update_provider(
+            api_session=api_session, provider_id=provider_id, provider_config=github_provider_obj,
             provider_url=url)
 
     def create_or_update_sfdc_provider_config(

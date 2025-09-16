@@ -1198,25 +1198,32 @@ def list_trivial_fields_Provider(ds: DSLSchema):
         ds.Provider.mode,
         ds.Provider.numHighRiskHis,
     )
-def list_trivial_fields_ProviderModelMapping(ds: DSLSchema):
-    """ List all trivial fields of the ProviderModelMapping type """
+def list_trivial_fields_ProviderObjMapping(ds: DSLSchema):
+    """ List all trivial fields of the ProviderObjMapping type """
     return (
-        ds.ProviderModelMapping.andromedaModelType,
-        ds.ProviderModelMapping.supported,
-        ds.ProviderModelMapping.label,
-        ds.ProviderModelMapping.optional,
+        ds.ProviderObjMapping.andromedaObjType,
+        ds.ProviderObjMapping.supported,
+        ds.ProviderObjMapping.label,
+        ds.ProviderObjMapping.optional,
     )
 def list_trivial_fields_ProviderFeatures(ds: DSLSchema):
     """ List all trivial fields of the ProviderFeatures type """
     return (
         ds.ProviderFeatures.integrationLevel,
-        ds.ProviderFeatures.supportedScopeTypes,
         ds.ProviderFeatures.riskSupported,
         ds.ProviderFeatures.userMappingRulesSupported,
         ds.ProviderFeatures.nhiSupported,
         ds.ProviderFeatures.nhiTypes,
         ds.ProviderFeatures.activityLogsSupported,
         ds.ProviderFeatures.supportedRecommendationTypes,
+    )
+def list_trivial_fields_ScopeFeatures(ds: DSLSchema):
+    """ List all trivial fields of the ScopeFeatures type """
+    return (
+        ds.ScopeFeatures.scopeType,
+        ds.ScopeFeatures.crossScopeAssignmentsSupported,
+        ds.ScopeFeatures.riskSupported,
+        ds.ScopeFeatures.assignmentsInheritedFromParentScope,
     )
 def list_trivial_fields_IdpProviderCapabilities(ds: DSLSchema):
     """ List all trivial fields of the IdpProviderCapabilities type """
@@ -1245,6 +1252,7 @@ def list_trivial_fields_AccessManagementCapabilities(ds: DSLSchema):
         ds.AccessManagementCapabilities.supportedResourceSetEligibilityConstraints,
         ds.AccessManagementCapabilities.sessionSummarySupported,
         ds.AccessManagementCapabilities.allowAllResourcesInResourcesetSupported,
+        ds.AccessManagementCapabilities.andromedaResourcePoliciesSupported,
     )
 def list_trivial_fields_ParentProviderData(ds: DSLSchema):
     """ List all trivial fields of the ParentProviderData type """
@@ -1310,6 +1318,11 @@ def list_trivial_fields_SupportedEligibilityConfiguration(ds: DSLSchema):
     """ List all trivial fields of the SupportedEligibilityConfiguration type """
     return (
         ds.SupportedEligibilityConfiguration.eligibilityTypes,
+    )
+def list_trivial_fields_ResourceSetEligibilityConfiguration(ds: DSLSchema):
+    """ List all trivial fields of the ResourceSetEligibilityConfiguration type """
+    return (
+        ds.ResourceSetEligibilityConfiguration.eligibilityConstraintSelectionAllowed,
     )
 def list_trivial_fields_SupportedProvisioningGroupInputConfiguration(ds: DSLSchema):
     """ List all trivial fields of the SupportedProvisioningGroupInputConfiguration type """
@@ -1402,6 +1415,13 @@ def list_trivial_fields_ProviderGroupsData(ds: DSLSchema):
     """ List all trivial fields of the ProviderGroupsData type """
     return (
         ds.ProviderGroupsData.providerName,
+    )
+def list_trivial_fields_ProviderGroupMetadata(ds: DSLSchema):
+    """ List all trivial fields of the ProviderGroupMetadata type """
+    return (
+        ds.ProviderGroupMetadata.parentGroupsCount,
+        ds.ProviderGroupMetadata.childGroupsCount,
+        ds.ProviderGroupMetadata.maxDepth,
     )
 def list_trivial_fields_ProviderGroupMembers(ds: DSLSchema):
     """ List all trivial fields of the ProviderGroupMembers type """
@@ -1676,6 +1696,25 @@ def list_trivial_fields_ProviderConfiguredAssignmentEdge(ds: DSLSchema):
     """ List all trivial fields of the ProviderConfiguredAssignmentEdge type """
     return (
     )
+def list_trivial_fields_Bucket(ds: DSLSchema):
+    """ List all trivial fields of the Bucket type """
+    return (
+        ds.Bucket.rangeLabel,
+        ds.Bucket.lowerBound,
+        ds.Bucket.upperBound,
+        ds.Bucket.groupCount,
+        ds.Bucket.percentage,
+    )
+def list_trivial_fields_ProviderGroupsMetadataBucketSummaryData(ds: DSLSchema):
+    """ List all trivial fields of the ProviderGroupsMetadataBucketSummaryData type """
+    return (
+        ds.ProviderGroupsMetadataBucketSummaryData.metadata,
+    )
+def list_trivial_fields_ProviderGroupsMetadataBucketSummary(ds: DSLSchema):
+    """ List all trivial fields of the ProviderGroupsMetadataBucketSummary type """
+    return (
+        ds.ProviderGroupsMetadataBucketSummary.totalGroups,
+    )
 
 # End of file: andromeda/nonpublic/graph/provider_service.proto
 
@@ -1698,6 +1737,12 @@ def list_trivial_fields_PolicyEligibilityMapping(ds: DSLSchema):
         ds.PolicyEligibilityMapping.status,
         ds.PolicyEligibilityMapping.eligibilityType,
         ds.PolicyEligibilityMapping.eligibilityName,
+    )
+def list_trivial_fields_AccessRequestProfileData(ds: DSLSchema):
+    """ List all trivial fields of the AccessRequestProfileData type """
+    return (
+        ds.AccessRequestProfileData.id,
+        ds.AccessRequestProfileData.name,
     )
 def list_trivial_fields_PolicyEligibilityMappingEdge(ds: DSLSchema):
     """ List all trivial fields of the PolicyEligibilityMappingEdge type """
@@ -1848,6 +1893,7 @@ def list_trivial_fields_AccountPolicyRecommendation(ds: DSLSchema):
         ds.AccountPolicyRecommendation.blastRiskLevel,
         ds.AccountPolicyRecommendation.recommendedPolicyName,
         ds.AccountPolicyRecommendation.providerPolicyType,
+        ds.AccountPolicyRecommendation.responseType,
     )
 def list_trivial_fields_AccountPolicyData(ds: DSLSchema):
     """ List all trivial fields of the AccountPolicyData type """
@@ -1867,6 +1913,7 @@ def list_trivial_fields_AccountPolicyData(ds: DSLSchema):
         ds.AccountPolicyData.accountId,
         ds.AccountPolicyData.accountName,
         ds.AccountPolicyData.accountMode,
+        ds.AccountPolicyData.isAdminPolicy,
         ds.AccountPolicyData.numberOfIdentitiesWithPolicyAccess,
         ds.AccountPolicyData.roleTrustDocument,
         ds.AccountPolicyData.externalId,
@@ -2126,6 +2173,14 @@ def list_trivial_fields_ResourceRoleEligibilityData(ds: DSLSchema):
         ds.ResourceRoleEligibilityData.serviceType,
         ds.ResourceRoleEligibilityData.allResources,
         ds.ResourceRoleEligibilityData.index,
+    )
+def list_trivial_fields_RoleEligibilityData(ds: DSLSchema):
+    """ List all trivial fields of the RoleEligibilityData type """
+    return (
+    )
+def list_trivial_fields_GroupEligibilityData(ds: DSLSchema):
+    """ List all trivial fields of the GroupEligibilityData type """
+    return (
     )
 def list_trivial_fields_ResourceSetEligibilityData(ds: DSLSchema):
     """ List all trivial fields of the ResourceSetEligibilityData type """
@@ -3131,6 +3186,7 @@ def list_trivial_fields_UnifiedIdentityAccountPolicyRecommendation(ds: DSLSchema
         ds.UnifiedIdentityAccountPolicyRecommendation.blastRiskLevel,
         ds.UnifiedIdentityAccountPolicyRecommendation.recommendedPolicyName,
         ds.UnifiedIdentityAccountPolicyRecommendation.providerPolicyType,
+        ds.UnifiedIdentityAccountPolicyRecommendation.responseType,
     )
 def list_trivial_fields_AccountPolicyDetailsConnection(ds: DSLSchema):
     """ List all trivial fields of the AccountPolicyDetailsConnection type """
@@ -3608,6 +3664,22 @@ def list_trivial_fields_UserScopeRoleData(ds: DSLSchema):
         ds.UserScopeRoleData.blastRisk,
         ds.UserScopeRoleData.blastRiskLevel,
         ds.UserScopeRoleData.excessivePrivilegeScore,
+    )
+def list_trivial_fields_ProviderGroupsSummary(ds: DSLSchema):
+    """ List all trivial fields of the ProviderGroupsSummary type """
+    return (
+    )
+def list_trivial_fields_ProviderGroupsGroupedBySignificance(ds: DSLSchema):
+    """ List all trivial fields of the ProviderGroupsGroupedBySignificance type """
+    return (
+        ds.ProviderGroupsGroupedBySignificance.significance,
+        ds.ProviderGroupsGroupedBySignificance.count,
+    )
+def list_trivial_fields_GroupInsights(ds: DSLSchema):
+    """ List all trivial fields of the GroupInsights type """
+    return (
+        ds.GroupInsights.type,
+        ds.GroupInsights.category,
     )
 
 # End of file: andromeda/nonpublic/graph/identity_service.proto
