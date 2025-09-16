@@ -180,10 +180,9 @@ def create_app_eligibility(
                     application, eligibility_group, eligibility_filters)
     eligibility_data = {
         "providerId": provider_id,
-        "principalName": eligibility_group,
         "eligibilityType": "PROVIDER_ELIGIBILITY",
         "provisioningGroupId": provisioning_group_id,
-        "groupId": eligibility_group_id,
+        "eligibleGroupIds": [eligibility_group_id],
         "eligibilityConstraint":{"scopeType":"PROVIDER"},
         "provisioningGroupConfiguration":{
             "name": provisioning_group,
@@ -221,6 +220,7 @@ def check_n_update_app_enforcement_mode(
     """
     try:
         application_obj = next(as_inventory.app_provider_itr(
+            page_size=25,
             filters={"name": {"equals": application}}))
     except StopIteration as e:
         logger.error("Application %s not found", application)

@@ -1,0 +1,10 @@
+id,userName,scope,externalId,firstName,lastName,syncState,salesforceGroups,samlRoles,groupName
+"00uvyqba18t2TKg0b357","mike.richard@beatles.ai","GROUP","","","","DISABLED","","","beatles-torq-case-analyst"
+"00u101yjxm0pRjNRS358","chip.brown@beatles.ai","GROUP","","","","DISABLED","","","beatles-torq-edr"
+"00u10v4dpmrAwDeAN358","ashley.porter@beatles.ai","GROUP","","","","DISABLED","","","beatles-torq-vm"
+"00u11d4qiaxGWE8yl358","bobbie.landry@beatles.ai","GROUP","","","","DISABLED","","","beatles-torq-infosec"
+"00u10v4dpmrAwDeAN358","bobbie.landry@beatles.ai","GROUP","","","","DISABLED","","","beatles-torq-vm"
+"00u10v4dpmrAwDeAN358","mike.richard@beatles.ai","GROUP","","","","DISABLED","","","beatles-torq-vm"
+"00uvyqba18t2TKg0b357","mike.richard@beatles.ai","GROUP","","","","DISABLED","","","beatles-torq-vm"
+"00uvyqba18t2TKg0b357","mike.richard@beatles.ai","USER","","","","DISABLED","","",""
+"00uvyqba18t2TKg0b357","Issac.Newton@beatles.ai","USER","","","","DISABLED","","",""

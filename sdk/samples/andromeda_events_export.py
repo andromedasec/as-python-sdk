@@ -66,6 +66,10 @@ def _setup_args() -> argparse.Namespace:
                         default="https://api.live.andromedasecurity.com/graphql",
                         help='GQL endpoint for the inventory')
 
+    parser.add_argument('--as_event_name',
+                        help='Comma Separated event names',
+                        choices=sorted(["USER_AUTH_LOGIN", "USER_REQUEST_ACCESS_KEY", "PROVIDER_CONFIG_CREATE", "PROVIDER_CONFIG_MODIFY", "PROVIDER_CONFIG_DELETE", "AWS_PROVIDER_CONFIG_CREATE", "AWS_PROVIDER_CONFIG_UPDATE", "AWS_PROVIDER_CONFIG_DELETE", "TENANT_INTERNAL_CONFIG_CREATE", "TENANT_INTERNAL_CONFIG_UPDATE", "TENANT_INTERNAL_CONFIG_DELETE", "AZURE_PROVIDER_CONFIG_CREATE", "AZURE_PROVIDER_CONFIG_UPDATE", "ENTRA_PROVIDER_CONFIG_CREATE", "ENTRA_PROVIDER_CONFIG_UPDATE", "OKTA_PROVIDER_CONFIG_CREATE", "OKTA_PROVIDER_CONFIG_UPDATE", "TENANT_SETTINGS_UPDATE", "ACCEPTED_IDENTITY_RISK_CONFIG_CREATE", "ACCEPTED_IDENTITY_RISK_CONFIG_DELETE", "ELIGIBILITY_MAPPING_CREATE", "ELIGIBILITY_MAPPING_DELETE", "ACCESS_REQUEST_CREATE", "ACCESS_REQUEST_REVIEW", "ACCESS_REQUEST_ADMIN_OVERRIDE_REVIEW", "ACCESS_REQUEST_USER_ACTION", "ACCESS_REQUEST_USER_ACTION_CLOSE", "ACCESS_REQUEST_USER_ACTION_EXTEND", "ACCESS_REQUEST_ADMIN_OVERRIDE_REVIEW_APPROVE", "ACCESS_REQUEST_ADMIN_OVERRIDE_REVIEW_REJECT", "ACCESS_REQUEST_REVIEW_APPROVE", "ACCESS_REQUEST_REVIEW_REJECT", "ACCESS_REQUEST_ANALYZED", "ACCESS_REQUEST_APPROVED", "ACCESS_REQUEST_PROVISIONED", "ACCESS_REQUEST_DEPROVISIONED", "ACCESS_REQUEST_REJECTED", "ACCESS_REQUEST_FAILED", "ACCESS_REQUEST_TIMED_OUT"]))
+
     return parser.parse_args()
 
 def _setup_logging():
@@ -97,7 +101,7 @@ def _get_api_session(api_endpoint: str, as_session_token: str, as_api_token: str
 
 def _export_events(
         as_inventory: AndromedaInventory, output_dir: str,
-        event_type: str, event_subtype: str, start_time: str) -> None:
+        event_type: str, event_subtype: str, start_time: str, event_name: str) -> None:
     """
     Export identities with ops insights to a file
     """
@@ -110,10 +114,14 @@ def _export_events(
         filters['eventSubtype'] = {"equals": event_subtype.strip()}
     if start_time:
         filters["eventTime"] = {"greaterThanOrEquals": start_time}
+    if event_name:
+        filters["name"] = {"equals": event_name.strip()}
 
+    events = []
     with open(f"{json_output_f}", 'w', encoding='utf-8') as f:
         for event in as_inventory.as_events_itr(filters=filters):
-            json.dump(event, f, indent=2)
+            events.append(event)
+        json.dump(events, f, indent=2)
     logger.info("Events exported to \n json: %s", json_output_f)
 
 if __name__ == '__main__':
@@ -129,4 +137,4 @@ if __name__ == '__main__':
         as_endpoint=as_api_endpoint, gql_endpoint=args.as_gql_endpoint)
 
     _export_events(
-        ai, args.as_output_dir, args.as_event_type, args.as_event_subtype, args.start_time)
+        ai, args.as_output_dir, args.as_event_type, args.as_event_subtype, args.start_time, args.as_event_name)
