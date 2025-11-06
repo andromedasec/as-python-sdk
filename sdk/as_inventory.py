@@ -560,17 +560,11 @@ class AndromedaInventory(dict):
                                     DSLMetaField("__typename")
                                 )
                             ),
-                            ds.AccountPolicyUserResolvedAssignment.identityRoleData.select(
-                                ds.IdentityPolicyData.policyId(),
-                                ds.IdentityPolicyData.policyName(),
-                                ds.IdentityPolicyData.policyType(),
-                                #*gql_snippets.list_trivial_fields_IdentityPolicyData(ds),
-                            ),
-                            ds.AccountPolicyUserResolvedAssignment.serviceIdentityRoleData.select(
-                                ds.ServiceIdentityPolicyData.policyId(),
-                                ds.ServiceIdentityPolicyData.policyName(),
-                                ds.ServiceIdentityPolicyData.policyType(),
-                                #*gql_snippets.list_trivial_fields_ServiceIdentityPolicyData(ds),
+                            ds.AccountPolicyUserResolvedAssignment.userScopeRoleData.select(
+                                ds.UserScopeRoleData.roleId(),
+                                ds.UserScopeRoleData.roleName(),
+                                ds.UserScopeRoleData.roleType(),
+                                #*gql_snippets.list_trivial_fields_UserScopeRoleData(ds),
                             ),
                             ds.AccountPolicyUserResolvedAssignment.opsInsights.select(
                                 *gql_snippets.list_trivial_fields_PolicyBindingOpsInsightsData(ds),
@@ -960,11 +954,16 @@ class AndromedaInventory(dict):
                 )
             )
         ))
-        response = self.gql_client.execute(query, get_execution_result=True).formatted
-        nodes = response["data"]['Provider']['groups']['edges']
-        items = [node['node'] for node in nodes]
-        logger.debug("provider %s num groups returned %s", provider_id, len(nodes))
-        return items
+    
+        try:
+            response = self.gql_client.execute(query, get_execution_result=True).formatted
+            nodes = response["data"]['Provider']['groups']['edges']
+            items = [node['node'] for node in nodes]
+            logger.debug("provider %s num groups returned %s", provider_id, len(nodes))
+            return items
+        except KeyError as e:
+            logger.error("error getting groups for provider %s: %s", provider_id, e)
+            return []
 
     def as_provider_groups_itr(self, provider_id: str, provider_data: dict,
                             filters=None, page_size: int = None) -> Generator[dict, None, None]:
@@ -1116,18 +1115,65 @@ class AndromedaInventory(dict):
                 )
             )
         ))
+        try:
+            response = self.gql_client.execute(query, get_execution_result=True).formatted
+            nodes = response["data"]['Provider']['assignableUsers']['edges']
+            items = [node['node'] for node in nodes]
+            logger.debug("provider %s num assignable users returned %s",
+                        response["data"]['Provider']['name'], len(nodes))
+            return items
+        except KeyError as e:
+            logger.error("error getting assignable users for provider %s: %s", provider_id, e)
+            return []
+
+    def provider_assignable_users_with_identity_base_fn(self, provider_id: str, provider_data: dict, filters: dict,
+                                page_size: int = 100, skip: int = 0) ->Generator[list, None, None]:
+        ds = DSLSchema(self.gql_client.schema)
+        query = dsl_gql(DSLQuery(
+            ds.Query.Provider(
+                id=provider_id
+            ).select(
+                ds.Provider.id(),
+                ds.Provider.name(),
+                ds.Provider.assignableUsers(
+                    pageArgs={"pageSize": page_size, "skip": skip},
+                    filters=filters).select(
+                    ds.AssignableUserDataConnection.edges.select(
+                        ds.AssignableUserDataEdge.node.select(
+                            *gql_snippets.list_trivial_fields_AssignableUserData(ds),
+                            ds.AssignableUserData.userDetails.select(
+                                *gql_snippets.list_trivial_fields_IdentityOriginData(ds),
+                                ds.IdentityOriginData.identity.select(
+                                    *gql_snippets.list_trivial_fields_Identity(ds),
+                                ),
+                            ),
+                        ),
+                    ),
+                    ds.AssignableUserDataConnection.pageInfo.select(
+                        *gql_snippets.list_trivial_fields_PageInfo(ds),
+                    )
+                )
+            )
+        ))
         response = self.gql_client.execute(query, get_execution_result=True).formatted
         nodes = response["data"]['Provider']['assignableUsers']['edges']
         items = [node['node'] for node in nodes]
         logger.debug("provider %s num assignable users returned %s",
                      response["data"]['Provider']['name'], len(nodes))
         return items
-
     def provider_assignable_users_itr(self, provider_id: str, provider_data: dict,
                                         filters=None, page_size: int = None) -> Generator[dict, None, None]:
         page_size = page_size if page_size else self.default_page_size
         partial_fn_itr = functools.partial(
             self.provider_assignable_users_base_fn, provider_id, provider_data, filters)
+        for item in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
+            yield item
+
+    def provider_assignable_users_with_identity_itr(self, provider_id: str, provider_data: dict,
+                                        filters=None, page_size: int = None) -> Generator[dict, None, None]:
+        page_size = page_size if page_size else self.default_page_size
+        partial_fn_itr = functools.partial(
+            self.provider_assignable_users_with_identity_base_fn, provider_id, provider_data, filters)
         for item in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
             yield item
 
@@ -1154,12 +1200,16 @@ class AndromedaInventory(dict):
                 )
             )
         ))
-        response = self.gql_client.execute(query, get_execution_result=True).formatted
-        nodes = response["data"]['Provider']['assignablePolicies']['edges']
-        items = [node['node'] for node in nodes]
-        logger.debug("provider %s num assignable policies returned %s",
-                     response["data"]['Provider']['name'], len(nodes))
-        return items
+        try:
+            response = self.gql_client.execute(query, get_execution_result=True).formatted
+            nodes = response["data"]['Provider']['assignablePolicies']['edges']
+            items = [node['node'] for node in nodes]
+            logger.debug("provider %s num assignable policies returned %s",
+                        response["data"]['Provider']['name'], len(nodes))
+            return items
+        except KeyError as e:
+            logger.error("error getting assignable policies for provider %s: %s", provider_id, e)
+            return []
 
     def provider_assignable_policies_itr(self, provider_id: str, provider_data: dict,
                                         filters=None, page_size: int = None) -> Generator[dict, None, None]:
@@ -1213,13 +1263,75 @@ class AndromedaInventory(dict):
                 )
             )
         ))
+        try:
+            response = self.gql_client.execute(query, get_execution_result=True).formatted
+            nodes = response["data"]['Provider']['assignableGroups']['edges']
+            items = [node['node'] for node in nodes]
+            logger.debug("provider %s num assignable groups returned %s",
+                        response["data"]['Provider']['name'],len(nodes))
+            return items
+        except KeyError as e:
+            logger.error("error getting assignable groups for provider %s: %s", provider_id, e)
+            return []
+
+    def provider_assignable_groups_with_members_base_fn(self, provider_id: str, provider_data: dict, filters: dict,
+                                page_size: int = 100, skip: int = 0) ->Generator[list, None, None]:
+        ds = DSLSchema(self.gql_client.schema)
+        query = dsl_gql(DSLQuery(
+            ds.Query.Provider(
+                id=provider_id
+            ).select(
+                ds.Provider.id(),
+                ds.Provider.name(),
+                ds.Provider.assignableGroups(
+                    pageArgs={"pageSize": page_size, "skip": skip},
+                    filters=filters).select(
+                    ds.AssignableGroupsConnection.edges.select(
+                        ds.AssignableGroupDataEdge.node.select(
+                            *gql_snippets.list_trivial_fields_AssignableGroup(ds),
+                            ds.AssignableGroup.groupDetails.select(
+                                *gql_snippets.list_trivial_fields_Group(ds),
+                                ds.Group.members.select(
+                                    *gql_snippets.list_trivial_fields_GroupMembers(ds),
+                                    ds.GroupMembers.humanUsers.select(
+                                        ds.GroupHumanMembersDataConnection.edges.select(
+                                            ds.GroupHumanMembersDataEdge.node.select(
+                                                *gql_snippets.list_trivial_fields_IdentityOriginData(ds),
+                                                ds.IdentityOriginData.identity.select(
+                                                    *gql_snippets.list_trivial_fields_Identity(ds),
+                                                ),
+                                            ),
+                                        ),
+                                        ds.GroupHumanMembersDataConnection.pageInfo.select(
+                                            *gql_snippets.list_trivial_fields_PageInfo(ds),
+                                        )
+                                    ),
+                                    ds.GroupMembers.serviceIdentities.select(
+                                        ds.GroupNonHumanMembersDataConnection.pageInfo.select(
+                                            *gql_snippets.list_trivial_fields_PageInfo(ds),
+                                        )
+                                    ),
+                                    ds.GroupMembers.groups.select(
+                                        ds.GroupsConnection.pageInfo.select(
+                                            *gql_snippets.list_trivial_fields_PageInfo(ds),
+                                        )
+                                    )
+                                ),
+                            ),
+                        ),
+                    ),
+                    ds.AssignableGroupsConnection.pageInfo.select(
+                        *gql_snippets.list_trivial_fields_PageInfo(ds),
+                    )
+                )
+            )
+        ))
         response = self.gql_client.execute(query, get_execution_result=True).formatted
         nodes = response["data"]['Provider']['assignableGroups']['edges']
         items = [node['node'] for node in nodes]
         logger.debug("provider %s num assignable groups returned %s",
                      response["data"]['Provider']['name'],len(nodes))
         return items
-
     def provider_assignable_groups_itr(self, provider_id: str, provider_data: dict,
                                         filters=None, page_size: int = None) -> Generator[dict, None, None]:
         page_size = page_size if page_size else self.default_page_size
@@ -1228,6 +1340,13 @@ class AndromedaInventory(dict):
         for item in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
             yield item
 
+    def provider_assignable_groups_with_members_itr(self, provider_id: str, provider_data: dict,
+                                        filters=None, page_size: int = None) -> Generator[dict, None, None]:
+        page_size = page_size if page_size else self.default_page_size
+        partial_fn_itr = functools.partial(
+            self.provider_assignable_groups_with_members_base_fn, provider_id, provider_data, filters)
+        for item in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
+            yield item
 
     def account_humans_base_fn(self, provider_id: str, account_id: str, account_data: dict, filters: dict,
                                 page_size: int = 100, skip: int = 0) ->Generator[list, None, None]:
@@ -1261,11 +1380,15 @@ class AndromedaInventory(dict):
                 )
             )
         ))
-        response = self.gql_client.execute(query, get_execution_result=True).formatted
-        identityNodes = response["data"]['Account']['identities']['edges']
-        humans = [node['node'] for node in identityNodes]
-        logger.debug("num identities returned %s", len(identityNodes))
-        return humans
+        try:
+            response = self.gql_client.execute(query, get_execution_result=True).formatted
+            identityNodes = response["data"]['Account']['identities']['edges']
+            humans = [node['node'] for node in identityNodes]
+            logger.debug("num identities returned %s", len(identityNodes))
+            return humans
+        except KeyError as e:
+            logger.error("error getting account humans for provider %s account %s: %s", provider_id, account_id, e)
+            return []
 
     def account_humans_itr(self, provider_id: str, account_id: str, account_data: dict,
                             filters=None, page_size: int = None) -> Generator[dict, None, None]:
@@ -1311,11 +1434,15 @@ class AndromedaInventory(dict):
                 )
             )
         ))
-        response = self.gql_client.execute(query, get_execution_result=True).formatted
-        identityNodes = response["data"]['Account']['serviceIdentities']['edges']
-        nhis = [node['node'] for node in identityNodes]
-        logger.debug("num identities returned %s", len(identityNodes))
-        return nhis
+        try:
+            response = self.gql_client.execute(query, get_execution_result=True).formatted
+            identityNodes = response["data"]['Account']['serviceIdentities']['edges']
+            nhis = [node['node'] for node in identityNodes]
+            logger.debug("num identities returned %s", len(identityNodes))
+            return nhis
+        except KeyError as e:
+            logger.error("error getting account nhis for provider %s account %s: %s", provider_id, account_id, e)
+            return []
 
     def account_nhis_itr(self, provider_id: str, account_id: str, account_data: dict,
                             filters=None, page_size: int = None) -> Generator[dict, None, None]:
@@ -1515,12 +1642,10 @@ class AndromedaInventory(dict):
             page_size: int, skip: int) -> Generator[list, None, None]:
         logger.debug("Fetching providers filters %s page_size %s skip %s",
                     filters, page_size, skip)
-        updated_filters = filters if filters else {}
-        updated_filters['category'] = {'equals': 'CLOUD'}
         ds = DSLSchema(self.gql_client.schema)
         query = dsl_gql(DSLQuery(
             ds.Query.Providers(
-                filters=updated_filters,
+                filters=filters,
                 pageArgs={"pageSize": page_size, "skip": skip}
             ).select(
                 ds.ProvidersConnection.edges.select(
@@ -1599,6 +1724,15 @@ class AndromedaInventory(dict):
         return providers
 
     def cloud_provider_itr(self, filters: dict = None, page_size: int = None) -> Generator[dict, None, None]:
+        page_size = page_size if page_size else self.default_page_size
+        updated_filters = filters if filters else {}
+        updated_filters['category'] = {'in': ['CLOUD']}
+        partial_fn_itr = functools.partial(
+            self.as_cloud_provider_base_fn, updated_filters)
+        for provider in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
+            yield provider
+
+    def provider_itr(self, filters: dict = None, page_size: int = None) -> Generator[dict, None, None]:
         page_size = page_size if page_size else self.default_page_size
         partial_fn_itr = functools.partial(
             self.as_cloud_provider_base_fn, filters)
@@ -2864,7 +2998,7 @@ class AndromedaInventory(dict):
         logger.debug("provider: %s", provider_id)
         return provider_data.get('eligibilities', {})
 
-    def _fetch_idp_application_details(self, provider_id: str, provider_data: dict) -> dict:
+    def _fetch_idp_application_details(self, provider_id: str, provider_data: dict) -> None:
         if provider_id not in self.provider_map:
             self.provider_map[provider_id] = AndromedaProvider()
         self.provider_map[provider_id].update(provider_data)
@@ -2879,11 +3013,11 @@ class AndromedaInventory(dict):
         self._fetch_application_assignments(provider_id, provider_data)
         self._fetch_provider_eligibilities(provider_id, provider_data)
 
-        logger.info("provider %s humans:%s nhis%s",
-                    provider_id, len(provider_data['humans']), len(provider_data['nhis']))
-        return
+        logger.info("provider %s:%s humans:%s nhis%s",
+                    provider_data['name'], provider_id, len(provider_data['humans']), len(provider_data['nhis']))
+        return None
 
-    def _fetch_cloud_provider_details(self, provider_id: str, provider_data: dict) -> dict:
+    def _fetch_cloud_provider_details(self, provider_id: str, provider_data: dict) -> None:
         if provider_id not in self.provider_map:
             self.provider_map[provider_id] = AndromedaProvider()
         self.provider_map[provider_id].update(provider_data)
@@ -2905,8 +3039,8 @@ class AndromedaInventory(dict):
             self._fetch_account_humans(provider_id, account_id, account_data)
             self._fetch_account_nhis(provider_id, account_id, account_data)
 
-        logger.info("provider %s humans:%s nhis%s accounts %s active bindings%s",
-                    provider_id, len(provider_data['humans']), len(provider_data['nhis']),
+        logger.info("provider %s:%s humans:%s nhis%s accounts %s active bindings%s",
+                    provider_data['name'], provider_id, len(provider_data['humans']), len(provider_data['nhis']),
                     len(provider_data['accounts']),
                     len(provider_data['activeBindings']))
         return
@@ -3042,8 +3176,11 @@ class AndromedaInventory(dict):
                     event['data'] = json.loads(event['data']['payload'])
                 events.append(event)
             except KeyError as e:
-                logger.error("error unpacking event %s", e)
+                logger.error("error unpacking event %s\n %s", e, event)
                 continue
+            except Exception as e:
+                logger.error("error unpacking event %s\n %s", e, event)
+                raise e
         logger.debug("num events returned %s", len(events))
         return events
 

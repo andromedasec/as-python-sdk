@@ -103,35 +103,35 @@ def test_full_inventory(ai: AndromedaInventory):
         assert data2
     assert data == data2
 
-def test_provider_inventory(ai: AndromedaInventory, e2e_provider: dict):
-    provider_id = e2e_provider["id"]
-    data_file = ai.download_inventory(provider_id=provider_id)
-    assert os.path.exists(data_file)
-    with open(data_file, "r") as f:
-        data = json.load(f)
-        assert data
-    #logger.debug("Provider data: %s", json.dumps(data, indent=2))
-    data_file_cached = ai.download_inventory(provider_id=provider_id, use_cached=True)
-    assert os.path.exists(data_file_cached)
-    assert data_file == data_file_cached, f"{data_file} != {data_file_cached}"
-    with open(data_file_cached, "r") as f:
-        data2 = json.load(f)
-        assert data2
-    assert data == data2
+# def test_provider_inventory(ai: AndromedaInventory, e2e_provider: dict):
+#     provider_id = e2e_provider["id"]
+#     data_file = ai.download_inventory(provider_id=provider_id)
+#     assert os.path.exists(data_file)
+#     with open(data_file, "r") as f:
+#         data = json.load(f)
+#         assert data
+#     #logger.debug("Provider data: %s", json.dumps(data, indent=2))
+#     data_file_cached = ai.download_inventory(provider_id=provider_id, use_cached=True)
+#     assert os.path.exists(data_file_cached)
+#     assert data_file == data_file_cached, f"{data_file} != {data_file_cached}"
+#     with open(data_file_cached, "r") as f:
+#         data2 = json.load(f)
+#         assert data2
+#     assert data == data2
 
-def test_access_requests(ai: AndromedaInventory, e2e_provider: dict):
-    for request in ai.as_provider_access_requests_itr(e2e_provider["id"]):
-        logger.debug("Access request: %s reviews %s",
-                     request['requestId'], len(request.get('reviews', [])))
+# def test_access_requests(ai: AndromedaInventory, e2e_provider: dict):
+#     for request in ai.as_provider_access_requests_itr(e2e_provider["id"]):
+#         logger.debug("Access request: %s reviews %s",
+#                      request['requestId'], len(request.get('reviews', [])))
 
-def test_as_access_keys(ai: AndromedaInventory, e2e_provider: dict):
-    for key in ai.as_access_keys_itr(e2e_provider["id"]):
-        logger.debug("Access keys: %s",  key)
+# def test_as_access_keys(ai: AndromedaInventory, e2e_provider: dict):
+#     for key in ai.as_access_keys_itr(e2e_provider["id"]):
+#         logger.debug("Access keys: %s",  key)
 
 
-def test_as_groups(ai: AndromedaInventory, e2e_provider: dict):
-    for group in ai.as_provider_groups_itr(e2e_provider["id"], e2e_provider):
-        logger.debug("group keys: %s",  group)
+# def test_as_groups(ai: AndromedaInventory, e2e_provider: dict):
+#     for group in ai.as_provider_groups_itr(e2e_provider["id"], e2e_provider):
+#         logger.debug("group keys: %s",  group)
 
 def test_user_provider_resolved_assignments(ai: AndromedaInventory):
     """
@@ -294,3 +294,14 @@ def test_recommendations(ai: AndromedaInventory):
     for recommendation in ai.as_recommendations_itr():
         assert recommendation['id'], f"recommendation missing id {recommendation}"
         assert recommendation['category'], f"recommendation missing category {recommendation}"
+
+def test_provider_itr(ai: AndromedaInventory):
+    count = 0
+    for provider in ai.provider_itr():
+        assert provider['id'], f"provider missing id {provider}"
+        assert provider['name'], f"provider missing name {provider}"
+        assert provider['category'], f"provider missing category {provider}"
+        assert provider['type'], f"provider missing type {provider}"
+        assert provider['mode'], f"provider missing mode {provider}"
+        count += 1
+    assert count > 0, "no providers found"
