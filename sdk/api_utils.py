@@ -27,6 +27,7 @@ Example usage:
 
 import logging
 import traceback
+from typing import Optional
 
 import requests
 
@@ -447,8 +448,9 @@ class APIUtils:
     def get_provider_aws_config_object(
             self, auth_mode: str, mgmt_account_id: str, role_name: str,
             acc_key_id: str, sec_acc_key: str, trails: list,
-            external_id: str="andromeda-test", iam_sso_integration_data: dict = None,
-            deployment_modes: list = None, enable_resource_inventory: bool = False, enable_eks_provider_creation: bool = False) -> dict:
+            external_id: str="andromeda-test", iam_sso_integration_data: Optional[dict] = None,
+            deployment_modes: list = None, enable_resource_inventory: bool = False,
+            enable_rds_provider_creation: bool = False, enable_eks_provider_creation: bool = False) -> dict:
         """ Create provider config object """
         # auth_mode = "AWS_AUTHMODE_ASSUME_ROLE_WITH_CREDENTIALS"
         aws_provider = {
@@ -468,6 +470,7 @@ class APIUtils:
                 "authMode": auth_mode
             },
             "enableResourceInventory": enable_resource_inventory,
+            "enableRdsProviderCreation": enable_rds_provider_creation,
             "enableEksProviderCreation": enable_eks_provider_creation
         }
         if deployment_modes:
@@ -796,3 +799,85 @@ class APIUtils:
         return self.create_or_update_provider(
             api_session=api_session, provider_id=provider_id, provider_config=pingone_provider_obj,
             provider_url=url)
+
+    def get_provider_atlas_config_object(
+            self, organization_id: str, external_idp_application_id: str,
+            auth_mode: str, public_key: str, private_key: str,
+            database_auth_mode: str, database_username: str, database_password: str) -> dict:
+        """ Create Atlas provider config object """
+        atlas_provider = {
+            "atlasAuthConfig": {
+                "authMode": auth_mode,
+                "apiKey": {
+                    "publicKey": public_key,
+                    "privateKey": private_key
+                }
+            },
+            "organizationId": organization_id,
+            "atlasDatabaseAuthConfig": {
+                "authMode": database_auth_mode,
+                "passwordAuth": {
+                    "username": database_username,
+                    "password": database_password
+                }
+            },
+            "externalIdpApplicationId": external_idp_application_id
+        }
+        return atlas_provider
+
+    def create_or_update_atlas_provider_config(
+            self, api_session: requests.Session, provider_id: str, atlas_provider_obj: dict) -> tuple[int, dict]:
+        """
+        This function creates or updates the Atlas specific settings for a provider
+        """
+        logger.info("creating atlas config for provider %s", provider_id)
+        url = self.get_resource_url(
+                resoure_type=f"providers/{provider_id}/atlas/config")
+        return self.create_or_update_provider(
+            api_session=api_session, provider_id=provider_id, provider_config=atlas_provider_obj,
+            provider_url=url)
+
+    def get_rds_postgresql_provider(self, api_session: requests.Session):
+        url = self.get_resource_url(resoure_type=f"providers")
+        response = api_session.get(url)
+        providers = response.json()
+
+        for provider in providers["results"]:
+            if provider["type"] == "PROVIDER_TYPE_RDS_POSTGRESQL":
+                return provider
+
+        return None
+
+    def get_rds_postgresql_provider_config(
+        self, api_session: requests.Session, provider_id: str
+    ) -> dict:
+        url = self.get_resource_url(resoure_type=f"providers/{provider_id}/rds-postgresql/config")
+        response = api_session.get(url)
+        return response.json()
+
+    def create_or_update_rds_postgresql_provider_config(
+        self,
+        api_session: requests.Session,
+        provider_id: str,
+        rds_postgresql_provider_obj: dict,
+    ) -> tuple[int, dict]:
+        """
+        This function creates or updates the cloud specific settings for a provider
+        """
+        url = self.get_resource_url(resoure_type=f"providers/{provider_id}/rds-postgresql/config")
+        return self.create_or_update_provider(
+            api_session=api_session,
+            provider_id=provider_id,
+            provider_config=rds_postgresql_provider_obj,
+            provider_url=url,
+        )
+
+    def update_access_request_profile(self, api_session: requests.Session, access_request_profile_id: str, access_request_profile_obj: dict) -> tuple[int, dict]:
+        url = self.get_resource_url(f"accessrequestprofiles/{access_request_profile_id}")
+        response = api_session.put(url=url, json=access_request_profile_obj)
+        return response.status_code, response.json()
+
+    def update_account_config(self, api_session: requests.Session, provider_id: str, account_id: str, account_config_obj: dict) -> tuple[int, dict]:
+        url = self.get_resource_url(f"providers/{provider_id}/accounts/{account_id}")
+        response = api_session.put(url=url, json=account_config_obj)
+        return response.status_code, response.json()
