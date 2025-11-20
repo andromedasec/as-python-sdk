@@ -8,14 +8,23 @@ Python SDK for Andromeda Security
 
 ```shell
 setopt interactive_comments
+
 # Create Virtual Environment
-virtualenv as-python-sdk
+python -m venv as-python-sdk
+
 # Activate Virtual Environment
 source as-python-sdk/bin/activate
+
 # Untar python sdk in linux/mac
 tar -xzvf as-python-sdk.tgz
 # Export pythonpath in linux/mac
 export PYTHONPATH=$PYTHONPATH:`pwd`
+```
+
+### Install python dependencies
+
+```shell
+pip install -r sdk/requirements.txt
 ```
 
 ### API Token Authentication or Session Token
@@ -147,3 +156,27 @@ The script generates output files in the specified directory (default: `/tmp/and
 - `--as_api_endpoint`: API endpoint (default: <https://api.live.andromedasecurity.com>)
 - `--as_gql_endpoint`: GraphQL endpoint (default: <https://api.live.andromedasecurity.com/graphql>)
 - `--operation_type`: Operation type - "identity_insights" or "dashboard_summary" (default: identity_insights)
+
+#### 3. Access Requests (JIT)
+
+Perform Access Requests for all requests that have been marked as favorites.
+
+```shell
+# Trigger Jit Request for all the favorites. The user is determined by the access token
+python3 sdk/samples/as_jit_request.py --duration=3600 --request_favorites
+```
+
+Perform Access Request for a Role
+
+```shell
+# Trigger Jit Request for a given role.
+python3 sdk/samples/as_jit_request.py --provider=<AWS> --account=<Prod> --role_names=<role1,role2> --duration=3600
+```
+
+Perform Access Request for a group
+
+```shell
+# Trigger Jit Request for a given group.
+python3 sdk/samples/as_jit_request.py --provider=<Entra> --group_names=<g1,g2> --duration=3600
+
+```

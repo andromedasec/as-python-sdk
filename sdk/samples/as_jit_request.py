@@ -92,7 +92,7 @@ def _setup_args() -> argparse.Namespace:
     return parser.parse_args()
 
 def _setup_logging():
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
     ch = logging.StreamHandler()
     # create formatter and add it to the handlers
     formatter = logging.Formatter('%(asctime)s:%(levelname)s:%(module)s:%(lineno)s: %(message)s')
