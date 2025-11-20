@@ -17,6 +17,22 @@ def list_trivial_fields_Permission(ds: DSLSchema):
 
 # End of file: andromeda/nonpublic/kuiper.proto
 
+# File: andromeda/nonpublic/graph/access_management.proto
+def list_trivial_fields_AccessManagement(ds: DSLSchema):
+    """ List all trivial fields of the AccessManagement type """
+    return (
+    )
+def list_trivial_fields_AccessRequestSummary(ds: DSLSchema):
+    """ List all trivial fields of the AccessRequestSummary type """
+    return (
+        ds.AccessRequestSummary.totalCount,
+        ds.AccessRequestSummary.reviewRequiredCount,
+        ds.AccessRequestSummary.approvedCount,
+        ds.AccessRequestSummary.rejectedCount,
+    )
+
+# End of file: andromeda/nonpublic/graph/access_management.proto
+
 # File: andromeda/nonpublic/graph/explorer_view_service.proto
 def list_trivial_fields_ExplorerViewConnection(ds: DSLSchema):
     """ List all trivial fields of the ExplorerViewConnection type """
@@ -754,6 +770,9 @@ def list_trivial_fields_ServiceIdentityAccountData(ds: DSLSchema):
     return (
         ds.ServiceIdentityAccountData.accountId,
         ds.ServiceIdentityAccountData.accountName,
+        ds.ServiceIdentityAccountData.sensitive,
+        ds.ServiceIdentityAccountData.criticality,
+        ds.ServiceIdentityAccountData.environment,
         ds.ServiceIdentityAccountData.blastRisk,
         ds.ServiceIdentityAccountData.blastRiskLevel,
         ds.ServiceIdentityAccountData.isBlastRiskComputed,
@@ -1819,6 +1838,33 @@ def list_trivial_fields_Group(ds: DSLSchema):
         ds.Group.isReference,
         ds.Group.lastUpdatedAt,
         ds.Group.groupCreatedAt,
+        ds.Group.groupDescription,
+        ds.Group.groupEmail,
+    )
+def list_trivial_fields_GroupHierarchySummary(ds: DSLSchema):
+    """ List all trivial fields of the GroupHierarchySummary type """
+    return (
+        ds.GroupHierarchySummary.totalParentGroupsCount,
+        ds.GroupHierarchySummary.directParentGroupsCount,
+        ds.GroupHierarchySummary.childGroupsCount,
+        ds.GroupHierarchySummary.maxDepth,
+    )
+def list_trivial_fields_GroupSyncInfo(ds: DSLSchema):
+    """ List all trivial fields of the GroupSyncInfo type """
+    return (
+    )
+def list_trivial_fields_GroupSyncInfoNode(ds: DSLSchema):
+    """ List all trivial fields of the GroupSyncInfoNode type """
+    return (
+        ds.GroupSyncInfoNode.syncType,
+    )
+def list_trivial_fields_GroupSyncedToGroupConnection(ds: DSLSchema):
+    """ List all trivial fields of the GroupSyncedToGroupConnection type """
+    return (
+    )
+def list_trivial_fields_GroupSyncedToGroupEdge(ds: DSLSchema):
+    """ List all trivial fields of the GroupSyncedToGroupEdge type """
+    return (
     )
 def list_trivial_fields_GroupProvidersConnection(ds: DSLSchema):
     """ List all trivial fields of the GroupProvidersConnection type """
@@ -1959,6 +2005,9 @@ def list_trivial_fields_IdentityAccountData(ds: DSLSchema):
     return (
         ds.IdentityAccountData.accountId,
         ds.IdentityAccountData.accountName,
+        ds.IdentityAccountData.sensitive,
+        ds.IdentityAccountData.criticality,
+        ds.IdentityAccountData.environment,
         ds.IdentityAccountData.isOwner,
         ds.IdentityAccountData.blastRisk,
         ds.IdentityAccountData.blastRiskLevel,
@@ -2668,6 +2717,21 @@ def list_trivial_fields_UserScopeRoleData(ds: DSLSchema):
 def list_trivial_fields_ProviderGroupsSummary(ds: DSLSchema):
     """ List all trivial fields of the ProviderGroupsSummary type """
     return (
+        ds.ProviderGroupsSummary.totalGroupsCount,
+        ds.ProviderGroupsSummary.localGroupsCount,
+        ds.ProviderGroupsSummary.syncGroupsCount,
+        ds.ProviderGroupsSummary.duplicateNameGroupsCount,
+    )
+def list_trivial_fields_GroupOwnershipSummary(ds: DSLSchema):
+    """ List all trivial fields of the GroupOwnershipSummary type """
+    return (
+        ds.GroupOwnershipSummary.significance,
+        ds.GroupOwnershipSummary.count,
+    )
+def list_trivial_fields_ProviderGroupNestingSummary(ds: DSLSchema):
+    """ List all trivial fields of the ProviderGroupNestingSummary type """
+    return (
+        ds.ProviderGroupNestingSummary.groupAsMemberCount,
     )
 def list_trivial_fields_ProviderGroupsGroupedBySignificance(ds: DSLSchema):
     """ List all trivial fields of the ProviderGroupsGroupedBySignificance type """
@@ -2681,6 +2745,25 @@ def list_trivial_fields_GroupInsights(ds: DSLSchema):
         ds.GroupInsights.type,
         ds.GroupInsights.category,
     )
+def list_trivial_fields_Bucket(ds: DSLSchema):
+    """ List all trivial fields of the Bucket type """
+    return (
+        ds.Bucket.rangeLabel,
+        ds.Bucket.lowerBound,
+        ds.Bucket.upperBound,
+        ds.Bucket.groupCount,
+        ds.Bucket.percentage,
+    )
+def list_trivial_fields_GroupsMetadataBucketSummaryData(ds: DSLSchema):
+    """ List all trivial fields of the GroupsMetadataBucketSummaryData type """
+    return (
+        ds.GroupsMetadataBucketSummaryData.metadata,
+    )
+def list_trivial_fields_GroupsMetadataBucketSummary(ds: DSLSchema):
+    """ List all trivial fields of the GroupsMetadataBucketSummary type """
+    return (
+        ds.GroupsMetadataBucketSummary.totalGroups,
+    )
 def list_trivial_fields_AccountPolicyRecommendation(ds: DSLSchema):
     """ List all trivial fields of the AccountPolicyRecommendation type """
     return (
@@ -2690,6 +2773,37 @@ def list_trivial_fields_AccountPolicyRecommendation(ds: DSLSchema):
         ds.AccountPolicyRecommendation.recommendedPolicyName,
         ds.AccountPolicyRecommendation.providerPolicyType,
         ds.AccountPolicyRecommendation.responseType,
+    )
+def list_trivial_fields_GroupSummary(ds: DSLSchema):
+    """ List all trivial fields of the GroupSummary type """
+    return (
+        ds.GroupSummary.totalGroupsCount,
+        ds.GroupSummary.providerWithGroupsCount,
+        ds.GroupSummary.providerWithSourceSyncGroupsCount,
+        ds.GroupSummary.providerWithDestinationSyncGroupsCount,
+        ds.GroupSummary.duplicateNameGroupsCount,
+    )
+def list_trivial_fields_GroupSyncSummary(ds: DSLSchema):
+    """ List all trivial fields of the GroupSyncSummary type """
+    return (
+        ds.GroupSyncSummary.syncType,
+        ds.GroupSyncSummary.count,
+    )
+def list_trivial_fields_GroupNestingSummary(ds: DSLSchema):
+    """ List all trivial fields of the GroupNestingSummary type """
+    return (
+        ds.GroupNestingSummary.groupAsMemberCount,
+    )
+def list_trivial_fields_GroupMembershipSummary(ds: DSLSchema):
+    """ List all trivial fields of the GroupMembershipSummary type """
+    return (
+        ds.GroupMembershipSummary.count,
+    )
+def list_trivial_fields_GroupMembershipType(ds: DSLSchema):
+    """ List all trivial fields of the GroupMembershipType type """
+    return (
+        ds.GroupMembershipType.type,
+        ds.GroupMembershipType.isMember,
     )
 
 # End of file: andromeda/nonpublic/graph/identity_service.proto
@@ -2887,6 +3001,7 @@ def list_trivial_fields_ParentProviderData(ds: DSLSchema):
         ds.ParentProviderData.providerName,
         ds.ParentProviderData.accountId,
         ds.ParentProviderData.accountName,
+        ds.ParentProviderData.providerType,
     )
 def list_trivial_fields_AssignableServicesConnection(ds: DSLSchema):
     """ List all trivial fields of the AssignableServicesConnection type """
@@ -3064,13 +3179,6 @@ def list_trivial_fields_ProviderGroupsData(ds: DSLSchema):
     return (
         ds.ProviderGroupsData.providerName,
     )
-def list_trivial_fields_ProviderGroupMetadata(ds: DSLSchema):
-    """ List all trivial fields of the ProviderGroupMetadata type """
-    return (
-        ds.ProviderGroupMetadata.parentGroupsCount,
-        ds.ProviderGroupMetadata.childGroupsCount,
-        ds.ProviderGroupMetadata.maxDepth,
-    )
 def list_trivial_fields_ProviderGroupMembers(ds: DSLSchema):
     """ List all trivial fields of the ProviderGroupMembers type """
     return (
@@ -3205,6 +3313,7 @@ def list_trivial_fields_Policy(ds: DSLSchema):
         ds.Policy.policyData,
         ds.Policy.accountId,
         ds.Policy.policyType,
+        ds.Policy.policyDescription,
         ds.Policy.hasAdminPermissions,
         ds.Policy.accountName,
         ds.Policy.externalId,
@@ -3350,25 +3459,6 @@ def list_trivial_fields_ProviderConfiguredAssignmentConnection(ds: DSLSchema):
 def list_trivial_fields_ProviderConfiguredAssignmentEdge(ds: DSLSchema):
     """ List all trivial fields of the ProviderConfiguredAssignmentEdge type """
     return (
-    )
-def list_trivial_fields_Bucket(ds: DSLSchema):
-    """ List all trivial fields of the Bucket type """
-    return (
-        ds.Bucket.rangeLabel,
-        ds.Bucket.lowerBound,
-        ds.Bucket.upperBound,
-        ds.Bucket.groupCount,
-        ds.Bucket.percentage,
-    )
-def list_trivial_fields_ProviderGroupsMetadataBucketSummaryData(ds: DSLSchema):
-    """ List all trivial fields of the ProviderGroupsMetadataBucketSummaryData type """
-    return (
-        ds.ProviderGroupsMetadataBucketSummaryData.metadata,
-    )
-def list_trivial_fields_ProviderGroupsMetadataBucketSummary(ds: DSLSchema):
-    """ List all trivial fields of the ProviderGroupsMetadataBucketSummary type """
-    return (
-        ds.ProviderGroupsMetadataBucketSummary.totalGroups,
     )
 def list_trivial_fields_ConfiguredAssignmentsGroupedBySignificance(ds: DSLSchema):
     """ List all trivial fields of the ConfiguredAssignmentsGroupedBySignificance type """
@@ -3581,6 +3671,52 @@ def list_trivial_fields_InventoryResourceStatus(ds: DSLSchema):
 
 # End of file: andromeda/nonpublic/graph/inventory_resources_trigger_service.proto
 
+# File: andromeda/nonpublic/graph/sink_configuration.proto
+def list_trivial_fields_SinkDetailsMessage(ds: DSLSchema):
+    """ List all trivial fields of the SinkDetailsMessage type """
+    return (
+    )
+def list_trivial_fields_SinkStatusMessage(ds: DSLSchema):
+    """ List all trivial fields of the SinkStatusMessage type """
+    return (
+        ds.SinkStatusMessage.status,
+        ds.SinkStatusMessage.errorMessage,
+        ds.SinkStatusMessage.lastPublishedTime,
+    )
+def list_trivial_fields_SinkConfigurationMessage(ds: DSLSchema):
+    """ List all trivial fields of the SinkConfigurationMessage type """
+    return (
+        ds.SinkConfigurationMessage.type,
+    )
+def list_trivial_fields_S3ServerConfigMessage(ds: DSLSchema):
+    """ List all trivial fields of the S3ServerConfigMessage type """
+    return (
+        ds.S3ServerConfigMessage.enabled,
+    )
+def list_trivial_fields_SyslogServerConfigMessage(ds: DSLSchema):
+    """ List all trivial fields of the SyslogServerConfigMessage type """
+    return (
+        ds.SyslogServerConfigMessage.host,
+        ds.SyslogServerConfigMessage.port,
+        ds.SyslogServerConfigMessage.protocol,
+    )
+def list_trivial_fields_RestEndpointConfigMessage(ds: DSLSchema):
+    """ List all trivial fields of the RestEndpointConfigMessage type """
+    return (
+        ds.RestEndpointConfigMessage.url,
+        ds.RestEndpointConfigMessage.method,
+        ds.RestEndpointConfigMessage.timeoutSeconds,
+        ds.RestEndpointConfigMessage.contentType,
+    )
+def list_trivial_fields_HeaderKeyValue(ds: DSLSchema):
+    """ List all trivial fields of the HeaderKeyValue type """
+    return (
+        ds.HeaderKeyValue.key,
+        ds.HeaderKeyValue.value,
+    )
+
+# End of file: andromeda/nonpublic/graph/sink_configuration.proto
+
 # File: andromeda/nonpublic/graph/recommendation_type_config_service.proto
 def list_trivial_fields_RecommendationTypeConfigConnection(ds: DSLSchema):
     """ List all trivial fields of the RecommendationTypeConfigConnection type """
@@ -3764,6 +3900,11 @@ def list_trivial_fields_Tag(ds: DSLSchema):
         ds.Tag.key,
         ds.Tag.value,
     )
+def list_trivial_fields_ProvidersPoliciesData(ds: DSLSchema):
+    """ List all trivial fields of the ProvidersPoliciesData type """
+    return (
+        ds.ProvidersPoliciesData.totalPoliciesCount,
+    )
 
 # End of file: andromeda/utils/common.proto
 
@@ -3831,6 +3972,8 @@ def list_trivial_fields_ReassignReviewActionData(ds: DSLSchema):
     """ List all trivial fields of the ReassignReviewActionData type """
     return (
         ds.ReassignReviewActionData.reassignedReviewerId,
+        ds.ReassignReviewActionData.id,
+        ds.ReassignReviewActionData.totalReassignedCount,
     )
 def list_trivial_fields_AccessReviewAiAnalysisCheck(ds: DSLSchema):
     """ List all trivial fields of the AccessReviewAiAnalysisCheck type """
@@ -4023,6 +4166,7 @@ def list_trivial_fields_AccessRequestReviewLevelDetails(ds: DSLSchema):
     return (
         ds.AccessRequestReviewLevelDetails.currentReviewLevel,
         ds.AccessRequestReviewLevelDetails.totalReviewLevels,
+        ds.AccessRequestReviewLevelDetails.isEscalated,
     )
 def list_trivial_fields_RequiredApprovalsDetails(ds: DSLSchema):
     """ List all trivial fields of the RequiredApprovalsDetails type """
@@ -4103,7 +4247,7 @@ def list_trivial_fields_JitSessionAnalysis(ds: DSLSchema):
         ds.JitSessionAnalysis.duration,
         ds.JitSessionAnalysis.summary,
         ds.JitSessionAnalysis.reason,
-        ds.JitSessionAnalysis.sessionLogsFileLocation,
+        ds.JitSessionAnalysis.sessionRecordingFolderLocation,
     )
 
 # End of file: andromeda/api/models/config/jit_transaction.proto

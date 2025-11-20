@@ -9,7 +9,7 @@ settings:
     provider_type: 'PROVIDER_TYPE_OKTA'
     category: "IDP"
     oktaConfiguration:
-      api_endpoint: "https://dev-46660721.okta.com/"
+      api_endpoint: "https://integrator-1396769.okta.com/"
       name: "beatles Okta"
       enable_application_provider_discovery: true
       #asAccessTokenSecretName: FIXME
