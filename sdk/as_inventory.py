@@ -15,6 +15,7 @@ from gql import Client, gql
 from gql.dsl import (DSLQuery, dsl_gql, DSLSchema, DSLInlineFragment, DSLMetaField)
 from gql.transport.requests import RequestsHTTPTransport
 from api.graphql import graphql_query_snippets as gql_snippets
+from gql.transport.exceptions import TransportQueryError
 from sdk.api_utils import APIUtils
 
 logger = logging.getLogger(__name__)
@@ -53,23 +54,37 @@ class AndromedaInventory(dict):
         self.gql_client = gql_client
         self.api_session = api_session
         # check and create the output directory
-        response = api_session.get(f"{as_endpoint}/tenantsettings")
-        response.raise_for_status()
-        self.tenant_id = response.json()["tenantId"]
-        self.output_dir = f"{output_dir}/{self.tenant_id}"
-        if not os.path.exists(self.output_dir):
-            os.makedirs(self.output_dir)
         self.pacer_duration_s = pacer_duration_s
         self['provider_map'] = {}
         self.default_page_size = default_page_size
         self.as_endpoint = as_endpoint
         if not self.gql_client:
             self.gql_client = self.get_gql_client(api_session, gql_endpoint)
+        self.tenant_id = self.get_tenant_id(api_session, as_endpoint)
+        self.output_dir = f"{output_dir}/{self.tenant_id}"
+        if not os.path.exists(self.output_dir):
+            os.makedirs(self.output_dir)
 
     @property
     def provider_map(self):
         return self['provider_map']
 
+    def get_tenant_id(self, api_session: requests.Session, as_endpoint: str):
+        """
+        Get the tenant ID from the API session
+        """
+        try:
+            # get the tenant_id and name from the identity-details
+            response = api_session.get(f"{as_endpoint}/identity-details")
+            response.raise_for_status()
+            tenant_id = response.json()["tenantId"]
+            return tenant_id
+        except Exception:
+            # this can happen if the user is not part of the discovered identities
+            response = api_session.get(f"{as_endpoint}/tenantsettings")
+            response.raise_for_status()
+            tenant_id = response.json()["tenantId"]
+            return tenant_id
 
     def get_gql_client(self, api_session: requests.Session, graphql_url: str):
         """ Create GraphQL client and schema from the API session """
@@ -954,15 +969,21 @@ class AndromedaInventory(dict):
                 )
             )
         ))
-    
+
         try:
             response = self.gql_client.execute(query, get_execution_result=True).formatted
             nodes = response["data"]['Provider']['groups']['edges']
             items = [node['node'] for node in nodes]
             logger.debug("provider %s num groups returned %s", provider_id, len(nodes))
             return items
+        except TransportQueryError as e:
+            logger.error("GraphQL transport error getting groups for provider %s: %s", provider_id, e)
+            return []
         except KeyError as e:
-            logger.error("error getting groups for provider %s: %s", provider_id, e)
+            logger.error("KeyError getting groups for provider %s: %s", provider_id, e)
+            return []
+        except Exception as e:
+            logger.error("Unexpected error getting groups for provider %s: %s", provider_id, e)
             return []
 
     def as_provider_groups_itr(self, provider_id: str, provider_data: dict,
@@ -1122,8 +1143,14 @@ class AndromedaInventory(dict):
             logger.debug("provider %s num assignable users returned %s",
                         response["data"]['Provider']['name'], len(nodes))
             return items
+        except TransportQueryError as e:
+            logger.error("GraphQL transport error getting assignable users for provider %s: %s", provider_id, e)
+            return []
         except KeyError as e:
-            logger.error("error getting assignable users for provider %s: %s", provider_id, e)
+            logger.error("KeyError getting assignable users for provider %s: %s", provider_id, e)
+            return []
+        except Exception as e:
+            logger.error("Unexpected error getting assignable users for provider %s: %s", provider_id, e)
             return []
 
     def provider_assignable_users_with_identity_base_fn(self, provider_id: str, provider_data: dict, filters: dict,
@@ -1207,8 +1234,8 @@ class AndromedaInventory(dict):
             logger.debug("provider %s num assignable policies returned %s",
                         response["data"]['Provider']['name'], len(nodes))
             return items
-        except KeyError as e:
-            logger.error("error getting assignable policies for provider %s: %s", provider_id, e)
+        except (TransportQueryError, KeyError, Exception) as e:
+            logger.error("Error in getting assignable policies for provider %s: %s", provider_id, e)
             return []
 
     def provider_assignable_policies_itr(self, provider_id: str, provider_data: dict,
@@ -1270,8 +1297,14 @@ class AndromedaInventory(dict):
             logger.debug("provider %s num assignable groups returned %s",
                         response["data"]['Provider']['name'],len(nodes))
             return items
+        except TransportQueryError as e:
+            logger.error("GraphQL transport error getting assignable groups for provider %s: %s", provider_id, e)
+            return []
         except KeyError as e:
-            logger.error("error getting assignable groups for provider %s: %s", provider_id, e)
+            logger.error("KeyError getting assignable groups for provider %s: %s", provider_id, e)
+            return []
+        except Exception as e:
+            logger.error("Unexpected error getting assignable groups for provider %s: %s", provider_id, e)
             return []
 
     def provider_assignable_groups_with_members_base_fn(self, provider_id: str, provider_data: dict, filters: dict,
@@ -1386,8 +1419,14 @@ class AndromedaInventory(dict):
             humans = [node['node'] for node in identityNodes]
             logger.debug("num identities returned %s", len(identityNodes))
             return humans
+        except TransportQueryError as e:
+            logger.error("GraphQL transport error getting account humans for provider %s account %s: %s", provider_id, account_id, e)
+            return []
         except KeyError as e:
-            logger.error("error getting account humans for provider %s account %s: %s", provider_id, account_id, e)
+            logger.error("KeyError getting account humans for provider %s account %s: %s", provider_id, account_id, e)
+            return []
+        except Exception as e:
+            logger.error("Unexpected error getting account humans for provider %s account %s: %s", provider_id, account_id, e)
             return []
 
     def account_humans_itr(self, provider_id: str, account_id: str, account_data: dict,
@@ -1440,8 +1479,14 @@ class AndromedaInventory(dict):
             nhis = [node['node'] for node in identityNodes]
             logger.debug("num identities returned %s", len(identityNodes))
             return nhis
+        except TransportQueryError as e:
+            logger.error("GraphQL transport error getting account nhis for provider %s account %s: %s", provider_id, account_id, e)
+            return []
         except KeyError as e:
-            logger.error("error getting account nhis for provider %s account %s: %s", provider_id, account_id, e)
+            logger.error("KeyError getting account nhis for provider %s account %s: %s", provider_id, account_id, e)
+            return []
+        except Exception as e:
+            logger.error("Unexpected error getting account nhis for provider %s account %s: %s", provider_id, account_id, e)
             return []
 
     def account_nhis_itr(self, provider_id: str, account_id: str, account_data: dict,
@@ -2541,6 +2586,57 @@ class AndromedaInventory(dict):
                      user_id, len(providers))
         return providers
 
+    def as_users_base_fn(
+            self, filters: dict,
+            page_size: int, skip: int) -> Generator[list, None, None]:
+        """
+        Fetch the resolved assignments for a user in a provider
+        """
+        logger.debug("Fetching Users filters %s page_size %s skip %s",
+                    filters, page_size, skip)
+        ds = DSLSchema(self.gql_client.schema)
+
+        query = dsl_gql(DSLQuery(
+            ds.Query.Users(
+                filters=filters
+            ).select(
+                ds.UserConnection.edges.select(
+                    ds.UserEdge.node.select(
+                        *gql_snippets.list_trivial_fields_User(ds),
+                        ds.User.userData.select(
+                            *gql_snippets.list_trivial_fields_IdentityOriginData(ds),
+                            ds.IdentityOriginData.identity.select(
+                                *gql_snippets.list_trivial_fields_Identity(ds),
+                            ),
+                        ),
+                    ),
+                ),
+                ds.UserConnection.pageInfo.select(
+                    *gql_snippets.list_trivial_fields_PageInfo(ds),
+                ),
+            )
+        ))
+        response = self.gql_client.execute(query, get_execution_result=True).formatted
+        try:
+            users = response["data"]['Users']['edges']
+        except IndexError:
+            # If there are no assignments, return an empty list
+            users = []
+        users = [node['node'] for node in users]
+        return users
+
+    def as_users_itr(
+            self, filters: dict = None,
+            page_size: int = None) -> Generator[dict, None, None]:
+        """
+        Iterate over the resolved assignments for a user in a provider
+        """
+        page_size = page_size if page_size else self.default_page_size
+        partial_fn_itr = functools.partial(
+            self.as_users_base_fn, filters)
+        for user in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
+            yield user
+
     def as_user_providers_with_assignments_itr(
             self, user_id: str, username: str = "", filters: dict = None,
             page_size: int = None) -> Generator[dict, None, None]:
@@ -2782,6 +2878,8 @@ class AndromedaInventory(dict):
         resource_set_eligibility_fragment.on(ds.ResourceSetEligibilityData)
         resource_eligibility_fragment = DSLInlineFragment()
         resource_eligibility_fragment.on(ds.IdentityResourceEligibilityData)
+        group_eligibility_fragment = DSLInlineFragment()
+        group_eligibility_fragment.on(ds.Group)
 
         query = dsl_gql(DSLQuery(
             ds.Query.Identity(
@@ -2811,6 +2909,9 @@ class AndromedaInventory(dict):
                                 ),
                                 resource_set_eligibility_fragment.select(
                                     *gql_snippets.list_trivial_fields_ResourceSetEligibilityData(ds),
+                                ),
+                                group_eligibility_fragment.select(
+                                    *gql_snippets.list_trivial_fields_Group(ds),
                                 ),
                                 # resource_eligibility_fragment.select(
                                 #     *gql_snippets.list_trivial_fields_IdentityResourceEligibilityData(ds),
@@ -3255,6 +3356,13 @@ def dev_download_application_summary(ai: AndromedaInventory) -> None:
                         app_stats['inactiveUsersCount'], inactive_users)
             csv_writer.writerow(app_record._asdict())
             logger.debug("app summary %s", app_record)
+
+    def identity_id_from_user_id(self, api_session: requests.Session, api_utils: APIUtils, access_request_user_id: str) -> str:
+        """
+        fetch the users using the id and extract identity id from the user details.
+        """
+        user = next(self.as_users_itr(filters={'id': {'equals': access_request_user_id}}))
+        return user['identityId']
 
 
 def main():
