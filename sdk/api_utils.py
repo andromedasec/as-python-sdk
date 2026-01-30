@@ -749,9 +749,7 @@ class APIUtils:
         url = self.get_resource_url(resoure_type=f"brokers")
         response = api_session.get(url)
         broker_data = {
-            "broker": {
-                "name": "test-default-broker"
-            }
+            "name": "test-default-broker"
         }
         response_json = response.json()
         if response.status_code == 200 and response_json and response_json['count'] > 0:
@@ -878,6 +876,6 @@ class APIUtils:
         return response.status_code, response.json()
 
     def update_account_config(self, api_session: requests.Session, provider_id: str, account_id: str, account_config_obj: dict) -> tuple[int, dict]:
-        url = self.get_resource_url(f"providers/{provider_id}/accounts/{account_id}")
+        url = self.get_resource_url(f"providers/{provider_id}/accounts/{account_id}/config")
         response = api_session.put(url=url, json=account_config_obj)
         return response.status_code, response.json()

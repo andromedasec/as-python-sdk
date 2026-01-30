@@ -416,6 +416,8 @@ class AndromedaInventory(dict):
         scope_account_fragment.on(ds.AccountScopeData)
         scope_folder_fragment = DSLInlineFragment()
         scope_folder_fragment.on(ds.FolderScopeData)
+        scope_population_fragment = DSLInlineFragment()
+        scope_population_fragment.on(ds.PopulationScopeData)
         filters = filters or {}
         filters['isResolved'] = resolved_view
         query = dsl_gql(DSLQuery(
@@ -452,6 +454,12 @@ class AndromedaInventory(dict):
                                     ds.FolderScopeData.name(),
                                     ds.FolderScopeData.id(),
                                     ds.FolderScopeData.isInherited(),
+                                    DSLMetaField("__typename")
+                                ),
+                                scope_population_fragment.select(
+                                    ds.PopulationScopeData.name(),
+                                    ds.PopulationScopeData.id(),
+                                    ds.PopulationScopeData.isInherited(),
                                     DSLMetaField("__typename")
                                 )
                             ),
@@ -504,7 +512,8 @@ class AndromedaInventory(dict):
         scope_account_fragment.on(ds.AccountScopeData)
         scope_folder_fragment = DSLInlineFragment()
         scope_folder_fragment.on(ds.FolderScopeData)
-
+        scope_population_fragment = DSLInlineFragment()
+        scope_population_fragment.on(ds.PopulationScopeData)
         principal_identity_origin_fragment = DSLInlineFragment()
         principal_identity_origin_fragment.on(ds.IdentityOriginData)
         principal_service_identity_fragment = DSLInlineFragment()
@@ -556,6 +565,12 @@ class AndromedaInventory(dict):
                                     ds.FolderScopeData.name(),
                                     ds.FolderScopeData.id(),
                                     ds.FolderScopeData.isInherited(),
+                                    DSLMetaField("__typename")
+                                ),
+                                scope_population_fragment.select(
+                                    ds.PopulationScopeData.name(),
+                                    ds.PopulationScopeData.id(),
+                                    ds.PopulationScopeData.isInherited(),
                                     DSLMetaField("__typename")
                                 )
                             ),
@@ -638,6 +653,12 @@ class AndromedaInventory(dict):
                                                 ds.FolderScopeData.name(),
                                                 ds.FolderScopeData.id(),
                                                 ds.FolderScopeData.isInherited(),
+                                                DSLMetaField("__typename")
+                                            ),
+                                            scope_population_fragment.select(
+                                                ds.PopulationScopeData.name(),
+                                                ds.PopulationScopeData.id(),
+                                                ds.PopulationScopeData.isInherited(),
                                                 DSLMetaField("__typename")
                                             )
                                         ),
@@ -1879,6 +1900,38 @@ class AndromedaInventory(dict):
         for provider in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
             yield provider
 
+    def as_provider_features(self, provider_id: str) -> dict:
+        """
+        Get the features for a provider
+        """
+        ds = DSLSchema(self.gql_client.schema)
+        query = dsl_gql(DSLQuery(
+            ds.Query.Provider(
+                id=provider_id,
+            ).select(
+                ds.Provider.features.select(
+                    *gql_snippets.list_trivial_fields_ProviderFeatures(ds),
+                    ds.ProviderFeatures.supportedScopeTypes.select(
+                        *gql_snippets.list_trivial_fields_ScopeFeatures(ds),
+                    ),
+                    ds.ProviderFeatures.objMapping.select(
+                        *gql_snippets.list_trivial_fields_ProviderObjMapping(ds),
+                    ),
+                    ds.ProviderFeatures.accessManagementCapabilities.select(
+                        *gql_snippets.list_trivial_fields_AccessManagementCapabilities(ds),
+                        ds.AccessManagementCapabilities.supportedProvisioningPolicies.select(
+                            *gql_snippets.list_trivial_fields_AccessRequestProvisioningPolicySupportData(ds),
+                            ds.AccessRequestProvisioningPolicySupportData.groupProvisioningPolicy.select(
+                                *gql_snippets.list_trivial_fields_AccessRequestGroupProvisioningPolicyData(ds),
+                            ),
+                        )
+                    ),
+                ),
+            )
+        ))
+        response = self.gql_client.execute(query, get_execution_result=True).formatted
+        return response["data"]['Provider']['features']
+
     def app_provider_itr(self, filters: dict = None, page_size: int = None) -> Generator[dict, None, None]:
         page_size = page_size if page_size else self.default_page_size
         partial_fn_itr = functools.partial(
@@ -2101,6 +2154,15 @@ class AndromedaInventory(dict):
                                     *gql_snippets.list_trivial_fields_AccessReviewsGroupedByStatusAndAiRecommendation(ds),
                                 ),
                             ),
+                            ds.AccessReviewerCampaignData.levelledReviewerDetails.select(
+                                *gql_snippets.list_trivial_fields_CampaignSnapshotLevelledReviewerDetails(ds),
+                                ds.CampaignSnapshotLevelledReviewerDetails.levelledReviewers.select(
+                                    *gql_snippets.list_trivial_fields_CampaignSnapshotLevelledReviewer(ds),
+                                    ds.CampaignSnapshotLevelledReviewer.signoffDetails.select(
+                                        *gql_snippets.list_trivial_fields_CampaignSnapshotReviewReviewerStatus(ds),
+                                    ),
+                                ),
+                            ),
                         ),
                     ),
                     ds.CampaignReviewersConnection.pageInfo.select(
@@ -2135,6 +2197,8 @@ class AndromedaInventory(dict):
         scope_account_fragment.on(ds.AccountScopeData)
         scope_folder_fragment = DSLInlineFragment()
         scope_folder_fragment.on(ds.FolderScopeData)
+        scope_population_fragment = DSLInlineFragment()
+        scope_population_fragment.on(ds.PopulationScopeData)
         query = dsl_gql(DSLQuery(
             ds.Query.Campaign(
                 id=campaign_id
@@ -2172,6 +2236,12 @@ class AndromedaInventory(dict):
                                         ds.FolderScopeData.id(),
                                         ds.FolderScopeData.isInherited(),
                                         DSLMetaField("__typename")
+                                    ),
+                                    scope_population_fragment.select(
+                                        ds.PopulationScopeData.name(),
+                                        ds.PopulationScopeData.id(),
+                                        ds.PopulationScopeData.isInherited(),
+                                        DSLMetaField("__typename")
                                     )
                                 ),
                                 ds.AccessAssignmentData.account.select(
@@ -2186,6 +2256,18 @@ class AndromedaInventory(dict):
                             ),
                             ds.AccessReview.revocationStatus.select(
                                 *gql_snippets.list_trivial_fields_RevocationStatus(ds),
+                            ),
+                            ds.AccessReview.levelledReviewerDetails.select(
+                                *gql_snippets.list_trivial_fields_AccessReviewLevelledReviewerDetails(ds),
+                                ds.AccessReviewLevelledReviewerDetails.levelledReviewers.select(
+                                    *gql_snippets.list_trivial_fields_AccessReviewLevelledReviewerDetail(ds),
+                                    ds.AccessReviewLevelledReviewerDetail.reviewStatus.select(
+                                        *gql_snippets.list_trivial_fields_AccessReviewReviewStatus(ds),
+                                    ),
+                                ),
+                            ),
+                            ds.AccessReview.reviewTrail.select(
+                                *gql_snippets.list_trivial_fields_CampaignSnapshotReviewAction(ds),
                             ),
                             # ds.AccessReview.originalReviewer.select(
                             #     *gql_snippets.list_trivial_fields_Identity(ds),
@@ -2269,6 +2351,182 @@ class AndromedaInventory(dict):
             self.as_access_reviewer_reviews_base_fn, identity_id, filters)
         for review in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
             yield review
+
+    def as_scoped_reviewer_campaign_access_reviews_base_fn(
+            self, campaign_id: str, reviewer_details_id: str, scope_type: str,
+            provider_id_filter: dict, search: str,
+            page_size: int, skip: int) -> Generator[list, None, None]:
+        """
+        Fetch access reviews grouped by scope for a reviewer in a campaign.
+
+        Args:
+            campaign_id: The campaign ID
+            reviewer_details_id: The reviewer campaign data ID (AccessReviewerCampaignData.id)
+            scope_type: The scope type to group by (ACCOUNT, RESOURCE_GROUP, FOLDER, etc.)
+            provider_id_filter: Optional filter for provider ID
+            search: Optional search string for scope name
+            page_size: Number of items per page
+            skip: Number of items to skip
+
+        Returns:
+            List of scoped access review groups
+        """
+        logger.debug("Fetching scoped access reviews for campaign %s reviewer %s scope_type %s page_size %s skip %s",
+                    campaign_id, reviewer_details_id, scope_type, page_size, skip)
+        ds = DSLSchema(self.gql_client.schema)
+
+        # Create scope union fragments
+        scope_resource_fragment = DSLInlineFragment()
+        scope_resource_fragment.on(ds.ResourceScopeData)
+        scope_account_fragment = DSLInlineFragment()
+        scope_account_fragment.on(ds.AccountScopeData)
+        scope_folder_fragment = DSLInlineFragment()
+        scope_folder_fragment.on(ds.FolderScopeData)
+        scope_group_fragment = DSLInlineFragment()
+        scope_group_fragment.on(ds.GroupScopeData)
+        scope_provider_fragment = DSLInlineFragment()
+        scope_provider_fragment.on(ds.ProviderScopeData)
+        scope_rg_fragment = DSLInlineFragment()
+        scope_rg_fragment.on(ds.ResourceGroupScopeData)
+        scope_population_fragment = DSLInlineFragment()
+        scope_population_fragment.on(ds.PopulationScopeData)
+
+        # Build filters for the grouped reviews
+        grouped_filters = {}
+        if search:
+            grouped_filters['scopeName'] = {'icontains': search}
+        if provider_id_filter:
+            grouped_filters['providerId'] = provider_id_filter
+
+        # Filter for the specific reviewer
+        reviewer_filter = {"id": {"equals": reviewer_details_id}}
+
+        query = dsl_gql(DSLQuery(
+            ds.Query.Campaign(
+                id=campaign_id
+            ).select(
+                ds.Campaign.reviewers(
+                    pageArgs={"pageSize": 1},
+                    filters=reviewer_filter
+                ).select(
+                    ds.CampaignReviewersConnection.edges.select(
+                        ds.CampaignReviewerEdge.reviewerCampaignData.select(
+                            *gql_snippets.list_trivial_fields_AccessReviewerCampaignData(ds),
+                            ds.AccessReviewerCampaignData.assignedReviewer.select(
+                                *gql_snippets.list_trivial_fields_Identity(ds),
+                            ),
+                            ds.AccessReviewerCampaignData.accessReviewsGrouped(
+                                groupByScopeType=scope_type,
+                                pageArgs={"pageSize": page_size, "skip": skip},
+                                filters=grouped_filters if grouped_filters else None
+                            ).select(
+                                ds.AccessReviewsGroupedConnection.edges.select(
+                                    ds.AccessReviewsGroupedEdge.node.select(
+                                        *gql_snippets.list_trivial_fields_AccessReviewsGroupedNode(ds),
+                                        ds.AccessReviewsGroupedNode.provider.select(
+                                            *gql_snippets.list_trivial_fields_Provider(ds),
+                                        ),
+                                        ds.AccessReviewsGroupedNode.parentScope.select(
+                                            scope_resource_fragment.select(
+                                                ds.ResourceScopeData.id(),
+                                                ds.ResourceScopeData.name(),
+                                                ds.ResourceScopeData.type(),
+                                                ds.ResourceScopeData.isInherited(),
+                                                DSLMetaField("__typename")
+                                            ),
+                                            scope_account_fragment.select(
+                                                ds.AccountScopeData.id(),
+                                                ds.AccountScopeData.name(),
+                                                ds.AccountScopeData.type(),
+                                                ds.AccountScopeData.isInherited(),
+                                                DSLMetaField("__typename")
+                                            ),
+                                            scope_folder_fragment.select(
+                                                ds.FolderScopeData.id(),
+                                                ds.FolderScopeData.name(),
+                                                ds.FolderScopeData.type(),
+                                                ds.FolderScopeData.isInherited(),
+                                                DSLMetaField("__typename")
+                                            ),
+                                            scope_group_fragment.select(
+                                                ds.GroupScopeData.id(),
+                                                ds.GroupScopeData.name(),
+                                                ds.GroupScopeData.type(),
+                                                ds.GroupScopeData.isInherited(),
+                                                DSLMetaField("__typename")
+                                            ),
+                                            scope_provider_fragment.select(
+                                                ds.ProviderScopeData.id(),
+                                                ds.ProviderScopeData.name(),
+                                                ds.ProviderScopeData.type(),
+                                                ds.ProviderScopeData.isInherited(),
+                                                DSLMetaField("__typename")
+                                            ),
+                                            scope_rg_fragment.select(
+                                                ds.ResourceGroupScopeData.id(),
+                                                ds.ResourceGroupScopeData.name(),
+                                                ds.ResourceGroupScopeData.type(),
+                                                ds.ResourceGroupScopeData.isInherited(),
+                                                DSLMetaField("__typename")
+                                            ),
+                                            scope_population_fragment.select(
+                                                ds.PopulationScopeData.id(),
+                                                ds.PopulationScopeData.name(),
+                                                ds.PopulationScopeData.type(),
+                                                ds.PopulationScopeData.isInherited(),
+                                                DSLMetaField("__typename")
+                                            ),
+                                        ),
+                                        ds.AccessReviewsGroupedNode.accessReviews.select(
+                                            ds.AccessReviewsConnection.pageInfo.select(
+                                                *gql_snippets.list_trivial_fields_PageInfo(ds),
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                                ds.AccessReviewsGroupedConnection.pageInfo.select(
+                                    *gql_snippets.list_trivial_fields_PageInfo(ds),
+                                ),
+                            ),
+                        ),
+                    ),
+                ),
+            )
+        ))
+        response = self.gql_client.execute(query, get_execution_result=True).formatted
+        reviewers = response['data']['Campaign']['reviewers']['edges']
+        if not reviewers:
+            return []
+
+        reviewer_campaign_data = reviewers[0]['reviewerCampaignData']
+        scoped_reviews = reviewer_campaign_data['accessReviewsGrouped']['edges']
+        scoped_reviews = [edge['node'] for edge in scoped_reviews]
+        logger.debug("num scoped reviews returned %s", len(scoped_reviews))
+        return scoped_reviews
+
+    def as_scoped_reviewer_campaign_access_reviews_itr(
+            self, campaign_id: str, reviewer_details_id: str, scope_type: str = "ACCOUNT",
+            provider_id_filter: dict = None, search: str = None, page_size: int = None) -> Generator[dict, None, None]:
+        """
+        Iterate over access reviews grouped by scope for a reviewer in a campaign.
+
+        Args:
+            campaign_id: The campaign ID
+            reviewer_details_id: The reviewer campaign data ID (AccessReviewerCampaignData.id)
+            scope_type: The scope type to group by (ACCOUNT, RESOURCE_GROUP, FOLDER, etc.)
+            provider_id_filter: Optional filter for provider ID (e.g., {"equals": "provider-id"})
+            search: Optional search string for scope name
+            page_size: Number of items per page
+
+        Yields:
+            dict: Scoped access review data including provider, scope, and review summary
+        """
+        page_size = page_size if page_size else self.default_page_size
+        partial_fn_itr = functools.partial(
+            self.as_scoped_reviewer_campaign_access_reviews_base_fn, campaign_id, reviewer_details_id,
+            scope_type, provider_id_filter, search)
+        for scoped_review in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
+            yield scoped_review
 
     def as_provider_access_keys_fn(
             self, provider_id: str, filters: dict,
@@ -2362,6 +2620,8 @@ class AndromedaInventory(dict):
         scope_account_fragment.on(ds.AccountScopeData)
         scope_folder_fragment = DSLInlineFragment()
         scope_folder_fragment.on(ds.FolderScopeData)
+        scope_population_fragment = DSLInlineFragment()
+        scope_population_fragment.on(ds.PopulationScopeData)
 
         query = dsl_gql(DSLQuery(
             ds.Query.Identity(
@@ -2405,6 +2665,12 @@ class AndromedaInventory(dict):
                                                             ds.FolderScopeData.name(),
                                                             ds.FolderScopeData.id(),
                                                             ds.FolderScopeData.isInherited(),
+                                                            DSLMetaField("__typename")
+                                                        ),
+                                                        scope_population_fragment.select(
+                                                            ds.PopulationScopeData.name(),
+                                                            ds.PopulationScopeData.id(),
+                                                            ds.PopulationScopeData.isInherited(),
                                                             DSLMetaField("__typename")
                                                         )
                                                     ),
@@ -2457,6 +2723,8 @@ class AndromedaInventory(dict):
         scope_folder_fragment.on(ds.FolderScopeData)
         scope_provider_fragment = DSLInlineFragment()
         scope_provider_fragment.on(ds.ProviderScopeData)
+        scope_population_fragment = DSLInlineFragment()
+        scope_population_fragment.on(ds.PopulationScopeData)
 
         user_filters = {}
         if user_id:
@@ -3059,6 +3327,36 @@ class AndromedaInventory(dict):
         logger.debug("num requests returned %s", len(requests))
         return requests
 
+    def as_tenant_data(self) -> dict:
+        """Get the tenant data."""
+        ds = DSLSchema(self.gql_client.schema)
+        query = dsl_gql(DSLQuery(
+            ds.Query.TenantData.select(
+                *gql_snippets.list_trivial_fields_TenantData(ds),
+                ds.TenantData.configured_domains(),
+                ds.TenantData.discovered_domains(),
+                ds.TenantData.status(),
+                ds.TenantData.settings().select(
+                    *gql_snippets.list_trivial_fields_TenantSettings(ds),
+                    ds.TenantSettings.primary_identity_providers.select(
+                        ds.PrimaryIdentityProvidersConnection.edges.select(
+                            ds.PrimaryIdentityProviderEdge.node.select(
+                                *gql_snippets.list_trivial_fields_Provider(ds),
+                            ),
+                        ),
+                        ds.PrimaryIdentityProvidersConnection.pageInfo.select(
+                            *gql_snippets.list_trivial_fields_PageInfo(ds),
+                        ),
+                    ),
+                ),
+                ds.TenantData.features().select(
+                    *gql_snippets.list_trivial_fields_TenantFeatureData(ds),
+                ),
+            )
+        ))
+        response = self.gql_client.execute(query, get_execution_result=True).formatted
+        return response["data"]['TenantData']
+
     def as_identity_access_requests_itr(self, identity_id: str, filters: Optional[dict]=None,
                                         page_size: Optional[int]=None) -> Generator[dict, None, None]:
         """Iterate through access requests."""
@@ -3329,6 +3627,14 @@ class AndromedaInventory(dict):
         for recommendation in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
             yield recommendation
 
+    def identity_id_from_user_id(self, api_session: requests.Session, api_utils: APIUtils,
+        access_request_user_id: str) -> str:
+        """
+        fetch the users using the id and extract identity id from the user details.
+        """
+        user = next(self.as_users_itr(filters={'id': {'equals': access_request_user_id}}))
+        return user['identityId']
+
 def dev_download_resolved_resolved_bindings(ai: AndromedaInventory) -> None:
     """ Download the resolved active bindings for all providers """
     logger.info("Downloading resolved active bindings for all providers")
@@ -3356,13 +3662,6 @@ def dev_download_application_summary(ai: AndromedaInventory) -> None:
                         app_stats['inactiveUsersCount'], inactive_users)
             csv_writer.writerow(app_record._asdict())
             logger.debug("app summary %s", app_record)
-
-    def identity_id_from_user_id(self, api_session: requests.Session, api_utils: APIUtils, access_request_user_id: str) -> str:
-        """
-        fetch the users using the id and extract identity id from the user details.
-        """
-        user = next(self.as_users_itr(filters={'id': {'equals': access_request_user_id}}))
-        return user['identityId']
 
 
 def main():
