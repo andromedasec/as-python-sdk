@@ -119,13 +119,15 @@ class CustomAppTransformerUploader:
                     provider_id, updated_config, status_code)
         return True
 
-    def upload_and_update(self, app_names: str, file_name: str) -> None:
+    def upload_and_update(self, app_names: str, file_name: str,
+                          file_type: str = "INVENTORY_TRANSLATOR_FILE_PYTHON") -> None:
         """
         Main method to upload file and update custom apps.
 
         Args:
             app_name: Name of the app to filter by
             file_name: Path to the file to upload
+            file_type: Type of file being uploaded
         """
         if not app_names:
             raise ValueError("app_names is required")
@@ -139,7 +141,6 @@ class CustomAppTransformerUploader:
             }
             # Get the provider id for the app.
             app_obj = next(self.as_inventory.app_provider_itr(provider_filter))
-            file_type = "INVENTORY_TRANSLATOR_FILE_PYTHON"
             file_ref = self._upload_file(file_name, app_obj['id'], app_obj['name'], file_type)
             self.update_custom_app_config(app_obj['id'], app_obj['name'], file_ref, file_type)
 
@@ -176,6 +177,9 @@ def parse_arguments() -> argparse.Namespace:
                        help="Comma separated list of app names to update.")
     parser.add_argument("--file_name", type=str, required=True,
                        help="The path to the file to upload.")
+    parser.add_argument("--file_type", type=str,
+                        default="INVENTORY_TRANSLATOR_FILE_PYTHON",
+                        choices=["INVENTORY_TRANSLATOR_FILE_PYTHON", "INVENTORY_DOWNLOADER_FILE_PYTHON"])
     parser.add_argument(
         '--as_api_token',
         help='Not required if AS_SESSION_COOKIE or AS_API_TOKEN is set.')
@@ -202,7 +206,7 @@ def main() -> None:
     setup_logging()
     logger.info("Uploading file %s to apps %s", args.file_name, args.app_names)
     uploader = CustomAppTransformerUploader(args.as_api_endpoint, args.as_gql_endpoint)
-    uploader.upload_and_update(args.app_names, args.file_name)
+    uploader.upload_and_update(args.app_names, args.file_name, args.file_type)
     logger.info("Successfully uploaded file %s and updated custom apps successfully", args.file_name)
 
 if __name__ == "__main__":
