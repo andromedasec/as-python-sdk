@@ -9,6 +9,7 @@ import json
 import csv
 import time
 import traceback
+import warnings
 from collections import namedtuple
 import requests
 from gql import Client, gql
@@ -406,9 +407,19 @@ class AndromedaInventory(dict):
         for as_policy in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
             yield as_policy
 
-    def as_provider_active_bindings_base_fn(self, provider_id: str,
-                                            provider_data: dict, resolved_view: bool, filters: dict,
-                                            page_size: int, skip: int) -> Generator[list, None, None]:
+    def as_provider_configured_assignments_base_fn(
+            self, provider_id: str, filters: dict,
+            page_size: int, skip: int) -> Generator[list, None, None]:
+        """
+        Args:
+            provider_id (str): provider uuid
+            filters (dict): GQL filters ProviderConfiguredAssignmentFilters
+            page_size (int): page_size
+            skip (int): skip
+
+        Yields:
+            Generator[list, None, None]: list of the configured assignments
+        """
         ds = DSLSchema(self.gql_client.schema)
         scope_rg_fragment = DSLInlineFragment()
         scope_rg_fragment.on(ds.ResourceGroupScopeData)
@@ -418,26 +429,42 @@ class AndromedaInventory(dict):
         scope_folder_fragment.on(ds.FolderScopeData)
         scope_population_fragment = DSLInlineFragment()
         scope_population_fragment.on(ds.PopulationScopeData)
-        filters = filters or {}
-        filters['isResolved'] = resolved_view
+        principal_identity_origin_fragment = DSLInlineFragment()
+        principal_identity_origin_fragment.on(ds.IdentityOriginData)
+        principal_service_identity_fragment = DSLInlineFragment()
+        principal_service_identity_fragment.on(ds.ServiceIdentity)
+        principal_group_fragment = DSLInlineFragment()
+        principal_group_fragment.on(ds.Group)
+        principal_role_fragment = DSLInlineFragment()
+        principal_role_fragment.on(ds.AccountPolicyData)
+
         query = dsl_gql(DSLQuery(
             ds.Query.Provider(
                 id=provider_id
             ).select(
-                ds.Provider.activeBindings(
+                ds.Provider.id(),
+                ds.Provider.name(),
+                ds.Provider.type(),
+                ds.Provider.configuredAssignments(
                     pageArgs={"pageSize": page_size, "skip": skip},
                     filters=filters
                     ).select(
-                    ds.AccountPolicyIdentityBindingsConnection.edges.select(
-                        ds.AccountPolicyIdentityBindingEdge.node.select(
-                            *gql_snippets.list_trivial_fields_AccountPolicyIdentityBinding(ds),
-                            ds.AccountPolicyIdentityBinding.policyData.select(
+                    ds.ProviderConfiguredAssignmentConnection.edges.select(
+                        ds.ProviderConfiguredAssignmentEdge.node.select(
+                            #*gql_snippets.list_trivial_fields_AccountPolicyUserResolvedAssignment(ds),
+                            ds.ProviderConfiguredAssignment.principalName(),
+                            ds.ProviderConfiguredAssignment.principalId(),
+                            ds.ProviderConfiguredAssignment.principalType(),
+                            ds.ProviderConfiguredAssignment.roleName(),
+                            ds.ProviderConfiguredAssignment.roleId(),
+                            ds.ProviderConfiguredAssignment.roleType(),
+                            ds.ProviderConfiguredAssignment.roleData.select(
                                 ds.AccountPolicyData.policyId(),
                                 ds.AccountPolicyData.policyName(),
                                 ds.AccountPolicyData.policyType(),
-                                ds.AccountPolicyData.policyLastUsedAt(),
+                                #ds.AccountPolicyData.policyLastUsedAt(),
                             ),
-                            ds.AccountPolicyIdentityBinding.scope.select(
+                            ds.ProviderConfiguredAssignment.scope.select(
                                 scope_rg_fragment.select(
                                     ds.ResourceGroupScopeData.name(),
                                     ds.ResourceGroupScopeData.id(),
@@ -463,44 +490,51 @@ class AndromedaInventory(dict):
                                     DSLMetaField("__typename")
                                 )
                             ),
-                            ds.AccountPolicyIdentityBinding.principalData.select(
-                                *gql_snippets.list_trivial_fields_PrincipalData(ds),
-                            ),
-                            ds.AccountPolicyIdentityBinding.trustEdges.select(
-                                ds.IncomingTrustsConnection.edges.select(
-                                    ds.IncomingTrustEdge.node.select(
-                                        *gql_snippets.list_trivial_fields_TrustEdges(ds),
-                                        ds.TrustEdges.trustedPrincipalData.select(
-                                            *gql_snippets.list_trivial_fields_PrincipalData(ds),
-                                        )
-                                    )
+                            ds.ProviderConfiguredAssignment.principal.select(
+                                principal_identity_origin_fragment.select(
+                                    ds.IdentityOriginData.originUserId(),
+                                    ds.IdentityOriginData.originUserName(),
+                                    ds.IdentityOriginData.originUserUsername(),
+                                    ds.IdentityOriginData.identity.select(
+                                        *gql_snippets.list_trivial_fields_Identity(ds),
+                                        DSLMetaField("__typename")
+                                    ),
+                                    DSLMetaField("__typename")
                                 ),
-                                ds.IncomingTrustsConnection.pageInfo.select(
-                                    *gql_snippets.list_trivial_fields_PageInfo(ds),
-                                )
-                            )
+                                principal_service_identity_fragment.select(
+                                    *gql_snippets.list_trivial_fields_ServiceIdentity(ds),
+                                    DSLMetaField("__typename")
+                                ),
+                                principal_group_fragment.select(
+                                    *gql_snippets.list_trivial_fields_Group(ds),
+                                    DSLMetaField("__typename")
+                                ),
+                            ),
+                            ds.ProviderConfiguredAssignment.opsInsights.select(
+                                *gql_snippets.list_trivial_fields_ConfiguredAssignmentOpsInsightData(ds),
+                            ),
                         )
                     ),
-                    ds.AccountPolicyIdentityBindingsConnection.pageInfo.select(
-                        *gql_snippets.list_trivial_fields_PageInfo(ds),
+                    ds.ProviderConfiguredAssignmentConnection.pageInfo.select(
+                       *gql_snippets.list_trivial_fields_PageInfo(ds),
                     )
                 )
             )
         ))
         response = self.gql_client.execute(query, get_execution_result=True).formatted
-        bindings = response["data"]['Provider']['activeBindings']['edges']
-        page_info = response["data"]['Provider']['activeBindings']['pageInfo']
-        logger.debug("bindings %s page_info %s batch_size %s skip %s filters=%s", len(bindings), page_info, page_size, skip, filters)
-        fbindings = [binding['node'] for binding in bindings]
-        return fbindings
+        assignments = response["data"]['Provider']['configuredAssignments']['edges']
+        #page_info = response["data"]['Provider']['userResolvedAssignments']['pageInfo']
+        logger.debug("assignments %s batch_size %s skip %s filters=%s", len(assignments), page_size, skip, filters)
+        assignments = [binding['node'] for binding in assignments]
+        return assignments
 
-    def provider_active_bindings_itr(self, provider_id: str, provider_data: dict, resolved_view: bool,
-                                     filters=None, page_size: int = None) -> Generator[dict, None, None]:
+    def as_provider_configured_assignments_itr(self, provider_id: str,
+            filters=None, page_size: int = None) -> Generator[dict, None, None]:
         page_size = page_size if page_size else self.default_page_size
         partial_fn_itr = functools.partial(
-            self.as_provider_active_bindings_base_fn, provider_id, provider_data, resolved_view, filters)
-        for binding in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
-            yield binding
+            self.as_provider_configured_assignments_base_fn, provider_id, filters)
+        for assignment in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
+            yield assignment
 
     def as_provider_user_resolved_assignments_base_fn(
             self, provider_id: str, filters: dict,
@@ -728,25 +762,25 @@ class AndromedaInventory(dict):
                         ),
                         ds.ProviderIdentityEdge.identityProviderData.select(
                             *gql_snippets.list_trivial_fields_IdentityProviderData(ds),
-                            ds.IdentityProviderData.eligiblePolicies.select(
-                                ds.IdentityPolicyEligibilityDataConnection.edges.select(
-                                    ds.IdentityPolicyEligibilityDataEdge.node.select(
-                                        *gql_snippets.list_trivial_fields_IdentityPolicyEligibilityData(ds),
-                                        ds.IdentityPolicyEligibilityData.eligibleUsers(
-                                            pageArgs={"pageSize": 100},
-                                        ).select(
-                                            ds.EligibleUserIncarnationsConnection.edges.select(
-                                                ds.EligibleUserIncarnationEdge.node.select(
-                                                    *gql_snippets.list_trivial_fields_EligibleUserIncarnation(ds),
-                                                ),
-                                            ),
-                                            ds.EligibleUserIncarnationsConnection.pageInfo.select(
-                                                *gql_snippets.list_trivial_fields_PageInfo(ds),
-                                            ),
-                                        ),
-                                    )
-                                ),
-                            ),
+                            # ds.IdentityProviderData.eligiblePolicies.select(
+                            #     ds.IdentityPolicyEligibilityDataConnection.edges.select(
+                            #         ds.IdentityPolicyEligibilityDataEdge.node.select(
+                            #             *gql_snippets.list_trivial_fields_IdentityPolicyEligibilityData(ds),
+                            #             ds.IdentityPolicyEligibilityData.eligibleUsers(
+                            #                 pageArgs={"pageSize": 100},
+                            #             ).select(
+                            #                 ds.EligibleUserIncarnationsConnection.edges.select(
+                            #                     ds.EligibleUserIncarnationEdge.node.select(
+                            #                         *gql_snippets.list_trivial_fields_EligibleUserIncarnation(ds),
+                            #                     ),
+                            #                 ),
+                            #                 ds.EligibleUserIncarnationsConnection.pageInfo.select(
+                            #                     *gql_snippets.list_trivial_fields_PageInfo(ds),
+                            #                 ),
+                            #             ),
+                            #         )
+                            #     ),
+                            # ),
                         ),
                     ),
                     ds.ProviderIdentitiesConnection.pageInfo.select(
@@ -788,7 +822,6 @@ class AndromedaInventory(dict):
                         *gql_snippets.list_trivial_fields_Identity(ds),
                         ds.Identity.origins(
                             pageArgs={"pageSize": 100},
-                            filters={"isReference": False}
                         ).select(
                             ds.IdentityOriginDataConnection.edges.select(
                                 ds.IdentityOriginDataEdge.node.select(
@@ -3174,12 +3207,15 @@ class AndromedaInventory(dict):
                             ds.IdentityProviderEligibilityData.eligibilityData.select(
                                 role_eligibility_fragment.select(
                                     *gql_snippets.list_trivial_fields_IdentityProviderEligibilityPolicyData(ds),
+                                    DSLMetaField("__typename"),
                                 ),
                                 resource_set_eligibility_fragment.select(
                                     *gql_snippets.list_trivial_fields_ResourceSetEligibilityData(ds),
+                                    DSLMetaField("__typename"),
                                 ),
                                 group_eligibility_fragment.select(
                                     *gql_snippets.list_trivial_fields_Group(ds),
+                                    DSLMetaField("__typename"),
                                 ),
                                 # resource_eligibility_fragment.select(
                                 #     *gql_snippets.list_trivial_fields_IdentityResourceEligibilityData(ds),
@@ -3467,8 +3503,13 @@ class AndromedaInventory(dict):
                 'resolved': []
             }
         view_type = 'resolved' if resolved_view else 'configured'
-        for binding in self.provider_active_bindings_itr(provider_data["id"], provider_data, resolved_view):
-            provider_data['activeBindings'][view_type].append(binding)
+        if resolved_view:
+            for binding in self.as_provider_user_resolved_assignments_itr(provider_data["id"]):
+                provider_data['activeBindings'][view_type].append(binding)
+        else:
+            for binding in self.as_provider_configured_assignments_itr(provider_data["id"]):
+                provider_data['activeBindings'][view_type].append(binding)
+
         logger.info("num active bindings view_type %s: %s", view_type, len(provider_data['activeBindings'][view_type]))
         return provider_data['activeBindings']
 
@@ -3567,12 +3608,6 @@ class AndromedaInventory(dict):
         for node in eventNodes:
             try:
                 event = node["node"]
-                # unpack the data from the event
-                event['data'] = json.loads(event['data'])
-                if 'value' in event['data']:
-                    event['data'] = json.loads(event['data']['value'])
-                if 'payload' in event['data']:
-                    event['data'] = json.loads(event['data']['payload'])
                 events.append(event)
             except KeyError as e:
                 logger.error("error unpacking event %s\n %s", e, event)
