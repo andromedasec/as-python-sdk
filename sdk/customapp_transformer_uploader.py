@@ -181,12 +181,6 @@ def parse_arguments() -> argparse.Namespace:
                         default="INVENTORY_TRANSLATOR_FILE_PYTHON",
                         choices=["INVENTORY_TRANSLATOR_FILE_PYTHON", "INVENTORY_DOWNLOADER_FILE_PYTHON"])
     parser.add_argument(
-        '--as_api_token',
-        help='Not required if AS_SESSION_COOKIE or AS_API_TOKEN is set.')
-    parser.add_argument(
-        '--as_session_token', '-s',
-        help='Not required if AS_SESSION_COOKIE or AS_API_TOKEN is set.')
-    parser.add_argument(
         '--as_api_endpoint',
         default="https://api.live.andromedasecurity.com",
         help='GQL endpoint for the inventory')

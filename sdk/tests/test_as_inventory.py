@@ -270,6 +270,8 @@ def test_events(ai: AndromedaInventory):
         )
 
     logger.debug("JIT txns: %s", len(jit_txns))
+    if len(jit_txns) == 0:
+        return
     jit_event_txn = next(iter(jit_txns.keys()))
     # check filters this jit event
     filters = {

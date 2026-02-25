@@ -40,14 +40,12 @@ def test_create_or_update_resource():
     session.mount('mock://', adapter)
     provider_obj = {
         'name': 'Foo',
-        'type': 'PROVIDER_TYPE_AWS',
-        'defaultMode': 'ACCOUNT_MODE_OBSERVATION'
+        'type': 'PROVIDER_TYPE_AWS'
     }
     provider_result_obj = {
         'name': 'Foo',
         'id': '1234',
-        'type': 'PROVIDER_TYPE_AWS',
-        'defaultMode': 'ACCOUNT_MODE_OBSERVATION'
+        'type': 'PROVIDER_TYPE_AWS'
     }
     adapter.register_uri('GET', url, json={"results": []})
     # requests_mock.get(url, json={"results": []})
@@ -68,14 +66,12 @@ def test_create_or_update_subresource():
     session.mount('mock://', adapter)
     aws_config = {
         'name': 'Foo',
-        'type': 'PROVIDER_TYPE_AWS',
-        'defaultMode': 'ACCOUNT_MODE_OBSERVATION'
+        'type': 'PROVIDER_TYPE_AWS'
     }
     aws_result_config = {
         'name': 'Foo',
         'id': '1234',
-        'type': 'PROVIDER_TYPE_AWS',
-        'defaultMode': 'ACCOUNT_MODE_OBSERVATION'
+        'type': 'PROVIDER_TYPE_AWS'
     }
 
     url = au.get_resource_url(
