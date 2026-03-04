@@ -2355,6 +2355,16 @@ class AndromedaInventory(dict):
                                 ),
                                 ds.AccessReview.accessData.select(
                                     *gql_snippets.list_trivial_fields_AccessAssignmentData(ds),
+                                    ds.AccessAssignmentData.assetData.select(
+                                        ds.UarAssetData.assetId(),
+                                        ds.UarAssetData.assetName(),
+                                        ds.UarAssetData.assetType(),
+                                        ds.UarAssetData.hasOwner(),
+                                        ds.UarAssetData.noOwner(),
+                                        ds.UarAssetData.suggestedOwner(),
+                                        ds.UarAssetData.inventoryDiscovered(),
+                                        ds.UarAssetData.andromedaConfigured(),
+                                    ),
                                 ),
                                 ds.AccessReview.reviewStatus.select(
                                     *gql_snippets.list_trivial_fields_AccessReviewReviewStatus(ds),
@@ -3428,7 +3438,10 @@ class AndromedaInventory(dict):
 
     def _fetch_provider_eligibilities(self, provider_id: str, provider_data: dict) -> dict:
         for eligibility in self.provider_eligibilities_itr(provider_id, provider_data):
-            e_tuple = "|".join((provider_id, eligibility['accountId'], eligibility['principalId'], eligibility['policyId']))
+            account_id = eligibility.get('accountId', '')
+            principal_id = eligibility.get('principalId', '')
+            policy_id = eligibility.get('policyId', '')
+            e_tuple = "|".join((provider_id, account_id, principal_id, policy_id))
             provider_data['eligibilities'][e_tuple] = eligibility
         logger.debug("provider: %s", provider_id)
         return provider_data.get('eligibilities', {})
