@@ -5237,6 +5237,7 @@ def list_trivial_fields_ProviderScopeData(ds: DSLSchema):
     return (
         ds.ProviderScopeData.name,
         ds.ProviderScopeData.id,
+        ds.ProviderScopeData.externalId,
         ds.ProviderScopeData.type,
         ds.ProviderScopeData.isInherited,
     )
@@ -5245,6 +5246,7 @@ def list_trivial_fields_FolderScopeData(ds: DSLSchema):
     return (
         ds.FolderScopeData.name,
         ds.FolderScopeData.id,
+        ds.FolderScopeData.externalId,
         ds.FolderScopeData.isInherited,
         ds.FolderScopeData.type,
     )
@@ -5266,6 +5268,7 @@ def list_trivial_fields_AccountScopeData(ds: DSLSchema):
     return (
         ds.AccountScopeData.name,
         ds.AccountScopeData.id,
+        ds.AccountScopeData.externalId,
         ds.AccountScopeData.isInherited,
         ds.AccountScopeData.type,
     )
@@ -5274,6 +5277,7 @@ def list_trivial_fields_ResourceGroupScopeData(ds: DSLSchema):
     return (
         ds.ResourceGroupScopeData.name,
         ds.ResourceGroupScopeData.id,
+        ds.ResourceGroupScopeData.externalId,
         ds.ResourceGroupScopeData.isInherited,
         ds.ResourceGroupScopeData.type,
     )
@@ -5282,6 +5286,7 @@ def list_trivial_fields_GroupScopeData(ds: DSLSchema):
     return (
         ds.GroupScopeData.name,
         ds.GroupScopeData.id,
+        ds.GroupScopeData.externalId,
         ds.GroupScopeData.isInherited,
         ds.GroupScopeData.type,
     )
@@ -5771,6 +5776,7 @@ def list_trivial_fields_UnusualTravelAndErrorDetails(ds: DSLSchema):
     """ List all trivial fields of the UnusualTravelAndErrorDetails type """
     return (
         ds.UnusualTravelAndErrorDetails.erroredCountriesCount,
+        ds.UnusualTravelAndErrorDetails.erroredCountries,
         ds.UnusualTravelAndErrorDetails.anomalyMetadata,
     )
 def list_trivial_fields_AccountTakeoverEvidence(ds: DSLSchema):
