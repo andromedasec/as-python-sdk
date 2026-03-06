@@ -6265,7 +6265,7 @@
           },
           {
             "name": "type",
-            "description": " - ANDROMEDA_WORKFLOW: Represents a child workflow task\n - QUERY_CACHE_TIME_DEPENDENT: Query cache task for a single tenant\n - LOG_INGEST: ============ Logs tasks ===========\n - LOG_PARTITION_ALLOCATE: Allocate Kafka partition for historical logs\n - LOG_PARTITION_RELEASE: Release Kafka partition after historical logs processing\n - LOG_CREATE_SCHEMA: Create provider schema for historical logs\n - RESOLVE_SUGGESTED_OWNERS: ============ Suggested Owners tasks ===========\n\nResolve suggested owners from TSDB logs\n - LSP_EPS: ============ Executor tasks ===========\n\nLSP/EPS computation executed as a Kubernetes Job per tenant\n - GALILEO: Galileo assignment metadata computation via gRPC per tenant\n - DELTASYNC_SYNC_TASK: ============ DeltaSync tasks ===========\n\nReads DELTA mode resources from IR and publishes to Kepler\n - TENANT_LEVEL_RISK_TASK: ============ Kuiper tasks ===========\n\nKuiper risk computation via gRPC per tenant",
+            "description": " - ANDROMEDA_WORKFLOW: Represents a child workflow task\n - QUERY_CACHE_TIME_DEPENDENT: Query cache task for a single tenant\n - LOG_INGEST: ============ Logs tasks ===========\n - LOG_PARTITION_ALLOCATE: Allocate Kafka partition for historical logs\n - LOG_PARTITION_RELEASE: Release Kafka partition after historical logs processing\n - LOG_CREATE_SCHEMA: Create provider schema for historical logs\n - RESOLVE_SUGGESTED_OWNERS: ============ Suggested Owners tasks ===========\n\nResolve suggested owners from TSDB logs\n - LSP_EPS: ============ Executor tasks ===========\n\nLSP/EPS computation executed as a Kubernetes Job per tenant\n - GALILEO: Galileo assignment metadata computation via gRPC per tenant\n - DELTASYNC_SYNC_TASK: ============ DeltaSync tasks ===========\n\nReads DELTA mode resources from IR and publishes to Kepler",
             "in": "query",
             "required": false,
             "type": "string",
@@ -6287,8 +6287,7 @@
               "RESOLVE_SUGGESTED_OWNERS",
               "LSP_EPS",
               "GALILEO",
-              "DELTASYNC_SYNC_TASK",
-              "TENANT_LEVEL_RISK_TASK"
+              "DELTASYNC_SYNC_TASK"
             ],
             "default": "TASK_TYPE_UNSPECIFIED"
           },
@@ -15528,19 +15527,10 @@
         "EXPLORER_VIEW_RESOURCE_DELETED",
         "EXPLORER_VIEW_IDENTITY_ADDED",
         "EXPLORER_VIEW_IDENTITY_DELETED",
-        "EXPLORER_VIEW_RESOURCE_CHANGED",
-        "JML_POLICY_TRIGGERED",
-        "JML_POLICY_RUN_COMPLETED",
-        "JML_USER_JOIN_DETECTED",
-        "JML_USER_MOVE_DETECTED",
-        "JML_USER_LEAVE_DETECTED",
-        "JML_ACTION_RUN_CREATE_USER_IN_PROVIDER",
-        "JML_ACTION_RUN_DEACTIVATE_USER",
-        "JML_ACTION_RUN_CREATE_STANDING_ASSIGNMENT_USING_ACCESS_BUNDLE",
-        "JML_ACTION_RUN_CREATE_ELIGIBILITY"
+        "EXPLORER_VIEW_RESOURCE_CHANGED"
       ],
       "default": "UNDEFINED",
-      "title": "- ELIGIBILITY_MAPPING_CREATE: Eligibility user events 91-100\n - ACCESS_REQUEST_CREATE: JIT 101-150\nJIT user events 101-125\n - ACCESS_REQUEST_REVIEW: generic - will be morphed into specific event.\n - ACCESS_REQUEST_ADMIN_OVERRIDE_REVIEW: generic - will be morphed into specific event.\n - ACCESS_REQUEST_USER_ACTION: generic - will be morphed into specific event.\n - ACCESS_REQUEST_RETRIGGER_PROCESSING: generic - will be morphed into specific event.\n - ACCESS_REQUEST_ANALYZED: JIT system events 126-150\n - UNTRUSTED_GEOLOCATION_DETECTED: Behavior events 201-400\n - BROKER_REGISTERED: Conduit events 401-500\n - EXPLORER_VIEW_RESOURCE_ADDED: Explorer view events 501-600\n - JML_POLICY_TRIGGERED: JML events 601-700"
+      "title": "- ELIGIBILITY_MAPPING_CREATE: Eligibility user events 91-100\n - ACCESS_REQUEST_CREATE: JIT 101-150\nJIT user events 101-125\n - ACCESS_REQUEST_REVIEW: generic - will be morphed into specific event.\n - ACCESS_REQUEST_ADMIN_OVERRIDE_REVIEW: generic - will be morphed into specific event.\n - ACCESS_REQUEST_USER_ACTION: generic - will be morphed into specific event.\n - ACCESS_REQUEST_RETRIGGER_PROCESSING: generic - will be morphed into specific event.\n - ACCESS_REQUEST_ANALYZED: JIT system events 126-150\n - UNTRUSTED_GEOLOCATION_DETECTED: Behavior events 201-400\n - BROKER_REGISTERED: Conduit events 401-500\n - EXPLORER_VIEW_RESOURCE_ADDED: Explorer view events 501-600"
     },
     "AndromedaModeMessageAndromedaMode": {
       "type": "string",
@@ -15886,8 +15876,7 @@
       "type": "string",
       "enum": [
         "UNSPECIFIED",
-        "JSON_BLOB",
-        "S3_KEY"
+        "JSON_BLOB"
       ],
       "default": "UNSPECIFIED"
     },
@@ -16561,14 +16550,13 @@
       "type": "string",
       "enum": [
         "ACTION_TYPE_UNSPECIFIED",
-        "CREATE_USER_IN_PROVIDER",
         "DEACTIVATE_USER",
-        "CREATE_STANDING_ASSIGNMENT_USING_ACCESS_BUNDLE",
+        "CREATE_STANDING_ACCESS_TO_ACCESS_BUNDLE",
         "RUN_JML_RULES",
         "CREATE_ELIGIBILITY"
       ],
       "default": "ACTION_TYPE_UNSPECIFIED",
-      "title": "- CREATE_USER_IN_PROVIDER: Future: Create/sync user to provider\n - DEACTIVATE_USER: P0: Deactivate user in provider\n - CREATE_STANDING_ASSIGNMENT_USING_ACCESS_BUNDLE: P1: Grant standing assignment using Access Bundle\n - RUN_JML_RULES: P1: Chain/execute multiple rules\n - CREATE_ELIGIBILITY: Future: Create eligibility for Access Bundle"
+      "title": "- DEACTIVATE_USER: P0: Deactivate user in providers\n - CREATE_STANDING_ACCESS_TO_ACCESS_BUNDLE: P1: Grant standing access to Access Bundle\n - RUN_JML_RULES: P1: Chain/execute multiple rules\n - CREATE_ELIGIBILITY: Future: Create eligibility for Access Bundle"
     },
     "JobStateEnumJobState": {
       "type": "string",
@@ -17732,11 +17720,10 @@
         "RESOLVE_SUGGESTED_OWNERS",
         "LSP_EPS",
         "GALILEO",
-        "DELTASYNC_SYNC_TASK",
-        "TENANT_LEVEL_RISK_TASK"
+        "DELTASYNC_SYNC_TASK"
       ],
       "default": "TASK_TYPE_UNSPECIFIED",
-      "description": "Resolve suggested owners from TSDB logs\n - LSP_EPS: ============ Executor tasks ===========\n\nLSP/EPS computation executed as a Kubernetes Job per tenant\n - GALILEO: Galileo assignment metadata computation via gRPC per tenant\n - DELTASYNC_SYNC_TASK: ============ DeltaSync tasks ===========\n\nReads DELTA mode resources from IR and publishes to Kepler\n - TENANT_LEVEL_RISK_TASK: ============ Kuiper tasks ===========\n\nKuiper risk computation via gRPC per tenant",
+      "description": "Resolve suggested owners from TSDB logs\n - LSP_EPS: ============ Executor tasks ===========\n\nLSP/EPS computation executed as a Kubernetes Job per tenant\n - GALILEO: Galileo assignment metadata computation via gRPC per tenant\n - DELTASYNC_SYNC_TASK: ============ DeltaSync tasks ===========\n\nReads DELTA mode resources from IR and publishes to Kepler",
       "title": "- ANDROMEDA_WORKFLOW: Represents a child workflow task\n - QUERY_CACHE_TIME_DEPENDENT: Query cache task for a single tenant\n - LOG_INGEST: ============ Logs tasks ===========\n - LOG_PARTITION_ALLOCATE: Allocate Kafka partition for historical logs\n - LOG_PARTITION_RELEASE: Release Kafka partition after historical logs processing\n - LOG_CREATE_SCHEMA: Create provider schema for historical logs\n - RESOLVE_SUGGESTED_OWNERS: ============ Suggested Owners tasks ==========="
     },
     "TenantTypeMessageTenantType": {
@@ -21207,13 +21194,6 @@
             "type": "string"
           },
           "title": "List of user IDs (Andromeda UUIDs) - human or service identities (future)"
-        },
-        "jmlReferences": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/configEligibilityJmlReference"
-          }
         }
       },
       "title": "AccessManagementEligiblePrincipals defines who is eligible for the access"
@@ -21477,9 +21457,6 @@
           "$ref": "#/definitions/nonpublicstaticGeolocation"
         },
         "userAgent": {
-          "type": "string"
-        },
-        "jmlActionRuntimeId": {
           "type": "string"
         }
       }
@@ -22223,30 +22200,6 @@
         "POPULATION"
       ],
       "default": "UNSPECIFIED"
-    },
-    "configAndromedaObjectType": {
-      "type": "string",
-      "enum": [
-        "OBJECT_TYPE_UNKNOWN",
-        "OBJECT_TYPE_POLICY",
-        "OBJECT_TYPE_USER",
-        "OBJECT_TYPE_GROUP",
-        "OBJECT_TYPE_ACCOUNT",
-        "OBJECT_TYPE_IDENTITY",
-        "OBJECT_TYPE_RESOURCE",
-        "OBJECT_TYPE_APPLICATION",
-        "OBJECT_TYPE_RESOURCE_GROUP",
-        "OBJECT_TYPE_FOLDER",
-        "OBJECT_TYPE_ROLE_PRINCIPAL",
-        "OBJECT_TYPE_PROVIDER",
-        "OBJECT_TYPE_SCOPE",
-        "OBJECT_TYPE_SERVICE_INSTANCE",
-        "OBJECT_TYPE_POPULATION",
-        "OBJECT_TYPE_AGENT",
-        "OBJECT_TYPE_TOOL_CLIENT"
-      ],
-      "default": "OBJECT_TYPE_UNKNOWN",
-      "title": "- OBJECT_TYPE_USER: is this identity insights user?"
     },
     "configApplicationClassificationExclude": {
       "type": "object"
@@ -23453,16 +23406,6 @@
     "configConfiguredSOTAction": {
       "type": "object"
     },
-    "configCreateUserInProviderAction": {
-      "type": "object",
-      "properties": {
-        "providerId": {
-          "type": "string",
-          "title": "Target provider ID (existence validated at creation)"
-        }
-      },
-      "title": "// CreateUserInProviderAction creates/syncs user to IDPs (Future)\n// Derives target IDPs from Access Bundle resources, uses User Profiles for attribute config"
-    },
     "configCriticality": {
       "type": "string",
       "enum": [
@@ -23487,9 +23430,6 @@
         "jsonBlob": {
           "$ref": "#/definitions/configCustomAppJsonBlob",
           "title": "Auth string for the custom application provider\nThis is a string auth data that is passed to the custom application\ntransformer script"
-        },
-        "s3Key": {
-          "$ref": "#/definitions/configCustomAppS3Key"
         }
       }
     },
@@ -23572,26 +23512,6 @@
         "tenantId"
       ]
     },
-    "configCustomAppS3Key": {
-      "type": "object",
-      "properties": {
-        "s3Bucket": {
-          "type": "string"
-        },
-        "filePath": {
-          "type": "string"
-        },
-        "awsAccessKeyId": {
-          "type": "string"
-        },
-        "awsSecretAccessKey": {
-          "type": "string"
-        },
-        "awsRegion": {
-          "type": "string"
-        }
-      }
-    },
     "configDatabricksAuthConfig": {
       "type": "object",
       "properties": {
@@ -23673,6 +23593,24 @@
           "type": "string"
         }
       }
+    },
+    "configDeactivateUserAction": {
+      "type": "object",
+      "properties": {
+        "allProviders": {
+          "type": "boolean",
+          "title": "Deactivate in all providers"
+        },
+        "allExceptProviders": {
+          "$ref": "#/definitions/configProviderExclusionList",
+          "title": "Deactivate in all providers except specified ones"
+        },
+        "specificProviders": {
+          "$ref": "#/definitions/configProviderList",
+          "title": "Deactivate in specific providers only"
+        }
+      },
+      "title": "DeactivateUserAction deactivates user in target providers\nIdempotent: skips if user already deactivated\nDoes not delete the user, only deactivates"
     },
     "configDepartmentMatch": {
       "type": "object",
@@ -23853,17 +23791,6 @@
           "items": {
             "type": "string"
           }
-        }
-      }
-    },
-    "configEligibilityJmlReference": {
-      "type": "object",
-      "properties": {
-        "jmlPolicyId": {
-          "type": "string"
-        },
-        "userId": {
-          "type": "string"
         }
       }
     },
@@ -26336,24 +26263,6 @@
         }
       }
     },
-    "configJmlCapabilities": {
-      "type": "object",
-      "properties": {
-        "userSyncSupported": {
-          "type": "boolean",
-          "description": "If true, the provider supports user sync actions."
-        },
-        "deactivateUserSupported": {
-          "type": "boolean",
-          "description": "If true, the provider supports deactivate user actions."
-        },
-        "deleteUserSupported": {
-          "type": "boolean",
-          "description": "If true, the provider supports delete user actions."
-        }
-      },
-      "description": "sctions support."
-    },
     "configJmlRuleAction": {
       "type": "object",
       "properties": {
@@ -26361,24 +26270,21 @@
           "$ref": "#/definitions/JmlActionTypeMessageJmlActionType"
         },
         "deactivateUser": {
-          "$ref": "#/definitions/modelsconfigDeactivateUserAction",
+          "$ref": "#/definitions/configDeactivateUserAction",
           "title": "P0: Deactivate user in target providers"
         },
-        "createStandingAssignment": {
-          "$ref": "#/definitions/modelsconfigCreateStandingAssignmentUsingAccessBundleAction",
-          "title": "P1: Grant standing assignment using Access Bundle"
+        "createStandingAccess": {
+          "$ref": "#/definitions/modelsconfigCreateStandingAccessToAccessBundleAction",
+          "title": "P1: Grant standing access to Access Bundle"
         },
         "runJmlRules": {
           "$ref": "#/definitions/modelsconfigRunJmlRulesAction",
           "title": "P1: Chain/execute multiple rules"
         },
-        "createUserInProvider": {
-          "$ref": "#/definitions/configCreateUserInProviderAction",
-          "title": "Future: Create/sync user to provider"
-        },
         "createEligibility": {
           "$ref": "#/definitions/modelsconfigCreateEligibilityAction",
-          "title": "Future: Create eligibility for Access Bundle"
+          "description": "Future: Create eligibility for Access Bundle",
+          "title": "Field 5 reserved for future CreateUserInProvidersAction"
         }
       },
       "title": "JmlRuleAction defines actions to execute when a rule matches\nActions execute independently - failure of one doesn't prevent execution of subsequent actions"
@@ -27336,17 +27242,6 @@
         }
       }
     },
-    "configOwner": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "externalOwnerType": {
-          "$ref": "#/definitions/configExternalResourceType"
-        }
-      }
-    },
     "configOwnersMappingPolicy": {
       "type": "object",
       "properties": {
@@ -27844,8 +27739,6 @@
         "ENTRA_APPLICATION_ROLE",
         "ENTRA_DEFAULT_ACCESS_POLICY",
         "ENTRA_INLINE_ROLE",
-        "ENTRA_BUILTIN_ROLE",
-        "ENTRA_CUSTOM_ROLE",
         "SFDC_PERMISSIONSET",
         "SFDC_PERMISSIONSET_GROUP",
         "SFDC_PROFILE",
@@ -27933,12 +27826,10 @@
         "GCP_SYSTEM_ROLE",
         "GCP_CUSTOM_ROLE",
         "GCP_API_KEY_ROLE",
-        "ACTIVE_DIRECTORY_ROLE",
-        "AZURE_BUILTIN_ROLE",
-        "AZURE_CUSTOM_ROLE"
+        "ACTIVE_DIRECTORY_ROLE"
       ],
       "default": "UNSPECIFIED",
-      "title": "- AWS_PERMISSION_SET: AWS Permission Set in AWS Identity Center\n - AWS_IAM_ROLE: AWS Role in IAM\n - AWS_USER_PERMISSIONS: AWS User-level permission policies\n - AWS_GROUP_PERMISSIONS: AWS Group-level permission policies\n - GCP_ROLE: GCP Role\n - WORKSPACE_ROLE: Workspace role\n - WORKSPACE_OAUTH_OBO_POLICY: Workspace OAuth OBO (On Behalf Of) policy - represents OAuth scopes granted to third-party apps\n - AZURE_ROLE: Azure role\n - ENTRA_OAUTH_OBO_POLICY: Entra OAuth OBO (On Behalf Of) policy - represents OAuth scopes granted to third-party apps\n - AWS_ROOT: AWS Root policy\n - SCIM_PUSH_GROUP_ROLE: these are roles created from the scim push groups that are synced\nfrom the IDP to the provider. (shadow of a push group in app-bound provider)\n - UNIT_POLICY: Unit policy means \"has access\". This and corresponding binding objects should not be shown in UI.\n - CUSTOM_APP_ROLE: Role in Custom App\n - CUSTOM_APP_USER_ROLE: User role in Custom App. This is used when andromeda creates a user specific role\nthat cannot be mapped directly to an Application role\n - ENTRA_ROLE: Roles from Entra\n - ENTRA_BUILTIN_ROLE: Entra built-in and custom roles (distinct from generic ENTRA_ROLE)\n - PINGONE_ROLE: Naming kept to avoid migration issue.\n - EKS_ACCESS_POLICY: Roles from EKS\n - ATLAS_DATABASE_CUSTOM_ROLE: Roles from Atlas\n - OKTA_STANDARD_ROLE: Okta roles\n - ELASTIC_ORGANIZATION_ROLE: Roles from Elastic\n - ANDROMEDA_RESOURCE_POLICY: Resource Policies\n - SNOWFLAKE_CUSTOM_ROLE: Roles from Snowflake\n - SLACK_WORKSPACE_BUILT_IN_ROLE: Roles from Slack Enterprise\n - RDS_POSTGRESQL_ROLE: RDS Role\n - GITHUB_REPOSITORY_ROLE: Roles from GitHub\n - KEEPER_ROLE: Roles from Keeper\n - GITLAB_BUILTIN_ROLE: Roles from GitLab\n - DATABRICKS_ACCOUNT_ENTITLEMENT_ROLE: Roles from Databricks\n3 account level entitlements\n - DATABRICKS_ACCOUNT_WORKSPACE_MGMT_ROLE: 2 workspace managment roles\n - DATABRICKS_WORKSPACE_ENTITLEMENT_ROLE: 4 workspace level entitlements\n - DATABRICKS_WORKSPACE_DASHBOARD_ROLE: workspace resource roles\n - DATABRICKS_METASTORE_GRANT_ROLE: metastore grant roles\n - ATLASSIAN_ROLE: Roles from Atlassian\n - NETAPP_ROLE: Roles from NetApp\n - ZOOM_BUILTIN_ROLE: Roles from Zoom\n - JIRA_GLOBAL_PERMISSION: Roles from Jira\n - GOOGLE_WORKSPACE_SYSTEM_ROLE: google workspace role\n - GCP_SYSTEM_ROLE: Gcp role\n - ACTIVE_DIRECTORY_ROLE: Roles from Active Directory\n - AZURE_BUILTIN_ROLE: Azure built-in and custom roles (distinct from generic AZURE_ROLE)"
+      "title": "- AWS_PERMISSION_SET: AWS Permission Set in AWS Identity Center\n - AWS_IAM_ROLE: AWS Role in IAM\n - AWS_USER_PERMISSIONS: AWS User-level permission policies\n - AWS_GROUP_PERMISSIONS: AWS Group-level permission policies\n - GCP_ROLE: GCP Role\n - WORKSPACE_ROLE: Workspace role\n - WORKSPACE_OAUTH_OBO_POLICY: Workspace OAuth OBO (On Behalf Of) policy - represents OAuth scopes granted to third-party apps\n - AZURE_ROLE: Azure role\n - ENTRA_OAUTH_OBO_POLICY: Entra OAuth OBO (On Behalf Of) policy - represents OAuth scopes granted to third-party apps\n - AWS_ROOT: AWS Root policy\n - SCIM_PUSH_GROUP_ROLE: these are roles created from the scim push groups that are synced\nfrom the IDP to the provider. (shadow of a push group in app-bound provider)\n - UNIT_POLICY: Unit policy means \"has access\". This and corresponding binding objects should not be shown in UI.\n - CUSTOM_APP_ROLE: Role in Custom App\n - CUSTOM_APP_USER_ROLE: User role in Custom App. This is used when andromeda creates a user specific role\nthat cannot be mapped directly to an Application role\n - ENTRA_ROLE: Roles from Entra\n - PINGONE_ROLE: Naming kept to avoid migration issue.\n - EKS_ACCESS_POLICY: Roles from EKS\n - ATLAS_DATABASE_CUSTOM_ROLE: Roles from Atlas\n - OKTA_STANDARD_ROLE: Okta roles\n - ELASTIC_ORGANIZATION_ROLE: Roles from Elastic\n - ANDROMEDA_RESOURCE_POLICY: Resource Policies\n - SNOWFLAKE_CUSTOM_ROLE: Roles from Snowflake\n - SLACK_WORKSPACE_BUILT_IN_ROLE: Roles from Slack Enterprise\n - RDS_POSTGRESQL_ROLE: RDS Role\n - GITHUB_REPOSITORY_ROLE: Roles from GitHub\n - KEEPER_ROLE: Roles from Keeper\n - GITLAB_BUILTIN_ROLE: Roles from GitLab\n - DATABRICKS_ACCOUNT_ENTITLEMENT_ROLE: Roles from Databricks\n3 account level entitlements\n - DATABRICKS_ACCOUNT_WORKSPACE_MGMT_ROLE: 2 workspace managment roles\n - DATABRICKS_WORKSPACE_ENTITLEMENT_ROLE: 4 workspace level entitlements\n - DATABRICKS_WORKSPACE_DASHBOARD_ROLE: workspace resource roles\n - DATABRICKS_METASTORE_GRANT_ROLE: metastore grant roles\n - ATLASSIAN_ROLE: Roles from Atlassian\n - NETAPP_ROLE: Roles from NetApp\n - ZOOM_BUILTIN_ROLE: Roles from Zoom\n - JIRA_GLOBAL_PERMISSION: Roles from Jira\n - GOOGLE_WORKSPACE_SYSTEM_ROLE: google workspace role\n - GCP_SYSTEM_ROLE: Gcp role\n - ACTIVE_DIRECTORY_ROLE: Roles from Active Directory"
     },
     "configPolicyUsageBehaviorSeasonalModelConfiguration": {
       "type": "object",
@@ -28130,9 +28021,6 @@
         },
         "superAdminSupported": {
           "type": "boolean"
-        },
-        "jmlCapabilities": {
-          "$ref": "#/definitions/configJmlCapabilities"
         }
       },
       "title": "Provider features"
@@ -28651,9 +28539,6 @@
         },
         "providerAccess": {
           "$ref": "#/definitions/configRequestBundleProviderAccessItem"
-        },
-        "userId": {
-          "type": "string"
         }
       },
       "title": "RequestBundleAccessItem represents a single access item with a specific type"
@@ -30583,18 +30468,6 @@
         }
       }
     },
-    "configUserIdentifierType": {
-      "type": "string",
-      "enum": [
-        "USER_IDENTIFIER_TYPE_UNKNOWN",
-        "USER_IDENTIFIER_TYPE_USERNAME",
-        "USER_IDENTIFIER_TYPE_EMAIL",
-        "USER_IDENTIFIER_TYPE_SECONDARY_EXTERNAL_ID",
-        "USER_IDENTIFIER_TYPE_AD_ACCOUNT_NAME"
-      ],
-      "default": "USER_IDENTIFIER_TYPE_UNKNOWN",
-      "description": " - USER_IDENTIFIER_TYPE_AD_ACCOUNT_NAME: AD-specific: sAMAccountName."
-    },
     "configUserMergeAction": {
       "type": "object",
       "properties": {
@@ -31157,6 +31030,11 @@
     "graphAccessRequestBundleData": {
       "type": "object",
       "properties": {
+        "totalCount": {
+          "type": "integer",
+          "format": "int32",
+          "title": "Total count of access items"
+        },
         "entitlements": {
           "$ref": "#/definitions/graphAccessRequestBundleAccessItemConnection",
           "title": "Access items"
@@ -31730,28 +31608,6 @@
         }
       }
     },
-    "graphAllExceptProvidersRuntime": {
-      "type": "object",
-      "properties": {
-        "providerIds": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "providers": {
-          "$ref": "#/definitions/protobufAny"
-        }
-      }
-    },
-    "graphAllProvidersTargetRuntime": {
-      "type": "object",
-      "properties": {
-        "allProviders": {
-          "type": "boolean"
-        }
-      }
-    },
     "graphAssetData": {
       "type": "object",
       "properties": {
@@ -31994,54 +31850,6 @@
         }
       }
     },
-    "graphCreateEligibilityActionRuntimeNode": {
-      "type": "object",
-      "properties": {
-        "accessBundleId": {
-          "type": "string"
-        },
-        "overrideProfileId": {
-          "type": "string"
-        },
-        "justification": {
-          "type": "string"
-        },
-        "accessBundle": {
-          "$ref": "#/definitions/protobufAny"
-        }
-      },
-      "description": "CreateEligibilityActionRuntimeNode - presentation layer."
-    },
-    "graphCreateStandingAssignmentUsingAccessBundleActionRuntimeNode": {
-      "type": "object",
-      "properties": {
-        "accessBundleId": {
-          "type": "string"
-        },
-        "overrideProfileId": {
-          "type": "string"
-        },
-        "justification": {
-          "type": "string"
-        },
-        "accessBundle": {
-          "$ref": "#/definitions/protobufAny"
-        }
-      },
-      "description": "CreateStandingAssignmentUsingAccessBundleActionRuntimeNode - presentation layer."
-    },
-    "graphCreateUserInProviderActionRuntimeNode": {
-      "type": "object",
-      "properties": {
-        "providerId": {
-          "type": "string"
-        },
-        "provider": {
-          "$ref": "#/definitions/protobufAny"
-        }
-      },
-      "description": "CreateUserInProviderActionRuntimeNode - presentation layer."
-    },
     "graphCrossAccountInfo": {
       "type": "object",
       "properties": {
@@ -32085,29 +31893,6 @@
       "properties": {
         "node": {
           "$ref": "#/definitions/graphCustodians"
-        }
-      }
-    },
-    "graphDeactivateUserActionRuntimeNode": {
-      "type": "object",
-      "properties": {
-        "target": {
-          "$ref": "#/definitions/graphDeactivateUserActionTargetRuntime"
-        }
-      },
-      "description": "DeactivateUserActionRuntimeNode - presentation layer for deactivate action."
-    },
-    "graphDeactivateUserActionTargetRuntime": {
-      "type": "object",
-      "properties": {
-        "allProviders": {
-          "$ref": "#/definitions/graphAllProvidersTargetRuntime"
-        },
-        "allExceptProviders": {
-          "$ref": "#/definitions/graphAllExceptProvidersRuntime"
-        },
-        "specificProviders": {
-          "$ref": "#/definitions/graphSpecificProvidersRuntime"
         }
       }
     },
@@ -35343,165 +35128,6 @@
         }
       }
     },
-    "graphJmlActionRuntimeEdge": {
-      "type": "object",
-      "properties": {
-        "node": {
-          "$ref": "#/definitions/graphJmlActionRuntimeNode"
-        }
-      }
-    },
-    "graphJmlActionRuntimeNode": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "userId": {
-          "type": "string"
-        },
-        "actionType": {
-          "$ref": "#/definitions/JmlActionTypeMessageJmlActionType"
-        },
-        "actionSpecification": {
-          "$ref": "#/definitions/graphJmlActionRuntimeSpecificationUnion"
-        },
-        "dependsOnRuleRuntimeIds": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "status": {
-          "$ref": "#/definitions/secuarJmlOperationStatus"
-        },
-        "startedAt": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "completedAt": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "errorDetails": {
-          "$ref": "#/definitions/secuarErrorDetails"
-        }
-      }
-    },
-    "graphJmlActionRuntimeSpecificationUnion": {
-      "type": "object",
-      "properties": {
-        "deactivateUser": {
-          "$ref": "#/definitions/graphDeactivateUserActionRuntimeNode"
-        },
-        "createStandingAssignment": {
-          "$ref": "#/definitions/graphCreateStandingAssignmentUsingAccessBundleActionRuntimeNode"
-        },
-        "runJmlRules": {
-          "$ref": "#/definitions/graphRunJmlRulesActionRuntimeNode"
-        },
-        "createUserInProvider": {
-          "$ref": "#/definitions/graphCreateUserInProviderActionRuntimeNode"
-        },
-        "createEligibility": {
-          "$ref": "#/definitions/graphCreateEligibilityActionRuntimeNode"
-        }
-      },
-      "description": "JmlActionRuntimeSpecificationUnion is a GraphQL union for action specification.\nUses presentation layer types, not config objects."
-    },
-    "graphJmlPolicyRuntimeConnection": {
-      "type": "object",
-      "properties": {
-        "edges": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/graphJmlPolicyRuntimeEdge"
-          }
-        },
-        "pageInfo": {
-          "$ref": "#/definitions/utilsPageInfo"
-        }
-      },
-      "description": "JmlPolicyRuntimeConnection is a GraphQL connection type for JmlPolicyRuntime."
-    },
-    "graphJmlPolicyRuntimeEdge": {
-      "type": "object",
-      "properties": {
-        "node": {
-          "$ref": "#/definitions/graphJmlPolicyRuntimeNode"
-        }
-      },
-      "description": "JmlPolicyRuntimeEdge is a GraphQL edge type for JmlPolicyRuntime."
-    },
-    "graphJmlPolicyRuntimeNode": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "jmlPolicyId": {
-          "type": "string"
-        },
-        "triggerSpecification": {
-          "$ref": "#/definitions/graphTriggerSpecificationNode"
-        },
-        "executionStatus": {
-          "$ref": "#/definitions/secuarExecutionStatus",
-          "title": "Computed execution status (aggregated from all rules/actions)"
-        },
-        "rules": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/graphJmlRuleRuntimeEdge"
-          }
-        },
-        "jmlPolicy": {
-          "$ref": "#/definitions/protobufAny"
-        }
-      }
-    },
-    "graphJmlRuleRuntimeEdge": {
-      "type": "object",
-      "properties": {
-        "node": {
-          "$ref": "#/definitions/graphJmlRuleRuntimeNode"
-        }
-      }
-    },
-    "graphJmlRuleRuntimeNode": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "jmlRuleId": {
-          "type": "string"
-        },
-        "conditionEvaluations": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/secuarConditionGroupEvaluation"
-          }
-        },
-        "executionStatus": {
-          "$ref": "#/definitions/secuarExecutionStatus",
-          "title": "Computed execution status (aggregated from all actions)"
-        },
-        "actions": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/graphJmlActionRuntimeEdge"
-          }
-        },
-        "jmlRule": {
-          "$ref": "#/definitions/protobufAny"
-        }
-      }
-    },
     "graphKeyOpsInsightData": {
       "type": "object",
       "properties": {
@@ -36645,21 +36271,6 @@
         }
       }
     },
-    "graphRunJmlRulesActionRuntimeNode": {
-      "type": "object",
-      "properties": {
-        "ruleIds": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "rules": {
-          "$ref": "#/definitions/protobufAny"
-        }
-      },
-      "description": "RunJmlRulesActionRuntimeNode - presentation layer."
-    },
     "graphServiceIdentitiesGroupedByRiskCategoryResponse": {
       "type": "object",
       "properties": {
@@ -37566,20 +37177,6 @@
         }
       }
     },
-    "graphSpecificProvidersRuntime": {
-      "type": "object",
-      "properties": {
-        "providerIds": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "providers": {
-          "$ref": "#/definitions/protobufAny"
-        }
-      }
-    },
     "graphStandingPoliciesInfo": {
       "type": "object",
       "properties": {
@@ -37662,27 +37259,6 @@
           "$ref": "#/definitions/graphSuggestedOwners"
         }
       }
-    },
-    "graphTriggerSpecificationNode": {
-      "type": "object",
-      "properties": {
-        "eventType": {
-          "$ref": "#/definitions/TriggerEventTypeMessageTriggerEventType"
-        },
-        "providerId": {
-          "type": "string"
-        },
-        "userId": {
-          "type": "string"
-        },
-        "provider": {
-          "$ref": "#/definitions/protobufAny"
-        },
-        "user": {
-          "$ref": "#/definitions/protobufAny"
-        }
-      },
-      "description": "TriggerSpecificationNode - presentation layer type for trigger details.\nMirrors secuar.TriggerSpecification but lives in the graph layer."
     },
     "graphTrustEdges": {
       "type": "object",
@@ -38244,17 +37820,6 @@
       ],
       "default": "UNKNOWN"
     },
-    "inventorymodelsUserIdentifier": {
-      "type": "object",
-      "properties": {
-        "value": {
-          "type": "string"
-        },
-        "type": {
-          "$ref": "#/definitions/configUserIdentifierType"
-        }
-      }
-    },
     "logsBatchProcessingState": {
       "type": "string",
       "enum": [
@@ -38265,171 +37830,6 @@
         "BATCH_PROCESSING_STATE_FAILED"
       ],
       "default": "BATCH_PROCESSING_STATE_UNSPECIFIED"
-    },
-    "modelsConsoleAccessStatus": {
-      "type": "string",
-      "enum": [
-        "CONSOLE_ACCESS_STATUS_UNKNOWN",
-        "ENABLED",
-        "DISABLED"
-      ],
-      "default": "CONSOLE_ACCESS_STATUS_UNKNOWN"
-    },
-    "modelsHumanUserAttributes": {
-      "type": "object",
-      "properties": {
-        "email": {
-          "type": "string"
-        },
-        "consoleAccess": {
-          "type": "boolean"
-        },
-        "employeeId": {
-          "type": "string"
-        },
-        "orgName": {
-          "type": "string"
-        },
-        "businessTitle": {
-          "type": "string"
-        },
-        "managerId": {
-          "type": "string"
-        },
-        "managerName": {
-          "type": "string"
-        },
-        "positionTitle": {
-          "type": "string"
-        },
-        "division": {
-          "type": "string"
-        },
-        "city": {
-          "type": "string"
-        },
-        "country": {
-          "type": "string"
-        },
-        "hireDate": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "terminationDate": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "category": {
-          "type": "string"
-        },
-        "hrType": {
-          "$ref": "#/definitions/configHrType"
-        },
-        "locationState": {
-          "type": "string"
-        },
-        "zipCode": {
-          "type": "string"
-        },
-        "countryCode": {
-          "type": "string"
-        },
-        "streetAddress": {
-          "type": "string"
-        },
-        "providerHrType": {
-          "type": "string"
-        },
-        "managerResolutionId": {
-          "type": "string"
-        }
-      }
-    },
-    "modelsNonHumanUserAttributes": {
-      "type": "object",
-      "properties": {
-        "originResourceId": {
-          "type": "string"
-        },
-        "serviceIdentityType": {
-          "$ref": "#/definitions/ServiceIdentityTypeMessageServiceIdentityType"
-        },
-        "trustedService": {
-          "type": "string"
-        },
-        "unknownService": {
-          "type": "boolean"
-        },
-        "createDate": {
-          "type": "string",
-          "format": "date-time",
-          "title": "resource create date for service identities"
-        },
-        "accountId": {
-          "type": "string",
-          "title": "external ID of the account ID to which the user belongs to"
-        },
-        "awsExtNhiSubtype": {
-          "$ref": "#/definitions/AwsExternalServiceIdentitySubTypeMessageAwsExternalServiceIdentitySubType",
-          "title": "AWS specific external service identity type"
-        },
-        "roleTrustConditionType": {
-          "$ref": "#/definitions/RoleTrustConditionTypeMessageRoleTrustConditionType",
-          "title": "condition type for the user"
-        },
-        "userOriginId": {
-          "type": "string",
-          "description": "If it's created from a role, then it would contain the role ARN. Otherwise Not Applicable."
-        },
-        "roleLastUsedAt": {
-          "type": "string",
-          "format": "date-time",
-          "description": "If it's created from a role, then it would contain the role's last used time'. Otherwise Not Applicable."
-        },
-        "passwordLastUsed": {
-          "type": "string",
-          "format": "date-time",
-          "title": "This is the last time the password was used -- used to determine last console access"
-        },
-        "azureNhiSubtype": {
-          "$ref": "#/definitions/AzureServiceIdentitySubTypeMessageAzureServiceIdentitySubType",
-          "title": "Azure specific service identity sub type"
-        },
-        "gcpNhiSubtype": {
-          "$ref": "#/definitions/GcpServiceIdentitySubTypeMessageGcpServiceIdentitySubType",
-          "title": "GCP specific service identity sub type"
-        },
-        "externalOriginScopeId": {
-          "type": "string",
-          "title": "External id of the Origin where user is created"
-        },
-        "andromedaOriginType": {
-          "$ref": "#/definitions/configAndromedaObjectType",
-          "title": "Andromeda object type of Origin Scope"
-        },
-        "externalOriginType": {
-          "$ref": "#/definitions/configExternalResourceType",
-          "description": "External resource type of Origin Scope."
-        },
-        "originScopeName": {
-          "type": "string",
-          "title": "External ID of the Origin where user is created"
-        },
-        "kubernetesNhiSubtype": {
-          "$ref": "#/definitions/KubernetesServiceIdentitySubTypeMessageKubernetesServiceIdentitySubType",
-          "title": "K8s specific service identity sub type"
-        },
-        "blueprintId": {
-          "type": "string",
-          "title": "Blueprint application id associated with the agent identity"
-        },
-        "agentIdentityType": {
-          "$ref": "#/definitions/AgentIdentityTypeMessageAgentIdentityType"
-        },
-        "blueprintExternalType": {
-          "$ref": "#/definitions/configExternalResourceType"
-        }
-      }
     },
     "modelsSuggestionDiscoveryDetails": {
       "type": "object",
@@ -38780,7 +38180,7 @@
       },
       "title": "CreateEligibilityAction creates eligibility for user to Access Bundle (Future)\nCreates Andromeda-managed eligibility (source_rule_id = rule ID)\nIdempotent: skips if eligibility already exists"
     },
-    "modelsconfigCreateStandingAssignmentUsingAccessBundleAction": {
+    "modelsconfigCreateStandingAccessToAccessBundleAction": {
       "type": "object",
       "properties": {
         "accessBundleId": {
@@ -38796,25 +38196,7 @@
           "title": "Auto-generated justification text (e.g., \"Auto-granted via JML policy\")"
         }
       },
-      "title": "CreateStandingAssignmentUsingAccessBundleAction grants a standing assignment via an Access Bundle\nIncluding group-membership\nIdempotent: skips if user already has access to the bundle"
-    },
-    "modelsconfigDeactivateUserAction": {
-      "type": "object",
-      "properties": {
-        "allProviders": {
-          "type": "boolean",
-          "title": "Deactivate in all providers"
-        },
-        "allExceptProviders": {
-          "$ref": "#/definitions/configProviderExclusionList",
-          "title": "Deactivate in all providers except specified ones"
-        },
-        "specificProviders": {
-          "$ref": "#/definitions/configProviderList",
-          "title": "Deactivate in specific providers only"
-        }
-      },
-      "title": "DeactivateUserAction deactivates user in target providers\nIdempotent: skips if user already deactivated\nDoes not delete the user, only deactivates"
+      "title": "CreateStandingAccessToAccessBundleAction grants standing (permanent) access to an Access Bundle\nIncluding group-membership\nIdempotent: skips if user already has access to the bundle"
     },
     "modelsconfigExplorerView": {
       "type": "object",
@@ -39143,6 +38525,27 @@
     "modelsconfigJmlRuleCondition": {
       "type": "object",
       "properties": {
+        "department": {
+          "$ref": "#/definitions/configDepartmentMatch",
+          "description": "Match department field with string criteria",
+          "title": "User attribute matches (field-specific for type safety)"
+        },
+        "title": {
+          "$ref": "#/definitions/configTitleMatch",
+          "title": "Match job title field with string criteria"
+        },
+        "manager": {
+          "$ref": "#/definitions/configManagerMatch",
+          "title": "Match manager field with string criteria"
+        },
+        "hrType": {
+          "$ref": "#/definitions/configHrTypeMatch",
+          "title": "Match HR type (EMPLOYEE, CONTRACTOR, etc.)"
+        },
+        "userStatus": {
+          "$ref": "#/definitions/configExternalUserStatusMatch",
+          "title": "Match user status (ACTIVE, INACTIVE, etc.)"
+        },
         "provider": {
           "$ref": "#/definitions/configProviderMatch",
           "description": "Match specific provider IDs",
@@ -40903,10 +40306,6 @@
         "updatedAt": {
           "type": "string",
           "format": "date-time"
-        },
-        "jmlPolicyRuntimes": {
-          "$ref": "#/definitions/graphJmlPolicyRuntimeConnection",
-          "title": "JML policy runtime executions for this identity"
         }
       }
     },
@@ -41338,161 +40737,6 @@
           "type": "string"
         }
       }
-    },
-    "nonpublicinventorymodelsUser": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "resourceType": {
-          "$ref": "#/definitions/configExternalResourceType",
-          "title": "Common Parent Information"
-        },
-        "externalResourceType": {
-          "$ref": "#/definitions/configExternalResourceType",
-          "title": "TODO : remove this comment external_user_type from HumanUser"
-        },
-        "userIdentityType": {
-          "$ref": "#/definitions/configIdentityType",
-          "title": "identity Human or Service type"
-        },
-        "mutableUserType": {
-          "type": "boolean",
-          "title": "If the user is mutable or not : for conversion from HI to NHI and vice versa"
-        },
-        "username": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "state": {
-          "$ref": "#/definitions/ExternalUserStatusMessageExternalUserStatus",
-          "title": "Access and Identity Details"
-        },
-        "identityOriginType": {
-          "$ref": "#/definitions/IdentityOriginTypeMessageIdentityOriginType"
-        },
-        "consoleAccessStatus": {
-          "$ref": "#/definitions/modelsConsoleAccessStatus"
-        },
-        "externalAccountType": {
-          "$ref": "#/definitions/configExternalResourceType"
-        },
-        "mfaNotApplicable": {
-          "type": "boolean",
-          "title": "MFA Applicability"
-        },
-        "idpAttributesMap": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          },
-          "title": "A KV Map containing all the attributes and their values fetched from the IDP"
-        },
-        "humanUserAttributes": {
-          "$ref": "#/definitions/modelsHumanUserAttributes",
-          "title": "Attributes specific to Human and Non-Human users"
-        },
-        "nonHumanUserAttributes": {
-          "$ref": "#/definitions/modelsNonHumanUserAttributes"
-        },
-        "isConfiguredSourceOfTruth": {
-          "type": "boolean"
-        },
-        "isUserReference": {
-          "type": "boolean"
-        },
-        "isMergeable": {
-          "type": "boolean"
-        },
-        "willDeprecate": {
-          "type": "boolean",
-          "title": "temporary"
-        },
-        "willNotDeprecate": {
-          "type": "boolean",
-          "title": "temporary"
-        },
-        "secondaryExternalIds": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "Avoid using this field for user merge signal,\n currently used for only special cases like IDP -\u003e Github/Atlas."
-        },
-        "profileName": {
-          "type": "string"
-        },
-        "externalApplicationId": {
-          "type": "string",
-          "title": "external application id"
-        },
-        "isShadowUser": {
-          "type": "boolean"
-        },
-        "usesPasswordAuth": {
-          "type": "boolean"
-        },
-        "mergeToIdentityId": {
-          "type": "string"
-        },
-        "configuredMergeMatchValues": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "lastLogin": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "passwordChanged": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "owners": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/configOwner"
-          },
-          "title": "identifiers of the owners of the user"
-        },
-        "identifiers": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/inventorymodelsUserIdentifier"
-          }
-        },
-        "customField1": {
-          "type": "string",
-          "title": "Custom fields for flexible attribute mapping"
-        },
-        "customField2": {
-          "type": "string"
-        },
-        "customField3": {
-          "type": "string"
-        },
-        "customField4": {
-          "type": "string"
-        },
-        "customField5": {
-          "type": "string"
-        }
-      },
-      "title": "fields for both human and non human users"
     },
     "nonpublicpolicyEffectivePermissionsResponse": {
       "type": "object",
@@ -43549,66 +42793,6 @@
       },
       "title": "Ticket represents a ticket in the ITSM system"
     },
-    "secuarConditionGroupEvaluation": {
-      "type": "object",
-      "properties": {
-        "results": {
-          "type": "array",
-          "items": {
-            "type": "boolean"
-          },
-          "title": "Boolean result for each condition in the AND group"
-        }
-      },
-      "title": "Evaluation results for a condition group"
-    },
-    "secuarErrorDetails": {
-      "type": "object",
-      "properties": {
-        "errorCode": {
-          "type": "string"
-        },
-        "errorMessage": {
-          "type": "string"
-        },
-        "stackTrace": {
-          "type": "string"
-        },
-        "timestamp": {
-          "type": "string",
-          "format": "date-time"
-        }
-      },
-      "title": "Error details for failed operations"
-    },
-    "secuarExecutionStatus": {
-      "type": "object",
-      "properties": {
-        "status": {
-          "$ref": "#/definitions/secuarJmlOperationStatus"
-        },
-        "updatedAt": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "errorDetails": {
-          "$ref": "#/definitions/secuarErrorDetails"
-        }
-      },
-      "title": "Unified execution status message\nUsed in GraphQL/API responses for policies, rules, and actions\nComputed dynamically at read time"
-    },
-    "secuarJmlOperationStatus": {
-      "type": "string",
-      "enum": [
-        "OPERATION_STATUS_UNSPECIFIED",
-        "QUEUED",
-        "IN_PROGRESS",
-        "COMPLETED",
-        "FAILED"
-      ],
-      "default": "OPERATION_STATUS_UNSPECIFIED",
-      "title": "Standard operation status enum"
-    },
     "secuarTriggerRevocationResponse": {
       "type": "object",
       "properties": {
@@ -43967,11 +43151,10 @@
         "IDP",
         "APPLICATION",
         "K8S",
-        "DATABASE",
-        "HRIS"
+        "DATABASE"
       ],
       "default": "UNSPECIFIED",
-      "description": "- IDP: Okta\n - APPLICATION: Figma from Okta\n - HRIS: Applications that provider HRIS information",
+      "description": "- IDP: Okta\n - APPLICATION: Figma from Okta",
       "title": "TODO AS-3963\nconvert this to a encapsulated message and enum type"
     }
   }
