@@ -3914,1077 +3914,6 @@
         ]
       }
     },
-    "/integrations": {
-      "get": {
-        "operationId": "IntegrationService_ListIntegrations",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiListIntegrationResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "sort",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "pageSize",
-            "in": "query",
-            "required": false,
-            "type": "integer",
-            "format": "int64"
-          },
-          {
-            "name": "cursor",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "skip",
-            "in": "query",
-            "required": false,
-            "type": "integer",
-            "format": "int64"
-          }
-        ],
-        "tags": [
-          "IntegrationService"
-        ]
-      },
-      "post": {
-        "operationId": "IntegrationService_CreateIntegration",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/modelsconfigIntegration"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "integrations",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/modelsconfigIntegration",
-              "required": [
-                "integrations"
-              ]
-            }
-          }
-        ],
-        "tags": [
-          "IntegrationService"
-        ]
-      }
-    },
-    "/integrations/{id}": {
-      "get": {
-        "operationId": "IntegrationService_GetIntegration",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/modelsconfigIntegration"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "IntegrationService"
-        ]
-      },
-      "delete": {
-        "operationId": "IntegrationService_DeleteIntegration",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "type": "object",
-              "properties": {}
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "IntegrationService"
-        ]
-      },
-      "put": {
-        "operationId": "IntegrationService_UpdateIntegration",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/modelsconfigIntegration"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "integrations",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/modelsconfigIntegration",
-              "required": [
-                "integrations"
-              ]
-            }
-          }
-        ],
-        "tags": [
-          "IntegrationService"
-        ]
-      }
-    },
-    "/integrations/{integrationId}/workday": {
-      "get": {
-        "operationId": "WorkdayConfigService_GetWorkdayConfig",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/configWorkdayConfiguration"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "integrationId",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "pageSize",
-            "in": "query",
-            "required": false,
-            "type": "integer",
-            "format": "int64"
-          },
-          {
-            "name": "cursor",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "skip",
-            "in": "query",
-            "required": false,
-            "type": "integer",
-            "format": "int64"
-          }
-        ],
-        "tags": [
-          "WorkdayConfigService"
-        ]
-      },
-      "post": {
-        "operationId": "WorkdayConfigService_CreateWorkdayConfig",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/configWorkdayConfiguration"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "integrationId",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "workdayConfiguration",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/configWorkdayConfiguration",
-              "required": [
-                "workdayConfiguration"
-              ]
-            }
-          },
-          {
-            "name": "fileId",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "WorkdayConfigService"
-        ]
-      },
-      "put": {
-        "operationId": "WorkdayConfigService_UpdateWorkdayConfig",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/configWorkdayConfiguration"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "integrationId",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "workdayConfiguration",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/configWorkdayConfiguration",
-              "required": [
-                "workdayConfiguration"
-              ]
-            }
-          },
-          {
-            "name": "fileId",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "WorkdayConfigService"
-        ]
-      }
-    },
-    "/integrations/{providerId}/files": {
-      "get": {
-        "operationId": "FileUploaderService_ListFile",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/apiListFileResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "providerId",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "pageSize",
-            "in": "query",
-            "required": false,
-            "type": "integer",
-            "format": "int64"
-          },
-          {
-            "name": "cursor",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "skip",
-            "in": "query",
-            "required": false,
-            "type": "integer",
-            "format": "int64"
-          }
-        ],
-        "tags": [
-          "FileUploaderService"
-        ]
-      }
-    },
-    "/integrations/{providerId}/files/upload": {
-      "post": {
-        "summary": "Not implemented grpc",
-        "operationId": "FileUploaderService_UploadFile",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/configFile"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "providerId",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/FileUploaderServiceUploadFileBody"
-            }
-          }
-        ],
-        "tags": [
-          "FileUploaderService"
-        ]
-      }
-    },
-    "/integrations/{providerId}/files/{id}": {
-      "get": {
-        "operationId": "FileUploaderService_GetFile",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/configFile"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "providerId",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "FileUploaderService"
-        ]
-      },
-      "delete": {
-        "operationId": "FileUploaderService_DeleteFile",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "type": "object",
-              "properties": {}
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "providerId",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "FileUploaderService"
-        ]
-      }
-    },
-    "/internal/apicache/disable": {
-      "post": {
-        "operationId": "ApiCacheService_DisableCache",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/nonpublicDisableCacheResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/nonpublicDisableCacheRequest"
-            }
-          }
-        ],
-        "tags": [
-          "ApiCacheService"
-        ]
-      }
-    },
-    "/internal/apicache/disable-settings": {
-      "get": {
-        "operationId": "ApiCacheService_ListCacheDisableSettings",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/nonpublicListCacheDisableSettingsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "tags": [
-          "ApiCacheService"
-        ]
-      }
-    },
-    "/internal/apicache/enable": {
-      "post": {
-        "operationId": "ApiCacheService_EnableCache",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/nonpublicEnableCacheResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/nonpublicEnableCacheRequest"
-            }
-          }
-        ],
-        "tags": [
-          "ApiCacheService"
-        ]
-      }
-    },
-    "/internal/apicache/refresh": {
-      "post": {
-        "operationId": "ApiCacheService_TriggerTenantCacheRefresh",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/nonpublicApiCacheRefreshTenantTriggerResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/nonpublicApiCacheRefreshTenantTriggerRequest"
-            }
-          }
-        ],
-        "tags": [
-          "ApiCacheService"
-        ]
-      }
-    },
-    "/internal/apicache/triggers": {
-      "get": {
-        "operationId": "ApiCacheService_ListTriggerStatuses",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/nonpublicListTriggerStatusesResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "states",
-            "description": "Optional filter by states",
-            "in": "query",
-            "required": false,
-            "type": "array",
-            "items": {
-              "type": "string",
-              "enum": [
-                "TRIGGER_STATUS_STATE_UNSPECIFIED",
-                "PENDING",
-                "PROCESSING",
-                "COMPLETED",
-                "FAILED",
-                "DROPPED"
-              ]
-            },
-            "collectionFormat": "multi"
-          },
-          {
-            "name": "limit",
-            "description": "Optional limit on number of results",
-            "in": "query",
-            "required": false,
-            "type": "integer",
-            "format": "int32"
-          }
-        ],
-        "tags": [
-          "ApiCacheService"
-        ]
-      }
-    },
-    "/internal/apicache/triggers/{triggerId}/status": {
-      "get": {
-        "operationId": "ApiCacheService_GetTriggerStatus",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/nonpublicGetTriggerStatusResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "triggerId",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "ApiCacheService"
-        ]
-      }
-    },
-    "/internal/configuration/system": {
-      "get": {
-        "operationId": "SystemConfigurationService_GetSystemConfiguration",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/configSystemConfiguration"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "tags": [
-          "SystemConfigurationService"
-        ]
-      },
-      "put": {
-        "operationId": "SystemConfigurationService_UpdateSystemConfiguration",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/configSystemConfiguration"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "config",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/configSystemConfiguration",
-              "required": [
-                "config"
-              ]
-            }
-          }
-        ],
-        "tags": [
-          "SystemConfigurationService"
-        ]
-      }
-    },
-    "/internal/configuration/tenants/{tenantId}": {
-      "get": {
-        "operationId": "TenantInternalConfigurationService_GetTenantInternalConfiguration",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/configTenantInternalConfiguration"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "tenantId",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "TenantInternalConfigurationService"
-        ]
-      },
-      "post": {
-        "summary": "By default this should be created with default values when a tenant is created.",
-        "operationId": "TenantInternalConfigurationService_CreateTenantInternalConfiguration",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/configTenantInternalConfiguration"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "tenantId",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "config",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/configTenantInternalConfiguration",
-              "required": [
-                "config"
-              ]
-            }
-          }
-        ],
-        "tags": [
-          "TenantInternalConfigurationService"
-        ]
-      },
-      "put": {
-        "operationId": "TenantInternalConfigurationService_UpdateTenantInternalConfiguration",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/configTenantInternalConfiguration"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "tenantId",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "config",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/configTenantInternalConfiguration",
-              "required": [
-                "config"
-              ]
-            }
-          }
-        ],
-        "tags": [
-          "TenantInternalConfigurationService"
-        ]
-      }
-    },
-    "/internal/configuration/tenants/{tenantId}/providers/{providerId}": {
-      "get": {
-        "operationId": "ProviderInternalConfigurationService_GetProviderInternalConfiguration",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/configProviderInternalConfiguration"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "tenantId",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "providerId",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "ProviderInternalConfigurationService"
-        ]
-      },
-      "delete": {
-        "operationId": "ProviderInternalConfigurationService_DeleteProviderInternalConfiguration",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "type": "object",
-              "properties": {}
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "tenantId",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "providerId",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "ProviderInternalConfigurationService"
-        ]
-      },
-      "post": {
-        "operationId": "ProviderInternalConfigurationService_CreateProviderInternalConfiguration",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/configProviderInternalConfiguration"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "tenantId",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "providerId",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "config",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/configProviderInternalConfiguration",
-              "required": [
-                "config"
-              ]
-            }
-          }
-        ],
-        "tags": [
-          "ProviderInternalConfigurationService"
-        ]
-      },
-      "put": {
-        "operationId": "ProviderInternalConfigurationService_UpdateProviderInternalConfiguration",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/configProviderInternalConfiguration"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "tenantId",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "providerId",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "config",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/configProviderInternalConfiguration",
-              "required": [
-                "config"
-              ]
-            }
-          }
-        ],
-        "tags": [
-          "ProviderInternalConfigurationService"
-        ]
-      }
-    },
-    "/internal/galileo/trigger": {
-      "post": {
-        "operationId": "GalileoService_Trigger",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/galileoTriggerResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/galileoTriggerRequest"
-            }
-          }
-        ],
-        "tags": [
-          "GalileoService"
-        ]
-      }
-    },
-    "/internal/image-version": {
-      "get": {
-        "operationId": "ImageInfoService_GetImageVersion",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/configImageVersion"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "tags": [
-          "ImageInfoService"
-        ]
-      }
-    },
     "/inventory/find": {
       "get": {
         "operationId": "InventoryExploreService_FindObjectInInventory",
@@ -17073,7 +16002,7 @@
         "PASSWORD_ROTATION_OVERDUE"
       ],
       "default": "UNSPECIFIED",
-      "description": " - ACCOUNT_OWNER: Identities that are marked owners for an account.\n - ADMIN_PRIVILEGES: Identity has admin level privileges in the account determined by either access to\nmanaged roles like AWSAdministratorAccess or IAM admin permissions like \u003cTBD\u003e\n - INACTIVE: The identity has not exhibited any activity for 90 days in this account or provider.\n - PROVIDER_OWNER: The identity is a provider owner\n - RISK_ACCEPTED: Identities whos risk has been accepted in the account. The standing policies\nthat have high blast risk are not included in account's risk calculation.\n - SUPER_ADMIN: Identities that have super admin privileges like IAM admin permissions like \u003cTBD\u003e\n - LOCAL_IDENTITY: IDC user with local IAM Identities\nLocal IAM users when provider is setup with the AWS IDC\n - NON_COMPLIANT: Identity state is non-compliant across the IDP (deactivated) and Provider (active).\n - IDENTITY_DATA_INCONSISTENCY: Identity data is inconsistent across different sources.\nDeprecated.\n - CROSS_ACCOUNT_WITH_CRITICALITY_ESCALATION: Cross account access with criticality escalation\n - DEACTIVATED_USER_WITH_POLICY_BINDINGS: Deactivated User with policy bindings\n - KEY_INACTIVE_30_90_DAYS: These would replace the inactive Key types\n - PRIVILEGED_USER: TODO(AS-2495)\nIf identity has one of the sources (incarnation) as a privileged user defined\nby the identity mapping policy\n - PASSWORD_ROTATION_OVERDUE: Password rotation is overdue for the identity based on AD group membership tier."
+      "description": " - ACCOUNT_OWNER: Identities that are marked owners for an account.\n - ADMIN_PRIVILEGES: Identity has admin level privileges in the account determined by either access to\nmanaged roles like AWSAdministratorAccess or IAM admin permissions like <TBD>\n - INACTIVE: The identity has not exhibited any activity for 90 days in this account or provider.\n - PROVIDER_OWNER: The identity is a provider owner\n - RISK_ACCEPTED: Identities whos risk has been accepted in the account. The standing policies\nthat have high blast risk are not included in account's risk calculation.\n - SUPER_ADMIN: Identities that have super admin privileges like IAM admin permissions like <TBD>\n - LOCAL_IDENTITY: IDC user with local IAM Identities\nLocal IAM users when provider is setup with the AWS IDC\n - NON_COMPLIANT: Identity state is non-compliant across the IDP (deactivated) and Provider (active).\n - IDENTITY_DATA_INCONSISTENCY: Identity data is inconsistent across different sources.\nDeprecated.\n - CROSS_ACCOUNT_WITH_CRITICALITY_ESCALATION: Cross account access with criticality escalation\n - DEACTIVATED_USER_WITH_POLICY_BINDINGS: Deactivated User with policy bindings\n - KEY_INACTIVE_30_90_DAYS: These would replace the inactive Key types\n - PRIVILEGED_USER: TODO(AS-2495)\nIf identity has one of the sources (incarnation) as a privileged user defined\nby the identity mapping policy\n - PASSWORD_ROTATION_OVERDUE: Password rotation is overdue for the identity based on AD group membership tier."
     },
     "IdentityUsernameMatchCriteriaMessageIdentityUsernameMatchCriteria": {
       "type": "string",
@@ -17629,7 +16558,7 @@
         "HAS_ROOT_TRUST"
       ],
       "default": "UNSPECIFIED",
-      "title": "- USED_BY_MULTIPLE_NON_HUMAN_IDENTITIES: Policies that are used by multiple non-human identities.\nCategory: POSTURE\n - UNUSED_30_90_DAYS: These are policies that are not used by any of the identities in the account\nIn the Policy Details page it will have zero used.\nFrom grounding perpective - need to show the list of the policies in the account\nthat are not used and for each one we can show the policy details.\nAs high priority only implement the unused policies.\nCategory: ACTIVITY\n - NOT_ALL_ASSIGNMENTS_USED_365_DAYS_PLUS: Policies that have only used by some of the identities who have access to the account\nThese assignements can be removed from the identity. Note, when assignment is via\ngroup then group members need to be identified who needs to be removed from the list.\nPARTIAL_ASSIGNMENTS_USED\nThese are computed based on unused of\nCategory: POSTURE\n - OVERPROVISIONED: These policies are overprovisioned in the account.\nIt is basically used/total permissions \u003c 10 %.\nThese are tagged only for High Risk Policies. I am divided as we can always\ncombine high blast risk with overprovisioned and get the same result.\nCategory: PRIVILEGE\n - HAS_IMPROPER_TRUST: Policies having self trusted roles\n - ADMIN_PRIVILEDGE: Policies that have admin permissions.\nCategory: PRIVILEGE"
+      "title": "- USED_BY_MULTIPLE_NON_HUMAN_IDENTITIES: Policies that are used by multiple non-human identities.\nCategory: POSTURE\n - UNUSED_30_90_DAYS: These are policies that are not used by any of the identities in the account\nIn the Policy Details page it will have zero used.\nFrom grounding perpective - need to show the list of the policies in the account\nthat are not used and for each one we can show the policy details.\nAs high priority only implement the unused policies.\nCategory: ACTIVITY\n - NOT_ALL_ASSIGNMENTS_USED_365_DAYS_PLUS: Policies that have only used by some of the identities who have access to the account\nThese assignements can be removed from the identity. Note, when assignment is via\ngroup then group members need to be identified who needs to be removed from the list.\nPARTIAL_ASSIGNMENTS_USED\nThese are computed based on unused of\nCategory: POSTURE\n - OVERPROVISIONED: These policies are overprovisioned in the account.\nIt is basically used/total permissions < 10 %.\nThese are tagged only for High Risk Policies. I am divided as we can always\ncombine high blast risk with overprovisioned and get the same result.\nCategory: PRIVILEGE\n - HAS_IMPROPER_TRUST: Policies having self trusted roles\n - ADMIN_PRIVILEDGE: Policies that have admin permissions.\nCategory: PRIVILEGE"
     },
     "PrincipalTypeMessagePrincipalType": {
       "type": "string",
@@ -19030,7 +17959,7 @@
         "createdAt": {
           "type": "string",
           "format": "date-time",
-          "title": "Hypertable partition column — composite PK with id",
+          "title": "Hypertable partition column \u2014 composite PK with id",
           "readOnly": true
         }
       },
@@ -19104,7 +18033,7 @@
         "createdAt": {
           "type": "string",
           "format": "date-time",
-          "title": "Hypertable partition column — composite PK with id",
+          "title": "Hypertable partition column \u2014 composite PK with id",
           "readOnly": true
         }
       },
@@ -22473,7 +21402,7 @@
           "description": "Supports only EQUALS for Boolean values."
         }
       },
-      "title": "AccessRequestAnalysisRule is a set of rules and conditions that must be met for\nan action to be taken by Andromeda intelligence while reviewing an access request.\nThe rules is analysed in the engine like so:\n   aggregates = []\n   if when(provider.type == AWS \u0026\u0026 provider.type == Azure) \u0026\u0026 condition(policy.risk \u003c 50) {\n\t    aggregates.append(auto_approve)\n   }\n   if when(provider.environment == prod) \u0026\u0026 condition(policy.risk \u003c 20) {\n\t    aggregates.append(auto_approve)\n   }\n   if when(provider.type == GCP) \u0026\u0026 condition(request.duration \u003c \"30min\") {\n\t    aggregates.append(auto_approve)\n   }\n   if when(provider.type == AWS) \u0026\u0026 condition(identity.termination_date within 30 days) {\n\t    aggregates.append(ask_for_review)\n   }\n   analysis.ai_review = compute(aggregates)"
+      "title": "AccessRequestAnalysisRule is a set of rules and conditions that must be met for\nan action to be taken by Andromeda intelligence while reviewing an access request.\nThe rules is analysed in the engine like so:\n   aggregates = []\n   if when(provider.type == AWS && provider.type == Azure) && condition(policy.risk < 50) {\n\t    aggregates.append(auto_approve)\n   }\n   if when(provider.environment == prod) && condition(policy.risk < 20) {\n\t    aggregates.append(auto_approve)\n   }\n   if when(provider.type == GCP) && condition(request.duration < \"30min\") {\n\t    aggregates.append(auto_approve)\n   }\n   if when(provider.type == AWS) && condition(identity.termination_date within 30 days) {\n\t    aggregates.append(ask_for_review)\n   }\n   analysis.ai_review = compute(aggregates)"
     },
     "configAccessRequestAssignReviewerConfig": {
       "type": "object",
@@ -22545,16 +21474,16 @@
         "maxExtensionRequestCount": {
           "type": "integer",
           "format": "int64",
-          "title": "The user is able to make at most “N” extension requests.\nN is configured in the JIT profile; default value = 2"
+          "title": "The user is able to make at most \u201cN\u201d extension requests.\nN is configured in the JIT profile; default value = 2"
         },
         "maxExtensionDuration": {
           "type": "integer",
           "format": "int64",
-          "title": "The requested extension duration is less than or equal to “Y” time\nY is configured in the JIT profile; default value = 1 hour (3600 seconds)"
+          "title": "The requested extension duration is less than or equal to \u201cY\u201d time\nY is configured in the JIT profile; default value = 1 hour (3600 seconds)"
         },
         "enabled": {
           "type": "boolean",
-          "title": "Admin can disable “automatic extension” feature in JIT profile"
+          "title": "Admin can disable \u201cautomatic extension\u201d feature in JIT profile"
         },
         "defaultExtensionDuration": {
           "type": "integer",
@@ -23090,7 +22019,7 @@
           "items": {
             "type": "string"
           },
-          "title": "repeated string identity_ids = 2 [\n   (buf.validate.field).repeated.unique = true,\n   (buf.validate.field).cel = {\n     expression: \"uint(this.size()) \u003e 0\",\n     message: \"Template must specify atleast one identity id in reviewer assignment scheme.\"\n   }\n ];"
+          "title": "repeated string identity_ids = 2 [\n   (buf.validate.field).repeated.unique = true,\n   (buf.validate.field).cel = {\n     expression: \"uint(this.size()) > 0\",\n     message: \"Template must specify atleast one identity id in reviewer assignment scheme.\"\n   }\n ];"
         }
       }
     },
@@ -25752,7 +24681,7 @@
         },
         "tenantId": {
           "type": "string",
-          "title": "Currently not supported by our code-gen. This field is helpful in assigning tags to objects.\n map\u003cstring, int32\u003e metatags = 111;"
+          "title": "Currently not supported by our code-gen. This field is helpful in assigning tags to objects.\n map<string, int32> metatags = 111;"
         },
         "updatedAt": {
           "type": "string",
@@ -27935,7 +26864,7 @@
           "title": "Andromeda Attribute Type"
         }
       },
-      "title": "For use when source's attr is Mgr -\u003e manager\nThe value is kept as-is"
+      "title": "For use when source's attr is Mgr -> manager\nThe value is kept as-is"
     },
     "configMarkSourceOfTruthUserAction": {
       "type": "object",
@@ -28080,7 +27009,7 @@
         },
         "isPasswordEncrypted": {
           "type": "boolean",
-          "description": "When true, the value in `password_env_var_name` is expected to be produced\nby the broker `encrypt` command and will be decrypted at runtime.\n\nTo encrypt a plaintext password on the broker host:\n  - Linux/macOS: ./andromeda-broker encrypt --password \"\u003cplaintext\u003e\"\n  - Windows:     andromeda-broker.exe encrypt --password \"\u003cplaintext\u003e\"\n  - Interactive (no shell history exposure):\n      ./andromeda-broker encrypt\n      andromeda-broker.exe encrypt\n\nThen set the environment variable named in `password_env_var_name` to the output in your `.env` file and set `is_password_encrypted = true`."
+          "description": "When true, the value in `password_env_var_name` is expected to be produced\nby the broker `encrypt` command and will be decrypted at runtime.\n\nTo encrypt a plaintext password on the broker host:\n  - Linux/macOS: ./andromeda-broker encrypt --password \"<plaintext>\"\n  - Windows:     andromeda-broker.exe encrypt --password \"<plaintext>\"\n  - Interactive (no shell history exposure):\n      ./andromeda-broker encrypt\n      andromeda-broker.exe encrypt\n\nThen set the environment variable named in `password_env_var_name` to the output in your `.env` file and set `is_password_encrypted = true`."
         }
       }
     },
@@ -28580,7 +27509,7 @@
       "properties": {
         "flowPatternId": {
           "type": "string",
-          "description": "Flow pattern ID (or name) of the HCM Extract to run.\nE.g. from Data Exchange \u003e Extract Definitions."
+          "description": "Flow pattern ID (or name) of the HCM Extract to run.\nE.g. from Data Exchange > Extract Definitions."
         },
         "legislativeDataGroup": {
           "type": "string",
@@ -28591,7 +27520,7 @@
           "description": "Output format: XML (raw hierarchical) or CSV."
         }
       },
-      "description": "Configuration for HCM Extracts bulk inventory fetch.\nExtracts are run via Flow Actions Service: submitFlow -\u003e poll -\u003e download XML/CSV.",
+      "description": "Configuration for HCM Extracts bulk inventory fetch.\nExtracts are run via Flow Actions Service: submitFlow -> poll -> download XML/CSV.",
       "required": [
         "flowPatternId",
         "legislativeDataGroup"
@@ -28796,7 +27725,7 @@
         "REGEX"
       ],
       "default": "UNSPECIFIED",
-      "description": "Enum to specify the type of matching criteria.\n\n - UNSPECIFIED: Default value indicating no specific criteria set. This will be treated as an error.\n - SUFFIX: Matches if the target ends with the specified value.\n - PREFIX: Matches if the target starts with the specified value.\n - EXACT: Matches if the target is an exact match with the specified value.\n - REGEX: For example, the normal user is kamal.murali@andromedasecurity.com and the privileged user is\n“su-kamal.murali@andromedasecurity.com”. In this case after you remove the prefix, the username\nis an exact match to the HI username. The normal user is kamal.murali@andromedasecurity.com and\nthe privileged user is “su-kmurali@andromedasecurity.com” . Now we need to form the privileged\nuser username using first letter of first name appended with last name with a prefix of “su-”"
+      "description": "Enum to specify the type of matching criteria.\n\n - UNSPECIFIED: Default value indicating no specific criteria set. This will be treated as an error.\n - SUFFIX: Matches if the target ends with the specified value.\n - PREFIX: Matches if the target starts with the specified value.\n - EXACT: Matches if the target is an exact match with the specified value.\n - REGEX: For example, the normal user is kamal.murali@andromedasecurity.com and the privileged user is\n\u201csu-kamal.murali@andromedasecurity.com\u201d. In this case after you remove the prefix, the username\nis an exact match to the HI username. The normal user is kamal.murali@andromedasecurity.com and\nthe privileged user is \u201csu-kmurali@andromedasecurity.com\u201d . Now we need to form the privileged\nuser username using first letter of first name appended with last name with a prefix of \u201csu-\u201d"
     },
     "configPingIdentityAuthConfig": {
       "type": "object",
@@ -29427,7 +28356,7 @@
             "type": "object",
             "$ref": "#/definitions/configProviderObjMapping"
           },
-          "title": "Mapping of provider specific terms to andromeda model\nEg. Account -\u003e Subscription, Provider -\u003e Organization\nit only lists overrides. default is the andromeda model type"
+          "title": "Mapping of provider specific terms to andromeda model\nEg. Account -> Subscription, Provider -> Organization\nit only lists overrides. default is the andromeda model type"
         },
         "riskSupported": {
           "type": "boolean",
@@ -29579,7 +28508,7 @@
         },
         "uploadBucketName": {
           "type": "string",
-          "title": "intermediary transformed data are uploaded to \u003cupload_bucket\u003e/\u003cprefix\u003e/accountId/region/yyyy/mm/dd/"
+          "title": "intermediary transformed data are uploaded to <upload_bucket>/<prefix>/accountId/region/yyyy/mm/dd/"
         },
         "uploadBucketRegion": {
           "type": "string"
@@ -30200,11 +29129,11 @@
         },
         "trackIdentityAccessGained": {
           "type": "boolean",
-          "title": "HI/NHI got access to a resource (\"Records are modified \u003e HI/NHI got access\")"
+          "title": "HI/NHI got access to a resource (\"Records are modified > HI/NHI got access\")"
         },
         "trackIdentityAccessLost": {
           "type": "boolean",
-          "title": "HI/NHI lost access to a resource (\"Records are modified \u003e HI/NHI lost access\")"
+          "title": "HI/NHI lost access to a resource (\"Records are modified > HI/NHI lost access\")"
         },
         "notificationConfig": {
           "$ref": "#/definitions/configExplorerViewNotificationConfig",
@@ -31719,7 +30648,7 @@
             "type": "object",
             "$ref": "#/definitions/configKeyValue"
           },
-          "title": "Use with MAP\nmap\u003cstring, string\u003e value_map = 10;"
+          "title": "Use with MAP\nmap<string, string> value_map = 10;"
         },
         "replaceValue": {
           "type": "string",
@@ -31745,7 +30674,7 @@
             "type": "object",
             "$ref": "#/definitions/configHrTypeKeyValue"
           },
-          "title": "Use with MAP\nmap\u003cstring, string\u003e value_map = 10;"
+          "title": "Use with MAP\nmap<string, string> value_map = 10;"
         },
         "assignValue": {
           "$ref": "#/definitions/configHrType"
@@ -32403,7 +31332,7 @@
         "significantGapsCount": {
           "type": "integer",
           "format": "int32",
-          "title": "significant_gaps_count is the count of gaps \u003e= threshold"
+          "title": "significant_gaps_count is the count of gaps >= threshold"
         },
         "patternReasoning": {
           "type": "string",
@@ -33677,7 +32606,7 @@
           "description": "The explicit buckets."
         }
       },
-      "description": "`BucketOptions` describes the bucket boundaries used to create a histogram\nfor the distribution. The buckets can be in a linear sequence, an\nexponential sequence, or each bucket can be specified explicitly.\n`BucketOptions` does not include the number of values in each bucket.\n\nA bucket has an inclusive lower bound and exclusive upper bound for the\nvalues that are counted for that bucket. The upper bound of a bucket must\nbe strictly greater than the lower bound. The sequence of N buckets for a\ndistribution consists of an underflow bucket (number 0), zero or more\nfinite buckets (number 1 through N - 2) and an overflow bucket (number N -\n1). The buckets are contiguous: the lower bound of bucket i (i \u003e 0) is the\nsame as the upper bound of bucket i - 1. The buckets span the whole range\nof finite values: lower bound of the underflow bucket is -infinity and the\nupper bound of the overflow bucket is +infinity. The finite buckets are\nso-called because both bounds are finite."
+      "description": "`BucketOptions` describes the bucket boundaries used to create a histogram\nfor the distribution. The buckets can be in a linear sequence, an\nexponential sequence, or each bucket can be specified explicitly.\n`BucketOptions` does not include the number of values in each bucket.\n\nA bucket has an inclusive lower bound and exclusive upper bound for the\nvalues that are counted for that bucket. The upper bound of a bucket must\nbe strictly greater than the lower bound. The sequence of N buckets for a\ndistribution consists of an underflow bucket (number 0), zero or more\nfinite buckets (number 1 through N - 2) and an overflow bucket (number N -\n1). The buckets are contiguous: the lower bound of bucket i (i > 0) is the\nsame as the upper bound of bucket i - 1. The buckets span the whole range\nof finite values: lower bound of the underflow bucket is -infinity and the\nupper bound of the overflow bucket is +infinity. The finite buckets are\nso-called because both bounds are finite."
     },
     "graphCampaignOwnersData": {
       "type": "object",
@@ -34120,7 +33049,7 @@
           "description": "The values must be monotonically increasing."
         }
       },
-      "description": "Specifies a set of buckets with arbitrary widths.\n\nThere are `size(bounds) + 1` (= N) buckets. Bucket `i` has the following\nboundaries:\n\n   Upper bound (0 \u003c= i \u003c N-1):     bounds[i]\n   Lower bound (1 \u003c= i \u003c N);       bounds[i - 1]\n\nThe `bounds` field must contain at least one element. If `bounds` has\nonly one element, then there are no finite buckets, and that single\nelement is the common boundary of the overflow and underflow buckets."
+      "description": "Specifies a set of buckets with arbitrary widths.\n\nThere are `size(bounds) + 1` (= N) buckets. Bucket `i` has the following\nboundaries:\n\n   Upper bound (0 <= i < N-1):     bounds[i]\n   Lower bound (1 <= i < N);       bounds[i - 1]\n\nThe `bounds` field must contain at least one element. If `bounds` has\nonly one element, then there are no finite buckets, and that single\nelement is the common boundary of the overflow and underflow buckets."
     },
     "graphExponential": {
       "type": "object",
@@ -34141,7 +33070,7 @@
           "description": "Must be greater than 0."
         }
       },
-      "description": "Specifies an exponential sequence of buckets that have a width that is\nproportional to the value of the lower bound. Each bucket represents a\nconstant relative uncertainty on a specific value in the bucket.\n\nThere are `num_finite_buckets + 2` (= N) buckets. Bucket `i` has the\nfollowing boundaries:\n\n   Upper bound (0 \u003c= i \u003c N-1):     scale * (growth_factor ^ i).\n\n   Lower bound (1 \u003c= i \u003c N):       scale * (growth_factor ^ (i - 1))."
+      "description": "Specifies an exponential sequence of buckets that have a width that is\nproportional to the value of the lower bound. Each bucket represents a\nconstant relative uncertainty on a specific value in the bucket.\n\nThere are `num_finite_buckets + 2` (= N) buckets. Bucket `i` has the\nfollowing boundaries:\n\n   Upper bound (0 <= i < N-1):     scale * (growth_factor ^ i).\n\n   Lower bound (1 <= i < N):       scale * (growth_factor ^ (i - 1))."
     },
     "graphFilterCollection": {
       "type": "object",
@@ -36591,7 +35520,7 @@
         },
         "reviewRequestData": {
           "$ref": "#/definitions/graphIdentityReviewRequestDataConnection",
-          "title": "TODO (AS-7384) deprecate this field once UI app / tests have\nbeen moved to use Identities -\u003e ReviewRequestData"
+          "title": "TODO (AS-7384) deprecate this field once UI app / tests have\nbeen moved to use Identities -> ReviewRequestData"
         },
         "authType": {
           "$ref": "#/definitions/configProviderAuthType"
@@ -37456,7 +36385,7 @@
           "description": "Lower bound of the first bucket."
         }
       },
-      "description": "Specifies a linear sequence of buckets that all have the same width\n(except overflow and underflow). Each bucket represents a constant\nabsolute uncertainty on the specific value in the bucket.\n\nThere are `num_finite_buckets + 2` (= N) buckets. Bucket `i` has the\nfollowing boundaries:\n\n   Upper bound (0 \u003c= i \u003c N-1):     offset + (width * i).\n\n   Lower bound (1 \u003c= i \u003c N):       offset + (width * (i - 1))."
+      "description": "Specifies a linear sequence of buckets that all have the same width\n(except overflow and underflow). Each bucket represents a constant\nabsolute uncertainty on the specific value in the bucket.\n\nThere are `num_finite_buckets + 2` (= N) buckets. Bucket `i` has the\nfollowing boundaries:\n\n   Upper bound (0 <= i < N-1):     offset + (width * i).\n\n   Lower bound (1 <= i < N):       offset + (width * (i - 1))."
     },
     "graphListAccountsSortedByRiskResponse": {
       "type": "object",
@@ -39507,7 +38436,7 @@
         },
         "providerType": {
           "$ref": "#/definitions/modelsconfigProviderType",
-          "title": "TODO AS-3963\nProvider Type as well. This will be useful for filtering.\nTODO(P0) AS-3963\nRole object the incoming trust -\u003e principal== group,"
+          "title": "TODO AS-3963\nProvider Type as well. This will be useful for filtering.\nTODO(P0) AS-3963\nRole object the incoming trust -> principal== group,"
         },
         "activities": {
           "$ref": "#/definitions/graphActivitiesConnection"
@@ -42404,7 +41333,7 @@
         "CONDITIONAL_CREATE"
       ],
       "default": "BLIND_MERGE",
-      "description": "- BLIND_MERGE: This creates MERGE…SET for each object in the array\nThis is the default (also, v1) strategy\n - CONDITIONAL_MERGE: Conditional MERGE does a MATCH for the object and properties\nif no match is found, it does a MERGE…SET\n - CONDITIONAL_CREATE: Conditional CREATE does a match for the object and properties\nif object exists but with different property set, it does a MATCH…SET\nif object doesn’t exist, it does a CREATE…SET",
+      "description": "- BLIND_MERGE: This creates MERGE\u2026SET for each object in the array\nThis is the default (also, v1) strategy\n - CONDITIONAL_MERGE: Conditional MERGE does a MATCH for the object and properties\nif no match is found, it does a MERGE\u2026SET\n - CONDITIONAL_CREATE: Conditional CREATE does a match for the object and properties\nif object exists but with different property set, it does a MATCH\u2026SET\nif object doesn\u2019t exist, it does a CREATE\u2026SET",
       "title": "GraphDatagramArrayUpsertStrategy is the strategy to generate UPSERT instructions"
     },
     "nonpublicGraphDatagramRequestType": {
@@ -43791,7 +42720,7 @@
           "items": {
             "type": "string"
           },
-          "description": "Avoid using this field for user merge signal,\n currently used for only special cases like IDP -\u003e Github/Atlas."
+          "description": "Avoid using this field for user merge signal,\n currently used for only special cases like IDP -> Github/Atlas."
         },
         "profileName": {
           "type": "string"
@@ -44542,7 +43471,7 @@
         },
         "sync": {
           "type": "boolean",
-          "description": "When true, knot uses the synchronous Execute RPC: the remote service runs\nthe method and returns, and knot manages state locally via goroutines/channels.\nWhen false (default), knot uses the legacy async pattern:\nStartExecution → poll GetExecutionStatus → CancelExecution."
+          "description": "When true, knot uses the synchronous Execute RPC: the remote service runs\nthe method and returns, and knot manages state locally via goroutines/channels.\nWhen false (default), knot uses the legacy async pattern:\nStartExecution \u2192 poll GetExecutionStatus \u2192 CancelExecution."
         }
       },
       "description": "GrpcInvocation defines the configuration for invoking a remote service via\nthe ExecutionService gRPC contract (andromeda.nonpublic.orchestrator.ExecutionService)."
@@ -44577,7 +43506,7 @@
         },
         "jobName": {
           "type": "string",
-          "title": "Populated after the Job is created — used for tracking across knot restarts",
+          "title": "Populated after the Job is created \u2014 used for tracking across knot restarts",
           "readOnly": true
         },
         "jobUid": {
@@ -44596,7 +43525,7 @@
           "description": "Name of the CronJob (e.g., \"lsp-eps\"). Must exist in the target namespace."
         }
       },
-      "description": "KubernetesJobFromCronJob sources the Job spec from an existing CronJob.\nThe CronJob should be deployed via Helm with suspend: true so it acts\npurely as a template — knot controls when Jobs are created."
+      "description": "KubernetesJobFromCronJob sources the Job spec from an existing CronJob.\nThe CronJob should be deployed via Helm with suspend: true so it acts\npurely as a template \u2014 knot controls when Jobs are created."
     },
     "orchestratorKubernetesJobInline": {
       "type": "object",
@@ -44707,7 +43636,7 @@
         "maxExecutions": {
           "type": "string",
           "format": "int64",
-          "title": "Maximum number of times this schedule should execute\n0 or NULL = unlimited executions (default for recurring schedules)\n\u003e 0 = schedule will stop after this many executions\nExample: Set to 7 for a daily backup that runs for one week\nWorks with execution_count to track progress"
+          "title": "Maximum number of times this schedule should execute\n0 or NULL = unlimited executions (default for recurring schedules)\n> 0 = schedule will stop after this many executions\nExample: Set to 7 for a daily backup that runs for one week\nWorks with execution_count to track progress"
         },
         "executionCount": {
           "type": "string",
@@ -44831,7 +43760,7 @@
         },
         "consumeDependencyResults": {
           "type": "boolean",
-          "description": "When true, knot collects results from dependency tasks\nand injects them into this task's invocation args as DependencyResult_\u003ctask_name\u003e keys."
+          "description": "When true, knot collects results from dependency tasks\nand injects them into this task's invocation args as DependencyResult_<task_name> keys."
         },
         "timeRangeAware": {
           "type": "boolean",
@@ -45384,7 +44313,7 @@
         }
       },
       "additionalProperties": {},
-      "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(\u0026foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n    // or ...\n    if (any.isSameTypeAs(Foo.getDefaultInstance())) {\n      foo = any.unpack(Foo.getDefaultInstance());\n    }\n\n Example 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\n Example 4: Pack and unpack a message in Go\n\n     foo := \u0026pb.Foo{...}\n     any, err := anypb.New(foo)\n     if err != nil {\n       ...\n     }\n     ...\n     foo := \u0026pb.Foo{}\n     if err := any.UnmarshalTo(foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\nJSON\n====\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": \u003cstring\u003e,\n      \"lastName\": \u003cstring\u003e\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
+      "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(&foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n    // or ...\n    if (any.isSameTypeAs(Foo.getDefaultInstance())) {\n      foo = any.unpack(Foo.getDefaultInstance());\n    }\n\n Example 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\n Example 4: Pack and unpack a message in Go\n\n     foo := &pb.Foo{...}\n     any, err := anypb.New(foo)\n     if err != nil {\n       ...\n     }\n     ...\n     foo := &pb.Foo{}\n     if err := any.UnmarshalTo(foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\nJSON\n====\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": <string>,\n      \"lastName\": <string>\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
     },
     "protobufNullValue": {
       "type": "string",
