@@ -253,6 +253,19 @@ def list_trivial_fields_ProviderFeatures(ds: DSLSchema):
         ds.ProviderFeatures.supportedRecommendationTypes,
         ds.ProviderFeatures.superAdminSupported,
     )
+def list_trivial_fields_JmlCapabilities(ds: DSLSchema):
+    """ List all trivial fields of the JmlCapabilities type """
+    return (
+        ds.JmlCapabilities.userSyncSupported,
+        ds.JmlCapabilities.deactivateUserSupported,
+        ds.JmlCapabilities.deleteUserSupported,
+    )
+def list_trivial_fields_BrokerFeatures(ds: DSLSchema):
+    """ List all trivial fields of the BrokerFeatures type """
+    return (
+        ds.BrokerFeatures.brokerSupported,
+        ds.BrokerFeatures.supportedAndromedaModes,
+    )
 
 # End of file: andromeda/api/models/config/provider_features.proto
 
@@ -754,6 +767,12 @@ def list_trivial_fields_CampaignSnapshotReviewReviewerTrail(ds: DSLSchema):
         ds.CampaignSnapshotReviewReviewerTrail.processedAt,
         ds.CampaignSnapshotReviewReviewerTrail.level,
     )
+def list_trivial_fields_UarEligibilityData(ds: DSLSchema):
+    """ List all trivial fields of the UarEligibilityData type """
+    return (
+        ds.UarEligibilityData.eligibilityIds,
+        ds.UarEligibilityData.eligibilityType,
+    )
 def list_trivial_fields_UarAssetData(ds: DSLSchema):
     """ List all trivial fields of the UarAssetData type """
     return (
@@ -813,6 +832,11 @@ def list_trivial_fields_ReassignReviewActionData(ds: DSLSchema):
         ds.ReassignReviewActionData.reassignedReviewerId,
         ds.ReassignReviewActionData.id,
         ds.ReassignReviewActionData.totalReassignedCount,
+    )
+def list_trivial_fields_ChangeAssetOwnerActionData(ds: DSLSchema):
+    """ List all trivial fields of the ChangeAssetOwnerActionData type """
+    return (
+        ds.ChangeAssetOwnerActionData.newOwnerIdentityId,
     )
 def list_trivial_fields_AccessReviewAiAnalysisCheck(ds: DSLSchema):
     """ List all trivial fields of the AccessReviewAiAnalysisCheck type """
@@ -903,6 +927,25 @@ def list_trivial_fields_Permission(ds: DSLSchema):
 
 # End of file: andromeda/nonpublic/kuiper.proto
 
+# File: andromeda/nonpublic/graph/ispm_dashboard_widget_config_service.proto
+def list_trivial_fields_IspmDashboardWidgetConfigConnection(ds: DSLSchema):
+    """ List all trivial fields of the IspmDashboardWidgetConfigConnection type """
+    return (
+    )
+def list_trivial_fields_IspmDashboardWidgetConfigEdge(ds: DSLSchema):
+    """ List all trivial fields of the IspmDashboardWidgetConfigEdge type """
+    return (
+    )
+def list_trivial_fields_IspmDashboardWidgetConfigNode(ds: DSLSchema):
+    """ List all trivial fields of the IspmDashboardWidgetConfigNode type """
+    return (
+        ds.IspmDashboardWidgetConfigNode.id,
+        ds.IspmDashboardWidgetConfigNode.explorerViewId,
+        ds.IspmDashboardWidgetConfigNode.widgetType,
+    )
+
+# End of file: andromeda/nonpublic/graph/ispm_dashboard_widget_config_service.proto
+
 # File: andromeda/nonpublic/graph/inventory_resources_trigger_service.proto
 def list_trivial_fields_InventoryResourceStatusResponse(ds: DSLSchema):
     """ List all trivial fields of the InventoryResourceStatusResponse type """
@@ -925,6 +968,99 @@ def list_trivial_fields_InventoryResourceStatus(ds: DSLSchema):
     )
 
 # End of file: andromeda/nonpublic/graph/inventory_resources_trigger_service.proto
+
+# File: andromeda/nonpublic/graph/jml_service.proto
+def list_trivial_fields_JmlPolicyRuntimeConnection(ds: DSLSchema):
+    """ List all trivial fields of the JmlPolicyRuntimeConnection type """
+    return (
+    )
+def list_trivial_fields_JmlPolicyRuntimeEdge(ds: DSLSchema):
+    """ List all trivial fields of the JmlPolicyRuntimeEdge type """
+    return (
+    )
+def list_trivial_fields_TriggerSpecificationNode(ds: DSLSchema):
+    """ List all trivial fields of the TriggerSpecificationNode type """
+    return (
+        ds.TriggerSpecificationNode.eventType,
+        ds.TriggerSpecificationNode.providerId,
+        ds.TriggerSpecificationNode.userId,
+    )
+def list_trivial_fields_JmlPolicyRuntimeNode(ds: DSLSchema):
+    """ List all trivial fields of the JmlPolicyRuntimeNode type """
+    return (
+        ds.JmlPolicyRuntimeNode.id,
+        ds.JmlPolicyRuntimeNode.jmlPolicyId,
+    )
+def list_trivial_fields_JmlRuleRuntimeEdge(ds: DSLSchema):
+    """ List all trivial fields of the JmlRuleRuntimeEdge type """
+    return (
+    )
+def list_trivial_fields_JmlRuleRuntimeNode(ds: DSLSchema):
+    """ List all trivial fields of the JmlRuleRuntimeNode type """
+    return (
+        ds.JmlRuleRuntimeNode.id,
+        ds.JmlRuleRuntimeNode.jmlRuleId,
+    )
+def list_trivial_fields_JmlActionRuntimeEdge(ds: DSLSchema):
+    """ List all trivial fields of the JmlActionRuntimeEdge type """
+    return (
+    )
+def list_trivial_fields_DeactivateUserActionRuntime(ds: DSLSchema):
+    """ List all trivial fields of the DeactivateUserActionRuntime type """
+    return (
+    )
+def list_trivial_fields_AllProvidersTargetRuntime(ds: DSLSchema):
+    """ List all trivial fields of the AllProvidersTargetRuntime type """
+    return (
+        ds.AllProvidersTargetRuntime.allProviders,
+    )
+def list_trivial_fields_AllExceptProvidersRuntime(ds: DSLSchema):
+    """ List all trivial fields of the AllExceptProvidersRuntime type """
+    return (
+        ds.AllExceptProvidersRuntime.providerIds,
+    )
+def list_trivial_fields_SpecificProvidersRuntime(ds: DSLSchema):
+    """ List all trivial fields of the SpecificProvidersRuntime type """
+    return (
+        ds.SpecificProvidersRuntime.providerIds,
+    )
+def list_trivial_fields_CreateStandingAssignmentUsingAccessBundleActionRuntime(ds: DSLSchema):
+    """ List all trivial fields of the CreateStandingAssignmentUsingAccessBundleActionRuntime type """
+    return (
+        ds.CreateStandingAssignmentUsingAccessBundleActionRuntime.accessBundleId,
+        ds.CreateStandingAssignmentUsingAccessBundleActionRuntime.overrideProfileId,
+        ds.CreateStandingAssignmentUsingAccessBundleActionRuntime.justification,
+    )
+def list_trivial_fields_RunJmlRulesActionRuntime(ds: DSLSchema):
+    """ List all trivial fields of the RunJmlRulesActionRuntime type """
+    return (
+        ds.RunJmlRulesActionRuntime.ruleIds,
+    )
+def list_trivial_fields_CreateUserInProviderActionRuntime(ds: DSLSchema):
+    """ List all trivial fields of the CreateUserInProviderActionRuntime type """
+    return (
+        ds.CreateUserInProviderActionRuntime.providerId,
+    )
+def list_trivial_fields_CreateEligibilityActionRuntime(ds: DSLSchema):
+    """ List all trivial fields of the CreateEligibilityActionRuntime type """
+    return (
+        ds.CreateEligibilityActionRuntime.accessBundleId,
+        ds.CreateEligibilityActionRuntime.overrideProfileId,
+        ds.CreateEligibilityActionRuntime.justification,
+    )
+def list_trivial_fields_JmlActionRuntimeNode(ds: DSLSchema):
+    """ List all trivial fields of the JmlActionRuntimeNode type """
+    return (
+        ds.JmlActionRuntimeNode.id,
+        ds.JmlActionRuntimeNode.userId,
+        ds.JmlActionRuntimeNode.actionType,
+        ds.JmlActionRuntimeNode.dependsOnRuleRuntimeIds,
+        ds.JmlActionRuntimeNode.status,
+        ds.JmlActionRuntimeNode.startedAt,
+        ds.JmlActionRuntimeNode.completedAt,
+    )
+
+# End of file: andromeda/nonpublic/graph/jml_service.proto
 
 # File: andromeda/nonpublic/graph/sink_configuration.proto
 def list_trivial_fields_SinkDetailsMessage(ds: DSLSchema):
@@ -1077,17 +1213,6 @@ def list_trivial_fields_AccountPolicyDataEdge(ds: DSLSchema):
     """ List all trivial fields of the AccountPolicyDataEdge type """
     return (
     )
-def list_trivial_fields_PrincipalTrustData(ds: DSLSchema):
-    """ List all trivial fields of the PrincipalTrustData type """
-    return (
-        ds.PrincipalTrustData.type,
-        ds.PrincipalTrustData.sourceAccountCount,
-        ds.PrincipalTrustData.crossAccountCount,
-    )
-def list_trivial_fields_PolicyIncomingTrustsSummary(ds: DSLSchema):
-    """ List all trivial fields of the PolicyIncomingTrustsSummary type """
-    return (
-    )
 def list_trivial_fields_PolicyOutgoingTrustsSummary(ds: DSLSchema):
     """ List all trivial fields of the PolicyOutgoingTrustsSummary type """
     return (
@@ -1166,6 +1291,7 @@ def list_trivial_fields_AccountPolicyUserResolvedAssignment(ds: DSLSchema):
         ds.AccountPolicyUserResolvedAssignment.principalUsername,
         ds.AccountPolicyUserResolvedAssignment.principalType,
         ds.AccountPolicyUserResolvedAssignment.policyType,
+        ds.AccountPolicyUserResolvedAssignment.blastRisk,
         ds.AccountPolicyUserResolvedAssignment.blastRiskLevel,
     )
 def list_trivial_fields_ResourcesDataConnection(ds: DSLSchema):
@@ -1405,6 +1531,12 @@ def list_trivial_fields_GroupEligibilityData(ds: DSLSchema):
     """ List all trivial fields of the GroupEligibilityData type """
     return (
     )
+def list_trivial_fields_AccessGroupPatternMatchData(ds: DSLSchema):
+    """ List all trivial fields of the AccessGroupPatternMatchData type """
+    return (
+        ds.AccessGroupPatternMatchData.matchType,
+        ds.AccessGroupPatternMatchData.pattern,
+    )
 def list_trivial_fields_ProviderEligibilityData(ds: DSLSchema):
     """ List all trivial fields of the ProviderEligibilityData type """
     return (
@@ -1459,6 +1591,79 @@ def list_trivial_fields_Distribution(ds: DSLSchema):
     )
 
 # End of file: andromeda/nonpublic/graph/distribution.proto
+
+# File: andromeda/nonpublic/graph/explorer_drifts_service.proto
+def list_trivial_fields_ExplorerDriftComparisonData(ds: DSLSchema):
+    """ List all trivial fields of the ExplorerDriftComparisonData type """
+    return (
+    )
+def list_trivial_fields_ExplorerDriftConnection(ds: DSLSchema):
+    """ List all trivial fields of the ExplorerDriftConnection type """
+    return (
+    )
+def list_trivial_fields_ExplorerDriftEdge(ds: DSLSchema):
+    """ List all trivial fields of the ExplorerDriftEdge type """
+    return (
+    )
+def list_trivial_fields_ExplorerDriftNode(ds: DSLSchema):
+    """ List all trivial fields of the ExplorerDriftNode type """
+    return (
+        ds.ExplorerDriftNode.id,
+        ds.ExplorerDriftNode.driftName,
+        ds.ExplorerDriftNode.createdAt,
+    )
+def list_trivial_fields_ExplorerDriftModificationConnection(ds: DSLSchema):
+    """ List all trivial fields of the ExplorerDriftModificationConnection type """
+    return (
+    )
+def list_trivial_fields_ResourceDriftModificationData(ds: DSLSchema):
+    """ List all trivial fields of the ResourceDriftModificationData type """
+    return (
+        ds.ResourceDriftModificationData.modificationType,
+    )
+def list_trivial_fields_ExplorerDriftViewSummary(ds: DSLSchema):
+    """ List all trivial fields of the ExplorerDriftViewSummary type """
+    return (
+        ds.ExplorerDriftViewSummary.totalCount,
+        ds.ExplorerDriftViewSummary.addedCount,
+        ds.ExplorerDriftViewSummary.removedCount,
+        ds.ExplorerDriftViewSummary.modifiedCount,
+    )
+def list_trivial_fields_ResourceHumanAccessDriftConnection(ds: DSLSchema):
+    """ List all trivial fields of the ResourceHumanAccessDriftConnection type """
+    return (
+    )
+def list_trivial_fields_ResourceHumanAccessDriftEdge(ds: DSLSchema):
+    """ List all trivial fields of the ResourceHumanAccessDriftEdge type """
+    return (
+        ds.ResourceHumanAccessDriftEdge.modificationType,
+    )
+def list_trivial_fields_ResourceNhiAccessDriftConnection(ds: DSLSchema):
+    """ List all trivial fields of the ResourceNhiAccessDriftConnection type """
+    return (
+    )
+def list_trivial_fields_ResourceNhiAccessDriftEdge(ds: DSLSchema):
+    """ List all trivial fields of the ResourceNhiAccessDriftEdge type """
+    return (
+        ds.ResourceNhiAccessDriftEdge.modificationType,
+    )
+def list_trivial_fields_ResourceAgentAccessDriftConnection(ds: DSLSchema):
+    """ List all trivial fields of the ResourceAgentAccessDriftConnection type """
+    return (
+    )
+def list_trivial_fields_ResourceAgentAccessDriftEdge(ds: DSLSchema):
+    """ List all trivial fields of the ResourceAgentAccessDriftEdge type """
+    return (
+        ds.ResourceAgentAccessDriftEdge.modificationType,
+    )
+def list_trivial_fields_ResourceAccessDriftEdgeSummary(ds: DSLSchema):
+    """ List all trivial fields of the ResourceAccessDriftEdgeSummary type """
+    return (
+        ds.ResourceAccessDriftEdgeSummary.addedCount,
+        ds.ResourceAccessDriftEdgeSummary.removedCount,
+    )
+
+# End of file: andromeda/nonpublic/graph/explorer_drifts_service.proto
 
 # File: andromeda/nonpublic/graph/favorites_service.proto
 def list_trivial_fields_FavoriteAccessRequestTemplateConnection(ds: DSLSchema):
@@ -1671,6 +1876,9 @@ def list_trivial_fields_Activity(ds: DSLSchema):
         ds.Activity.policyName,
         ds.Activity.accessType,
         ds.Activity.userId,
+        ds.Activity.identityId,
+        ds.Activity.identityName,
+        ds.Activity.identityType,
     )
 def list_trivial_fields_KnownLocation(ds: DSLSchema):
     """ List all trivial fields of the KnownLocation type """
@@ -1926,6 +2134,7 @@ def list_trivial_fields_AccessKeyData(ds: DSLSchema):
         ds.AccessKeyData.keyRotationPastDueDays,
         ds.AccessKeyData.status,
         ds.AccessKeyData.keyRotationDueAt,
+        ds.AccessKeyData.expiresAt,
         ds.AccessKeyData.identityOriginType,
         ds.AccessKeyData.keyType,
     )
@@ -2735,22 +2944,6 @@ def list_trivial_fields_PrincipalData(ds: DSLSchema):
         ds.PrincipalData.idInOrigin,
         ds.PrincipalData.identityId,
     )
-def list_trivial_fields_TrustEdges(ds: DSLSchema):
-    """ List all trivial fields of the TrustEdges type """
-    return (
-        ds.TrustEdges.type,
-        ds.TrustEdges.policyBindingType,
-        ds.TrustEdges.isAndromedaManaged,
-        ds.TrustEdges.status,
-    )
-def list_trivial_fields_IncomingTrustEdge(ds: DSLSchema):
-    """ List all trivial fields of the IncomingTrustEdge type """
-    return (
-    )
-def list_trivial_fields_IncomingTrustsConnection(ds: DSLSchema):
-    """ List all trivial fields of the IncomingTrustsConnection type """
-    return (
-    )
 def list_trivial_fields_OutgoingTrust(ds: DSLSchema):
     """ List all trivial fields of the OutgoingTrust type """
     return (
@@ -2836,7 +3029,6 @@ def list_trivial_fields_EligibleUsersEdge(ds: DSLSchema):
 def list_trivial_fields_AccessRequestBundleData(ds: DSLSchema):
     """ List all trivial fields of the AccessRequestBundleData type """
     return (
-        ds.AccessRequestBundleData.totalCount,
     )
 def list_trivial_fields_AccessRequestBundleAccessItemConnection(ds: DSLSchema):
     """ List all trivial fields of the AccessRequestBundleAccessItemConnection type """
@@ -3417,23 +3609,23 @@ def list_trivial_fields_SpecificProviders(ds: DSLSchema):
     """ List all trivial fields of the SpecificProviders type """
     return (
     )
-def list_trivial_fields_DeactivateUserActionData(ds: DSLSchema):
-    """ List all trivial fields of the DeactivateUserActionData type """
+def list_trivial_fields_DeactivateUserActionGraph(ds: DSLSchema):
+    """ List all trivial fields of the DeactivateUserActionGraph type """
     return (
     )
-def list_trivial_fields_CreateStandingAccessToAccessBundleAction(ds: DSLSchema):
-    """ List all trivial fields of the CreateStandingAccessToAccessBundleAction type """
+def list_trivial_fields_CreateStandingAssignmentUsingAccessBundleActionGraph(ds: DSLSchema):
+    """ List all trivial fields of the CreateStandingAssignmentUsingAccessBundleActionGraph type """
     return (
-        ds.CreateStandingAccessToAccessBundleAction.justification,
+        ds.CreateStandingAssignmentUsingAccessBundleActionGraph.justification,
     )
-def list_trivial_fields_RunJmlRulesAction(ds: DSLSchema):
-    """ List all trivial fields of the RunJmlRulesAction type """
+def list_trivial_fields_RunJmlRulesActionGraph(ds: DSLSchema):
+    """ List all trivial fields of the RunJmlRulesActionGraph type """
     return (
     )
-def list_trivial_fields_CreateEligibilityAction(ds: DSLSchema):
-    """ List all trivial fields of the CreateEligibilityAction type """
+def list_trivial_fields_CreateEligibilityActionGraph(ds: DSLSchema):
+    """ List all trivial fields of the CreateEligibilityActionGraph type """
     return (
-        ds.CreateEligibilityAction.justification,
+        ds.CreateEligibilityActionGraph.justification,
     )
 def list_trivial_fields_JmlRuleActionData(ds: DSLSchema):
     """ List all trivial fields of the JmlRuleActionData type """
@@ -3778,6 +3970,12 @@ def list_trivial_fields_AccessReview(ds: DSLSchema):
         ds.AccessReview.originalReviewerAssignmentReason,
         ds.AccessReview.hrType,
         ds.AccessReview.department,
+    )
+def list_trivial_fields_ChangeAssetOwnerActionDisplayData(ds: DSLSchema):
+    """ List all trivial fields of the ChangeAssetOwnerActionDisplayData type """
+    return (
+        ds.ChangeAssetOwnerActionDisplayData.newOwnerIdentityId,
+        ds.ChangeAssetOwnerActionDisplayData.reason,
     )
 def list_trivial_fields_AccessReviewLevelledReviewerDetails(ds: DSLSchema):
     """ List all trivial fields of the AccessReviewLevelledReviewerDetails type """
@@ -4988,6 +5186,7 @@ def list_trivial_fields_ProviderAccessKeyData(ds: DSLSchema):
         ds.ProviderAccessKeyData.providerId,
         ds.ProviderAccessKeyData.accountId,
         ds.ProviderAccessKeyData.keyType,
+        ds.ProviderAccessKeyData.expiresAt,
     )
 def list_trivial_fields_ProviderAccessKeysConnection(ds: DSLSchema):
     """ List all trivial fields of the ProviderAccessKeysConnection type """
@@ -5137,6 +5336,7 @@ def list_trivial_fields_ProviderScopeData(ds: DSLSchema):
     return (
         ds.ProviderScopeData.name,
         ds.ProviderScopeData.id,
+        ds.ProviderScopeData.externalId,
         ds.ProviderScopeData.type,
         ds.ProviderScopeData.isInherited,
     )
@@ -5145,6 +5345,7 @@ def list_trivial_fields_FolderScopeData(ds: DSLSchema):
     return (
         ds.FolderScopeData.name,
         ds.FolderScopeData.id,
+        ds.FolderScopeData.externalId,
         ds.FolderScopeData.isInherited,
         ds.FolderScopeData.type,
     )
@@ -5166,6 +5367,7 @@ def list_trivial_fields_AccountScopeData(ds: DSLSchema):
     return (
         ds.AccountScopeData.name,
         ds.AccountScopeData.id,
+        ds.AccountScopeData.externalId,
         ds.AccountScopeData.isInherited,
         ds.AccountScopeData.type,
     )
@@ -5174,6 +5376,7 @@ def list_trivial_fields_ResourceGroupScopeData(ds: DSLSchema):
     return (
         ds.ResourceGroupScopeData.name,
         ds.ResourceGroupScopeData.id,
+        ds.ResourceGroupScopeData.externalId,
         ds.ResourceGroupScopeData.isInherited,
         ds.ResourceGroupScopeData.type,
     )
@@ -5182,6 +5385,7 @@ def list_trivial_fields_GroupScopeData(ds: DSLSchema):
     return (
         ds.GroupScopeData.name,
         ds.GroupScopeData.id,
+        ds.GroupScopeData.externalId,
         ds.GroupScopeData.isInherited,
         ds.GroupScopeData.type,
     )
@@ -5477,6 +5681,7 @@ def list_trivial_fields_ExplorerView(ds: DSLSchema):
         ds.ExplorerView.description,
         ds.ExplorerView.scopeId,
         ds.ExplorerView.scopeType,
+        ds.ExplorerView.isTracked,
     )
 
 # End of file: andromeda/nonpublic/graph/explorer_view_service.proto
@@ -5649,6 +5854,7 @@ def list_trivial_fields_LocationDetail(ds: DSLSchema):
     return (
         ds.LocationDetail.city,
         ds.LocationDetail.country,
+        ds.LocationDetail.trustLevel,
     )
 def list_trivial_fields_TrustedLocationsConnection(ds: DSLSchema):
     """ List all trivial fields of the TrustedLocationsConnection type """
@@ -5670,6 +5876,7 @@ def list_trivial_fields_UnusualTravelAndErrorDetails(ds: DSLSchema):
     """ List all trivial fields of the UnusualTravelAndErrorDetails type """
     return (
         ds.UnusualTravelAndErrorDetails.erroredCountriesCount,
+        ds.UnusualTravelAndErrorDetails.erroredCountries,
         ds.UnusualTravelAndErrorDetails.anomalyMetadata,
     )
 def list_trivial_fields_AccountTakeoverEvidence(ds: DSLSchema):
@@ -5689,18 +5896,16 @@ def list_trivial_fields_ErroredCountryInfo(ds: DSLSchema):
         ds.ErroredCountryInfo.errorLogsCount,
         ds.ErroredCountryInfo.listOfTopCities,
         ds.ErroredCountryInfo.listOfTopErrors,
-        ds.ErroredCountryInfo.listOfTopActions,
+        ds.ErroredCountryInfo.listOfTopErroredActions,
         ds.ErroredCountryInfo.listOfTopProviders,
+        ds.ErroredCountryInfo.listOfTopIps,
+        ds.ErroredCountryInfo.listOfTopNonErroredActions,
         ds.ErroredCountryInfo.citiesCount,
         ds.ErroredCountryInfo.errorsCount,
-        ds.ErroredCountryInfo.actionsCount,
+        ds.ErroredCountryInfo.erroredActionsCount,
         ds.ErroredCountryInfo.providersCount,
-    )
-def list_trivial_fields_LocationInfo(ds: DSLSchema):
-    """ List all trivial fields of the LocationInfo type """
-    return (
-        ds.LocationInfo.city,
-        ds.LocationInfo.country,
+        ds.ErroredCountryInfo.ipsCount,
+        ds.ErroredCountryInfo.nonErroredActionsCount,
     )
 
 # End of file: andromeda/nonpublic/graph/models/event_evidence.proto
@@ -5719,6 +5924,29 @@ def list_trivial_fields_UsagePatternMetadata(ds: DSLSchema):
 
 # End of file: andromeda/nonpublic/galileo/assignment_metadata.proto
 
+# File: andromeda/nonpublic/secuar/jml_policy_runtime.proto
+def list_trivial_fields_ConditionGroupEvaluation(ds: DSLSchema):
+    """ List all trivial fields of the ConditionGroupEvaluation type """
+    return (
+        ds.ConditionGroupEvaluation.results,
+    )
+def list_trivial_fields_ErrorDetails(ds: DSLSchema):
+    """ List all trivial fields of the ErrorDetails type """
+    return (
+        ds.ErrorDetails.errorCode,
+        ds.ErrorDetails.errorMessage,
+        ds.ErrorDetails.stackTrace,
+        ds.ErrorDetails.timestamp,
+    )
+def list_trivial_fields_ExecutionStatus(ds: DSLSchema):
+    """ List all trivial fields of the ExecutionStatus type """
+    return (
+        ds.ExecutionStatus.status,
+        ds.ExecutionStatus.updatedAt,
+    )
+
+# End of file: andromeda/nonpublic/secuar/jml_policy_runtime.proto
+
 # File: andromeda/api/models/config/enums_derived.proto
 
 # End of file: andromeda/api/models/config/enums_derived.proto
@@ -5726,6 +5954,10 @@ def list_trivial_fields_UsagePatternMetadata(ds: DSLSchema):
 # File: andromeda/api/models/config/andromeda_broker.proto
 
 # End of file: andromeda/api/models/config/andromeda_broker.proto
+
+# File: andromeda/api/models/config/ispm_dashboard_widget_config.proto
+
+# End of file: andromeda/api/models/config/ispm_dashboard_widget_config.proto
 
 # File: andromeda/api/models/config/data_rules.proto
 
