@@ -7,6 +7,7 @@ from dataclasses import asdict
 from deepdiff import DeepDiff
 from sdk.custom_app_type1_sample.custom_app_type1_transformer import CustomAppSampleTransformer, CustomAppRoleAssignment
 from sdk.custom_app_type1_sample.custom_app_okta_bookmark import CustomAppOktaBookmarkTransformer
+from sdk.customapp.custom_app_utils import convert_to_andromeda_dict
 
 
 logger = logging.getLogger(__name__)
@@ -21,11 +22,12 @@ def test_transform_custom_type1_inventory_csv():
         inventory_file=inventory_file,
         output_dir="/tmp/customapp_export"
     )
-    inventory, errors = csv_transformer.transform()
+    errors = csv_transformer.transform()
+    inventory = csv_transformer.inventory
     assert inventory
     assert not errors, f"Errors: {errors}"
     inventory_dict = asdict(inventory)
-    inventory_dict = csv_transformer.convert_to_andromeda_dict(inventory_dict)
+    inventory_dict = convert_to_andromeda_dict(inventory_dict)
     logger.debug("Inventory %s", json.dumps(inventory_dict, indent=2))
     with open('beatles-custom-app.json', 'r', encoding="utf-8") as f:
         expected_inventory = json.load(f)
@@ -43,7 +45,8 @@ def test_inventory_invalid_permission_validation():
         output_dir="/tmp/customapp_export"
     )
     # modify the inventory to be invalid
-    inventory, errors = csv_transformer.transform()
+    errors = csv_transformer.transform()
+    inventory = csv_transformer.inventory
     assert inventory
     assert not errors, f"Errors: {errors}"
 
@@ -66,7 +69,8 @@ def test_inventory_invalid_user():
         output_dir="/tmp/customapp_export"
     )
     # modify the inventory to be invalid
-    inventory, errors = csv_transformer.transform()
+    errors = csv_transformer.transform()
+    inventory = csv_transformer.inventory
     assert inventory
     assert not errors, f"Errors: {errors}"
 
@@ -90,7 +94,8 @@ def test_inventory_invalid_assignment_validation():
     )
 
     # modify the inventory to be invalid
-    inventory, errors = csv_transformer.transform()
+    errors = csv_transformer.transform()
+    inventory = csv_transformer.inventory
     assert inventory
     assert not errors, f"Errors: {errors}"
 
@@ -120,6 +125,7 @@ def test_okta_bookmark_torq():
         output_dir="/tmp/customapp_export"
     )
         # modify the inventory to be invalid
-    inventory, errors = csv_transformer.transform()
+    errors = csv_transformer.transform()
+    inventory = csv_transformer.inventory
     assert inventory
     assert not errors, f"Errors: {errors}"

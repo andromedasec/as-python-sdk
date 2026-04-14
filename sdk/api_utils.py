@@ -559,7 +559,7 @@ class APIUtils:
             eligibility_mapping: dict) -> (int, dict):
         try:
             url = self.get_resource_url(
-                resoure_type=f"providers/{provider_id}/eligibility")
+                resoure_type=f"providers/{provider_id}/eligibilities")
             response = api_session.post(url, json=eligibility_mapping, verify=False)
             status_code, obj = response.status_code, response.json()
             return status_code, obj
@@ -720,7 +720,10 @@ class APIUtils:
             "activeDirectoryEndpoint": ad_configuration["activeDirectoryEndpoint"],
             "bindDn": ad_configuration["bindDn"],
             "baseDn": ad_configuration["baseDn"],
-            "brokers": [broker_id],
+            "brokerConfiguration": {
+                "brokerSupportedModes": ["OBSERVATION", "ENFORCEMENT"],
+                "brokers": [broker_id],
+            },
             "ldapFilters": {
                 "userFilter": ad_configuration["ldapFilters"]["userFilter"],
                 "groupFilter": ad_configuration["ldapFilters"]["groupFilter"],

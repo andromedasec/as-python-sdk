@@ -255,7 +255,7 @@ class CustomAppInventoryTransformer:
 
 class CustomAppInventoryIOHandler:
     """Handles input and output of custom application inventory data."""
-    def download_csv_from_s3(self, auth_config: dict) -> str:
+    def download_csv_from_s3(self, auth_config: dict, metadata: dict) -> str:
         """Download a CSV file from S3 and return the local file path.
 
         Requires static IAM user credentials (aws_access_key_id,
@@ -268,9 +268,9 @@ class CustomAppInventoryIOHandler:
 
         aws_access_key_id = auth_config.get("aws_access_key_id")
         aws_secret_access_key = auth_config.get("aws_secret_access_key")
-        aws_region = auth_config.get("aws_region")
-        s3_bucket = auth_config.get("s3_bucket")
-        file_path = auth_config.get("file_path")
+        aws_region = metadata.get("aws_region")
+        s3_bucket = metadata.get("s3_bucket")
+        file_path = metadata.get("file_path")
 
         missing = [
             k for k, v in {
@@ -375,6 +375,7 @@ def main() -> None:
 
     csv_path = None
     auth_config: Optional[dict] = None
+    metadata: Optional[dict] = None
 
     try:
         auth_json = os.environ.get('AS_CUSTOM_APP_AUTH_JSON', '')
@@ -383,10 +384,19 @@ def main() -> None:
             auth_config = json.loads(auth_json)
             logger.info("Auth JSON found for app: %s", args.app_name.strip())
         else:
-            logger.info("No auth JSON found for app: %s", args.app_name.strip())
+            logger.error("No auth JSON found for app: %s", args.app_name.strip())
+            raise ValueError("No auth JSON found for app: %s", args.app_name.strip())
+
+        metadata_json = os.environ.get('AS_CUSTOM_APP_METADATA', '')
+        if metadata_json:
+            metadata = json.loads(metadata_json)
+            logger.info("Metadata JSON found for app: %s", args.app_name.strip())
+        else:
+            logger.info("No metadata JSON found for app: %s", args.app_name.strip())
+            raise ValueError("No metadata JSON found for app: %s, s3 bucked name, path-to-file, aws-region is required", args.app_name.strip())
 
         io_handler = CustomAppInventoryIOHandler()
-        csv_path = io_handler.download_csv_from_s3(auth_config or {})
+        csv_path = io_handler.download_csv_from_s3(auth_config or {}, metadata or {})
 
         transformer = CustomAppInventoryTransformer()
         transformer.transform_csv(csv_path)

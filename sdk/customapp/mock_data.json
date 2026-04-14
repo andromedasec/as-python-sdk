@@ -1,4 +1,44 @@
 {
+ "groups": {
+    "Group A": {
+      "id": "Group A",
+      "memberUserIds": [
+        "chip.brown@beatles.ai",
+        "kieran.juarez@beatles.ai",
+        "devin.chapman@beatles.ai"
+      ],
+      "name": "Group A"
+    },
+    "Group B": {
+      "id": "Group B",
+      "memberUserIds": [
+        "bobbie.laundry@beatles.ai"
+      ],
+      "name": "Group B"
+    },
+    "Group C": {
+      "id": "Group C",
+      "memberUserIds": [
+        "abby.palmer@beatles.ai"
+      ],
+      "name": "Group C"
+    },
+    "Group D": {
+      "id": "Group D",
+      "memberUserIds": [
+        "john.smith@beatles.ai",
+        "jane.doe@beatles.ai"
+      ],
+      "name": "Group D"
+    },
+    "Group E": {
+      "id": "Group E",
+      "memberUserIds": [
+        "mike.richard@beatles.ai"
+      ],
+      "name": "Group E"
+    }
+  },
   "users": {
     "matt.james@beatles.ai": {
       "id": "matt.james@beatles.ai",
@@ -16,7 +56,7 @@
       "id": "matt.cooper@beatles.ai",
       "username": "matt.cooper@beatles.ai",
       "name": "Matt Cooper",
-      "status": "DEACTIVATED"
+      "status": "ENABLED"
     },
     "fred.marsh@beatles.ai": {
       "id": "fred.marsh@beatles.ai",
@@ -35,6 +75,148 @@
       "username": "samy.joseph@beatles.ai",
       "name": "Samy Joseph",
       "status": "ENABLED"
+    },
+    "hail.mary@beatles.ai": {
+      "id": "hail.mary@beatles.ai",
+      "username": "hail.mary@beatles.ai",
+      "name": "Hail Mary",
+      "status": "ENABLED"
+    },
+    "abby.palmer@beatles.ai": {
+      "hrType": "EMPLOYEE",
+      "id": "abby.palmer@beatles.ai",
+      "name": "Abby Palmer",
+      "status": "ENABLED",
+      "username": "abby.palmer@beatles.ai"
+    },
+    "bobbie.laundry@beatles.ai": {
+      "hrType": "EMPLOYEE",
+      "id": "bobbie.laundry@beatles.ai",
+      "name": "Bobbie Laundry",
+      "status": "ENABLED",
+      "username": "bobbie.laundry@beatles.ai"
+    },
+    "chip.brown@beatles.ai": {
+      "hrType": "EMPLOYEE",
+      "id": "chip.brown@beatles.ai",
+      "name": "Brown Chip",
+      "status": "ENABLED",
+      "username": "chip.brown@beatles.ai"
+    },
+    "devin.chapman@beatles.ai": {
+      "hrType": "EMPLOYEE",
+      "id": "devin.chapman@beatles.ai",
+      "name": "Devin Chapman",
+      "status": "ENABLED",
+      "username": "devin.chapman@beatles.ai"
+    },
+    "jane.doe@beatles.ai": {
+      "hrType": "EMPLOYEE",
+      "id": "jane.doe@beatles.ai",
+      "name": "Jane Doe",
+      "status": "ENABLED",
+      "username": "jane.doe@beatles.ai"
+    },
+    "john.smith@beatles.ai": {
+      "hrType": "EMPLOYEE",
+      "id": "john.smith@beatles.ai",
+      "name": "John Smith",
+      "status": "ENABLED",
+      "username": "john.smith@beatles.ai"
+    },
+    "kieran.juarez@beatles.ai": {
+      "hrType": "EMPLOYEE",
+      "id": "kieran.juarez@beatles.ai",
+      "name": "Kieran Juarez",
+      "status": "ENABLED",
+      "username": "kieran.juarez@beatles.ai"
+    },
+    "mike.richard@beatles.ai": {
+      "hrType": "EMPLOYEE",
+      "id": "mike.richard@beatles.ai",
+      "name": "Mike Richard",
+      "status": "ENABLED",
+      "username": "mike.richard@beatles.ai"
+    },
+    "ashley.porter@beatles.ai": {
+      "hrType": "EMPLOYEE",
+      "id": "ashley.porter@beatles.ai",
+      "name": "Ashley Porter",
+      "status": "ENABLED",
+      "username": "ashley.porter@beatles.ai"
+    }
+  },
+
+  "nhis": {
+    "application-1": {
+      "id": "app-uuid-00001",
+      "username": "application-1",
+      "name": "Application 1 Service Identity",
+      "ownerId": "matt.james@beatles.ai",
+      "custodianId": "marcus.smith@beatles.ai",
+      "status": "ENABLED"
+    },
+    "application-2": {
+      "id": "app-uuid-00002",
+      "username": "application-2",
+      "name": "Application 2 Service Identity",
+      "ownerId": "matt.james@beatles.ai",
+      "custodianId": "marcus.smith@beatles.ai",
+      "status": "ENABLED"
+    },
+    "application-3": {
+      "id": "app-uuid-00003",
+      "username": "application-3",
+      "name": "Application 3 Service Identity",
+      "ownerId": "matt.cooper@beatles.ai",
+      "custodianId": "matt.james@beatles.ai",
+      "status": "ENABLED"
+    },
+    "application-4": {
+      "id": "app-uuid-00004",
+      "username": "application-4",
+      "name": "Application 4 Service Identity",
+      "ownerId": "matt.cooper@beatles.ai",
+      "custodianId": "marcus.smith@beatles.ai",
+      "status": "DISABLED"
+    },
+    "application-5": {
+      "id": "app-uuid-00005",
+      "username": "application-5",
+      "name": "Application 5 Service Identity",
+      "ownerId": "marcus.smith@beatles.ai",
+      "custodianId": "matt.cooper@beatles.ai",
+      "status": "ENABLED"
+    }
+  },
+  "scopes": {
+    "Server A": {
+      "id": "Server A",
+      "name": "Server A",
+      "type": "FOLDER"
+    },
+    "Server A/Drive:\\location\\finance\\Reports": {
+      "id": "Server A/Drive:\\location\\finance\\Reports",
+      "name": "Drive:\\location\\finance\\Reports",
+      "parentScopeId": "Server A",
+      "type": "ACCOUNT"
+    },
+    "Server A/Drive:\\location\\general\\Team Folder": {
+      "id": "Server A/Drive:\\location\\general\\Team Folder",
+      "name": "Drive:\\location\\general\\Team Folder",
+      "parentScopeId": "Server A",
+      "type": "ACCOUNT"
+    },
+    "Server B": {
+      "id": "Server B",
+      "name": "Server B",
+      "type": "FOLDER"
+    },
+    "Server B/Drive:\\projects\\Engineering": {
+      "id": "Server B/Drive:\\projects\\Engineering",
+      "name": "Drive:\\projects\\Engineering",
+      "parentScopeId": "Server B",
+      "type": "ACCOUNT"
     }
   },
   "roles": {
@@ -275,6 +457,21 @@
         "enabedBillbaseUI",
         "enabledNewSuperOrgPage"
       ]
+    },
+    "Modify": {
+      "id": "Modify",
+      "name": "Modify",
+      "type": "CUSTOM_APP_ROLE"
+    },
+    "Modify-S": {
+      "id": "Modify-S",
+      "name": "Modify-S",
+      "type": "CUSTOM_APP_ROLE"
+    },
+    "Read": {
+      "id": "Read",
+      "name": "Read",
+      "type": "CUSTOM_APP_ROLE"
     }
   },
   "assignments": {
@@ -318,169 +515,50 @@
       "id": "samy.joseph@beatles.ai_internal_support_l1",
       "principalId": "samy.joseph@beatles.ai",
       "principalType": "HUMAN",
-      "roleId": "internal_support_l1"
-    }
-  },
-  "permissions": {
-    "pModifyData": {
-      "name": "pModifyData",
-      "serviceName": "DefaultService"
+      "roleId": "internal_support_l1",
+      "scopeId": "Server A/Drive:\\location\\general\\Team Folder"
     },
-    "pModifyBank": {
-      "name": "pModifyBank"
+    "netapp_beatles|Group A|Modify|Server A/Drive:\\location\\general\\Team Folder": {
+      "id": "netapp_beatles|Group A|Modify|Server A/Drive:\\location\\general\\Team Folder",
+      "principalId": "Group A",
+      "principalType": "GROUP",
+      "roleId": "Modify",
+      "scopeId": "Server A/Drive:\\location\\general\\Team Folder"
     },
-    "pModifyVerify": {
-      "name": "pModifyVerify"
+    "netapp_beatles|Group B|Modify-S|Server A/Drive:\\location\\finance\\Reports": {
+      "id": "netapp_beatles|Group B|Modify-S|Server A/Drive:\\location\\finance\\Reports",
+      "principalId": "Group B",
+      "principalType": "GROUP",
+      "roleId": "Modify-S",
+      "scopeId": "Server A/Drive:\\location\\finance\\Reports"
     },
-    "pModifyBilling": {
-      "name": "pModifyBilling"
+    "netapp_beatles|Group C|Read|Server A/Drive:\\location\\finance\\Reports": {
+      "id": "netapp_beatles|Group C|Read|Server A/Drive:\\location\\finance\\Reports",
+      "principalId": "Group C",
+      "principalType": "GROUP",
+      "roleId": "Read",
+      "scopeId": "Server A/Drive:\\location\\finance\\Reports"
     },
-    "pPrintChecks": {
-      "name": "pPrintChecks"
+    "netapp_beatles|Group D|Modify|Server B/Drive:\\projects\\Engineering": {
+      "id": "netapp_beatles|Group D|Modify|Server B/Drive:\\projects\\Engineering",
+      "principalId": "Group D",
+      "principalType": "GROUP",
+      "roleId": "Modify",
+      "scopeId": "Server B/Drive:\\projects\\Engineering"
     },
-    "pViewOrg": {
-      "name": "pViewOrg"
+    "netapp_beatles|Group D|Read|Server B/Drive:\\projects\\Engineering": {
+      "id": "netapp_beatles|Group D|Read|Server B/Drive:\\projects\\Engineering",
+      "principalId": "Group D",
+      "principalType": "GROUP",
+      "roleId": "Read",
+      "scopeId": "Server B/Drive:\\projects\\Engineering"
     },
-    "pViewACH": {
-      "name": "pViewACH"
-    },
-    "pViewBank": {
-      "name": "pViewBank"
-    },
-    "pViewPositivePay": {
-      "name": "pViewPositivePay"
-    },
-    "pViewBilling": {
-      "name": "pViewBilling"
-    },
-    "pViewVerify": {
-      "name": "pViewVerify"
-    },
-    "pViewCheckInfo": {
-      "name": "pViewCheckInfo"
-    },
-    "pEnterVoidChecks": {
-      "name": "pEnterVoidChecks"
-    },
-    "pViewCheckImage": {
-      "name": "pViewCheckImage"
-    },
-    "pModifyCheckImage": {
-      "name": "pModifyCheckImage"
-    },
-    "pDataEntry": {
-      "name": "pDataEntry"
-    },
-    "pViewCheckFiles": {
-      "name": "pViewCheckFiles"
-    },
-    "pViewCheckReports": {
-      "name": "pViewCheckReports"
-    },
-    "pViewTxnReports": {
-      "name": "pViewTxnReports"
-    },
-    "pEditFraudControl": {
-      "name": "pEditFraudControl"
-    },
-    "pModifyFundingBank": {
-      "name": "pModifyFundingBank"
-    },
-    "pMergeRecords": {
-      "name": "pMergeRecords"
-    },
-    "pModifyEmail": {
-      "name": "pModifyEmail"
-    },
-    "pImpersonation": {
-      "name": "pImpersonation"
-    },
-    "pDoCsEmulation": {
-      "name": "pDoCsEmulation"
-    },
-    "pARApproval": {
-      "name": "pARApproval"
-    },
-    "pViewTaxIdReports": {
-      "name": "pViewTaxIdReports"
-    },
-    "pUpdateOrgBilling": {
-      "name": "pUpdateOrgBilling"
-    },
-    "pManualCharges": {
-      "name": "pManualCharges"
-    },
-    "pManualRefunds": {
-      "name": "pManualRefunds"
-    },
-    "pAccessToHighSecurityPartnersData": {
-      "name": "pAccessToHighSecurityPartnersData"
-    },
-    "pManageIntlPayments": {
-      "name": "pManageIntlPayments"
-    },
-    "pModifyPayment": {
-      "name": "pModifyPayment"
-    },
-    "pAccessToTinEin": {
-      "name": "pAccessToTinEin"
-    },
-    "pPhotoIDVerification": {
-      "name": "pPhotoIDVerification"
-    },
-    "pAccessHIPAAOrgs": {
-      "name": "pAccessHIPAAOrgs"
-    },
-    "pManageWalletBalance": {
-      "name": "pManageWalletBalance"
-    },
-    "pViewRiskProfile": {
-      "name": "pViewRiskProfile"
-    },
-    "pViewComplianceFields": {
-      "name": "pViewComplianceFields"
-    },
-    "pEditComplianceFields": {
-      "name": "pEditComplianceFields"
-    },
-    "pVirtualCardPFY": {
-      "name": "pVirtualCardPFY"
-    },
-    "pViewChecks": {
-      "name": "pViewChecks"
-    },
-    "pSyncTools": {
-      "name": "pSyncTools"
-    },
-    "pSyncConfig": {
-      "name": "pSyncConfig"
-    },
-    "pManageFederatedDomains": {
-      "name": "pManageFederatedDomains"
-    },
-    "pManageVendorsAdvanced": {
-      "name": "pManageVendorsAdvanced"
-    },
-    "pManageStripeAccount": {
-      "name": "pManageStripeAccount"
-    },
-    "enabedBillbaseUI": {
-      "name": "enabedBillbaseUI"
-    },
-    "enabledNewSuperOrgPage": {
-      "name": "enabledNewSuperOrgPage"
-    },
-    "pEditTaxExempt": {
-      "name": "pEditTaxExempt"
-    },
-    "pEditPaymentStatus": {
-      "name": "pEditPaymentStatus"
-    },
-    "pManageBillingDiscounts": {
-      "name": "pManageBillingDiscounts"
-    },
-    "pManageUsers": {
-      "name": "pManageUsers"
+    "netapp_beatles|Group E|Read|Server A/Drive:\\location\\general\\Team Folder": {
+      "id": "netapp_beatles|Group E|Read|Server A/Drive:\\location\\general\\Team Folder",
+      "principalId": "Group E",
+      "principalType": "GROUP",
+      "roleId": "Read",
+      "scopeId": "Server A/Drive:\\location\\general\\Team Folder"
     }
   }
 }

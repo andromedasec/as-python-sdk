@@ -1,5 +1,25 @@
 {
   "users": {
+    "cabbott@efficientoffice.com": {
+      "id": "cabbott@efficientoffice.com",
+      "username": "cabbott@efficientoffice.com",
+      "name": "Charlotte Abbott",
+      "status": "DEACTIVATED",
+      "hris_attributes": {
+        "email": "cabbott@efficientoffice.com",
+        "org_name": "Human Resources",
+        "business_title": "Sr. HR Administrator",
+        "manager_id": "9",
+        "manager_name": "Caldwell, Jennifer",
+        "position_title": "Sr. HR Administrator",
+        "division": "North America",
+        "city": "Lindon",
+        "state": "Utah",
+        "country": "United States",
+        "hire_date": "2025-01-06T00:00:00Z",
+        "termination_date": "2025-02-06T00:00:00Z"
+      }
+    },
     "matt.james@beatles.ai": {
       "id": "matt.james@beatles.ai",
       "username": "matt.james@beatles.ai",

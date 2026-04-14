@@ -809,6 +809,35 @@ class AndromedaInventory(dict):
         for human in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
             yield human
 
+    def provider_identities_page_count(
+        self, provider_id: str, filters=None
+    ) -> int:
+        """
+        Total count of identities on a provider (Provider.identities.pageInfo.count).
+
+        Matches the UI ProviderIdentitiesList total when using the same filters;
+        uses a minimal page fetch (pageSize 1) since only pageInfo.count is needed.
+        """
+        ds = DSLSchema(self.gql_client.schema)
+        identities_args: dict = {"pageArgs": {"pageSize": 1, "skip": 0}}
+        if filters is not None:
+            identities_args["filters"] = filters
+        query = dsl_gql(DSLQuery(
+            ds.Query.Provider(
+                id=provider_id
+            ).select(
+                ds.Provider.identities(
+                    **identities_args
+                ).select(
+                    ds.ProviderIdentitiesConnection.pageInfo.select(
+                        *gql_snippets.list_trivial_fields_PageInfo(ds),
+                    )
+                )
+            )
+        ))
+        response = self.gql_client.execute(query, get_execution_result=True).formatted
+        return int(response["data"]["Provider"]["identities"]["pageInfo"]["count"])
+
     def as_humans_base_fn(self, filters: dict,
                                 page_size: int = 100, skip: int = 0) ->Generator[list, None, None]:
         ds = DSLSchema(self.gql_client.schema)

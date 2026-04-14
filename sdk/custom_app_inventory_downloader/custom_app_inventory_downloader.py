@@ -1,22 +1,32 @@
 """
-Custom App Inventory Transformer
+Custom App Inventory Downloader
 
-This module provides functionality to transform CSV inventory files into
-a standardized JSON format for custom applications.
+This module provides functionality to download and generate inventory data
+for custom applications using mock data from an external JSON file.
 """
 
 import os
-import argparse
 import logging
 import datetime
+import traceback
 import json
-from dataclasses import asdict, dataclass, field
-from enum import Enum, StrEnum
+from dataclasses import asdict
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Dict
 
+from sdk.customapp.custom_app_models import (
+    CustomAppUser, CustomAppNhi, CustomAppGroup, CustomAppScope,
+    CustomAppRole, CustomAppRoleAssignment,
+    CustomAppInventory
+)
+from sdk.customapp.custom_app_utils import (
+    convert_to_andromeda_dict, parse_arguments
+)
 
+# Configure logging
+logger = logging.getLogger(__name__)
 
+# Load mock data from external JSON file
 mock_data = {
  "groups": {
     "Group A": {
@@ -581,163 +591,20 @@ mock_data = {
   }
 }
 
-# Data Classes that
-class UserStatus(Enum):
-    """Represents a user status in the custom application inventory."""
-    ENABLED = "ENABLED"
-    DEACTIVATED = "DEACTIVATED"
-    IDENTITY_STATUS_UNRESOLVED = "IDENTITY_STATUS_UNRESOLVED"
-    SUSPENDED = "SUSPENDED"
-
-class PrincipalType(Enum):
-    """Represents a principal type in the custom application inventory."""
-    HUMAN = "HUMAN"
-    NHI = "NHI"
-    GROUP = "GROUP"
-
-class RoleType(Enum):
-    """Represents a role type in the custom application inventory."""
-    CUSTOM_APP_ROLE = "CUSTOM_APP_ROLE"
-    CUSTOM_APP_USER_ROLE = "CUSTOM_APP_USER_ROLE"
-
-class PermissionAccessLevel(Enum):
-    """Represents a permission access level in the custom application inventory."""
-    UNSPECIFIED = "UNSPECIFIED"
-    LIST = "LIST"
-    WRITE_TAG = "WRITE_TAG"
-    DELETE_TAG = "DELETE_TAG"
-    READ_METADATA = "READ_METADATA"
-    READ_DATA = "READ_DATA"
-    WRITE_METADATA = "WRITE_METADATA"
-    CREATE = "CREATE"
-    WRITE_DATA = "WRITE_DATA"
-    DELETE_DATA = "DELETE_DATA"
-    DELETE = "DELETE"
-    PERMISSIONS_MANAGEMENT = "PERMISSIONS_MANAGEMENT"
-
-class ScopeType(Enum):
-    """Represents a scope type in the custom application inventory."""
-    UNSPECIFIED = "UNSPECIFIED"
-    PROVIDER = "PROVIDER"
-    FOLDER = "FOLDER"
-    ACCOUNT = "ACCOUNT"
-    RESOURCE_GROUP = "RESOURCE_GROUP"
-
-class HrType(StrEnum):
-    """Represents a HR type in the custom application inventory."""
-    HR_TYPE_UNSPECIFIED = ""
-    EMPLOYEE = "EMPLOYEE"
-    CONTINGENT_WORKER = "CONTINGENT_WORKER"
-    THIRD_PARTY = "THIRD_PARTY"
-
-class NhiType(Enum):
-    """Represents a service identity type in the custom application inventory."""
-    CUSTOM_APP_NHI = "CUSTOM_APP_NHI"
-
-@dataclass
-class CustomAppUser:
-    """Represents a user in the custom application inventory."""
-    username: str
-    name: str
-    id: str
-    status: Optional[str] = UserStatus.ENABLED.name
-    hrType: Optional[str] = None
-
-@dataclass
-class CustomAppNhi:
-    """Represents a NHI in the custom application inventory."""
-    username: str
-    name: str
-    id: str
-    type: Optional[str] = NhiType.CUSTOM_APP_NHI.name
-    is_external_client: Optional[bool] = False
-    ownerId: Optional[str] = None
-    custodianId: Optional[str] = None
-    status: Optional[str] = None
-
-@dataclass
-class CustomAppGroup:
-    """Represents a group in the custom application inventory."""
-    name: str
-    id: str
-    memberUserIds: List[str] = field(default_factory=list)
-    memberSubgroupIds: List[str] = field(default_factory=list)
-
-@dataclass
-class CustomAppScope:
-    """Represents a scope in the custom application inventory."""
-    id: str
-    name: str
-    type: str
-    parentScopeId: Optional[str] = None
-
-@dataclass
-class CustomAppRole:
-    """Represents a role in the custom application inventory."""
-    name: str
-    id: str
-    type: Optional[str] = RoleType.CUSTOM_APP_ROLE.name
-    permissions: List[str] = field(default_factory=list)
-
-@dataclass
-class CustomAppRoleAssignment:
-    """Represents a role assignment in the custom application inventory."""
-    id: str
-    principalId: str
-    principalType: str
-    roleId: str
-    scopeId: Optional[str] = None
-
-@dataclass
-class CustomAppPermission:
-    """Represents a permission in the custom application inventory."""
-    name: str
-    accessLevel: Optional[str] = None
-    serviceName: Optional[str] = None
-
-@dataclass
-class CustomAppInventory:
-    """Container for all custom application inventory data."""
-    users: Dict[str, CustomAppUser] = field(default_factory=dict)
-    nhis: Dict[str, CustomAppNhi] = field(default_factory=dict)
-    roles: Dict[str, CustomAppRole] = field(default_factory=dict)
-    assignments: Dict[str, CustomAppRoleAssignment] = field(default_factory=dict)
-    permissions: Dict[str, CustomAppPermission] = field(default_factory=dict)
-    groups: Dict[str, CustomAppGroup] = field(default_factory=dict)
-    scopes: Dict[str, CustomAppScope] = field(default_factory=dict)
-
-
-
-# Configure logging
-logger = logging.getLogger(__name__)
-
 # Constants
 DEFAULT_BATCH_SIZE = 100
 DEFAULT_OUTPUT_DIR = "/tmp/customapp_export"
 DEFAULT_APP_NAME_PREFIX = "test"
 DEFAULT_INVENTORY_TYPE = "CUSTOM_TYPE1_INVENTORY_CSV"
 
-# CSV field mappings
-NON_PERMISSIONS_KEYS = {
-    'id', 'isActive', 'firstName', 'lastName', 'email', 'opRoleId',
-    'employeeId', 'Manager', 'Department', 'total active dates',
-    'createdDate', 'updatedDate', 'Total active permissions'
-}
-
-# Status constants
-USER_STATUS_ENABLED = "ENABLED"
-PRINCIPAL_TYPE_HUMAN = "HUMAN"
-ROLE_TYPE_CUSTOM_APP = "CUSTOM_APP_ROLE"
-ROLE_TYPE_CUSTOM_APP_USER = "CUSTOM_APP_USER_ROLE"
-
 
 class CustomAppInventoryTransformer:
-    """Transforms CSV inventory files into standardized JSON format."""
+    """Transforms mock data into standardized JSON format."""
 
     def __init__(self):
-        self.inventory = self.load_mock_data(mock_data)
+        self.inventory = self._parse_mock_data_dict(mock_data)
 
-    def load_mock_data(self, data: dict) -> CustomAppInventory:
+    def _parse_mock_data_dict(self, data: dict) -> CustomAppInventory:
         """
         Converts the mock data dictionary into a fully populated CustomAppInventory object.
         """
@@ -745,9 +612,9 @@ class CustomAppInventoryTransformer:
         users: Dict[str, CustomAppUser] = {}
         for key, user_data in data.get("users", {}).items():
             users[key] = CustomAppUser(
+                id=user_data["id"],
                 username=user_data["username"],
                 name=user_data["name"],
-                id=user_data["id"],
                 status=user_data.get("status"),
                 hrType=user_data.get("hrType"),
             )
@@ -818,21 +685,6 @@ class CustomAppInventoryTransformer:
         )
 
 
-    def convert_to_andromeda_dict(self, obj: Any) -> Any:
-        """
-        Recursively convert dictionary keys from snake_case to camelCase.
-        And removes empty values.
-        Handles dictionaries, lists, and nested structures.
-        """
-        if isinstance(obj, str):
-            return obj
-        if isinstance(obj, dict):
-            return {k: self.convert_to_andromeda_dict(v) for k, v in obj.items() if v}
-        if isinstance(obj, list):
-            return [self.convert_to_andromeda_dict(item) for item in obj if item]
-        return obj
-
-
     def transform_and_export(self, app_name_prefix: str, output_dir: str) -> dict:
         """Transform inventory and export to JSON file."""
         # Create output directory if it doesn't exist
@@ -845,7 +697,7 @@ class CustomAppInventoryTransformer:
         try:
             # Convert to dictionary, camelize keys, and remove empty values
             inventory_dict = asdict(self.inventory)
-            inventory_dict = self.convert_to_andromeda_dict(inventory_dict)
+            inventory_dict = convert_to_andromeda_dict(inventory_dict)
             with open(output_file, 'w', encoding="utf-8") as file:
                 json.dump(inventory_dict, file, indent=2)
                 logger.info("Written inventory to file %s", output_file)
@@ -854,7 +706,6 @@ class CustomAppInventoryTransformer:
             raise
 
         return mock_data
-
 
 
 def setup_logging() -> None:
@@ -872,41 +723,6 @@ def setup_logging() -> None:
     )
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
-
-
-def parse_arguments() -> argparse.Namespace:
-    """Parse command line arguments."""
-    help_text = """
-    This script converts different CSV imports into Andromeda custom inventory format.
-
-    Example:
-        python3 custom_app_inventory_transformer.py --inventory_type=CUSTOM_TYPE1_INVENTORY_CSV --inventory_file=<file> --output_dir=<dir>
-    """
-
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.RawTextHelpFormatter,
-        description=help_text
-    )
-
-    parser.add_argument(
-        '--app_name',
-        help='Application name',
-        default=DEFAULT_APP_NAME_PREFIX
-    )
-
-    parser.add_argument(
-        '--output_dir',
-        help='Output directory',
-        default=DEFAULT_OUTPUT_DIR
-    )
-
-    parser.add_argument(
-        '--inventory_type',
-        help='Inventory type',
-        default=DEFAULT_INVENTORY_TYPE
-    )
-
-    return parser.parse_args()
 
 
 def main() -> None:
@@ -934,8 +750,9 @@ def main() -> None:
                 logger.info("no metadata passed")
         except Exception as e:
             logger.info("exception %s", e)
+            logger.info("traceback %s", traceback.format_exc())
 
-
+        logger.info("Triggering Transformation")
         transformer = CustomAppInventoryTransformer()
         transformer.transform_and_export(
             app_name_prefix=args.app_name.strip(),
@@ -945,7 +762,6 @@ def main() -> None:
     except Exception as e:
         logger.error("Transformation failed: %s", e)
         raise
-
 
 if __name__ == '__main__':
     main()
