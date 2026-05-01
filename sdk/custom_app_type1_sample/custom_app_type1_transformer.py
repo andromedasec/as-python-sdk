@@ -11,7 +11,7 @@ from typing import Dict, List, Tuple
 
 from sdk.customapp.custom_app_models import (
     CustomAppUser, UserStatus, PrincipalType, RoleType,
-    CustomAppRole, CustomAppRoleAssignment, CustomAppPermission, CustomAppInventory
+    CustomAppRole, CustomAppRoleAssignment, CustomAppPermission
 )
 from sdk.customapp.custom_app_utils import parse_arguments
 from sdk.customapp.csv_transformer import CustomAppCsvTransformer
@@ -82,9 +82,9 @@ class CustomAppSampleTransformer(CustomAppCsvTransformer):
         assignment_id = f"{username}_{role_name}"
         return CustomAppRoleAssignment(
             id=assignment_id,
-            principalId=username,
-            principalType=PrincipalType.HUMAN.name,
-            roleId=role_name
+            principal_id=username,
+            principal_type=PrincipalType.HUMAN.name,
+            role_id=role_name
         )
 
     @staticmethod

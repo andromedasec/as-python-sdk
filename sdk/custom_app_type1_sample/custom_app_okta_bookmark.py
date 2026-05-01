@@ -106,7 +106,7 @@ class CustomAppOktaBookmarkTransformer(CustomAppCsvTransformer):
             username=username,
             name=name,
             status=status,
-            #hrType=self.get_hr_type_from_username(username).value
+            #hr_type=self.get_hr_type_from_username(username).value
         )
         logger.debug("Added user %s to inventory", user)
         self.inventory.users[username] = user
@@ -187,9 +187,9 @@ class CustomAppOktaBookmarkTransformer(CustomAppCsvTransformer):
             else:
                 assignment = CustomAppRoleAssignment(
                     id=assignment_id,
-                    principalId=principal_id,
-                    principalType=principal_type,
-                    roleId=role.id,
+                    principal_id=principal_id,
+                    principal_type=principal_type,
+                    role_id=role.id,
                 )
                 logger.debug("Creating assignment %s for principal %s role %s", assignment.id,
                             principal_id, role.name)

@@ -111,8 +111,6 @@ class APIUtils:
             resource_id: str = "", resource_name: str = "", obj: dict = None) -> tuple[int, dict]:
         try:
             status_code = 200
-            logger.info("resource_type %s resource_name %s resource_id %s",
-                         resource_type, resource_name, resource_id)
             if resource_name and not resource_id:
                 status_code, existing_obj = self.get_resource_by_name(
                     api_session, resource_type, resource_name)
@@ -141,9 +139,11 @@ class APIUtils:
 
             response = getattr(api_session, op)(url, json=obj, verify=False)
             status_code, obj = response.status_code, response.json()
-            logger.debug("url:%s op:%s status_code:%s obj:%s", url, op, status_code, obj)
+            logger.debug("url:%s op:%s status_code:%s type:%s id: %s name: %s",
+                         url, op, status_code, resource_type, resource_id, resource_name)
         except Exception as exc:
-            logger.error('Failed to create provider object')
+            logger.error('Failed to create provider object type:%s id: %s name: %s',
+                         resource_type, resource_id, resource_name)
             logger.error('exception %s\n %s', exc, traceback.format_exc())
             raise exc
         return status_code, obj
@@ -559,7 +559,7 @@ class APIUtils:
             eligibility_mapping: dict) -> (int, dict):
         try:
             url = self.get_resource_url(
-                resoure_type=f"providers/{provider_id}/eligibility")
+                resoure_type=f"providers/{provider_id}/eligibilities")
             response = api_session.post(url, json=eligibility_mapping, verify=False)
             status_code, obj = response.status_code, response.json()
             return status_code, obj
@@ -720,7 +720,10 @@ class APIUtils:
             "activeDirectoryEndpoint": ad_configuration["activeDirectoryEndpoint"],
             "bindDn": ad_configuration["bindDn"],
             "baseDn": ad_configuration["baseDn"],
-            "brokers": [broker_id],
+            "brokerConfiguration": {
+                "brokerSupportedModes": ["OBSERVATION", "ENFORCEMENT"],
+                "brokers": [broker_id],
+            },
             "ldapFilters": {
                 "userFilter": ad_configuration["ldapFilters"]["userFilter"],
                 "groupFilter": ad_configuration["ldapFilters"]["groupFilter"],

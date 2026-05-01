@@ -54,8 +54,7 @@ from dataclasses import asdict
 from typing import Dict, List, Optional, Generator, Tuple
 from pathlib import Path
 from sdk.customapp.custom_app_models import (
-    CustomAppInventory, UserStatus, RoleType, CustomAppRole, PrincipalType,
-    CustomAppRoleAssignment
+    CustomAppInventory, validate_inventory_consistency
 )
 from sdk.customapp.custom_app_utils import convert_to_andromeda_dict
 
@@ -166,8 +165,13 @@ class CustomAppCsvTransformer:
         # Export to JSON
         try:
             # Convert to dictionary, camelize keys, and remove empty values
+
+            # perform validation
+            self.inventory_validation()
+
             inventory_dict = asdict(self.inventory)
             result_dict = convert_to_andromeda_dict(inventory_dict)
+
             with open(output_file, 'w', encoding="utf-8") as file:
                 json.dump(result_dict, file, indent=2)
             # return full path of the output file
@@ -199,69 +203,12 @@ class CustomAppCsvTransformer:
 
     def inventory_validation(self) -> None:
         """Validate the inventory."""
-        self._validate_users()
-        self._validate_roles()
-        self._validate_assignments()
-
-    def _validate_users(self) -> None:
-        """Validate user data in the inventory."""
-        for user in self.inventory.users.values():
-            if user.status not in UserStatus:
-                logger.error("User %s has invalid status %s", user, user.status)
-                raise ValueError(f"User {user} has invalid status {user.status}")
-
-    def _validate_roles(self) -> None:
-        """Validate role data in the inventory."""
-        for role in self.inventory.roles.values():
-            if role.type not in RoleType:
-                logger.error("Role %s has invalid type %s", role, role.type)
-                raise ValueError(f"Role {role} has invalid type {role.type}")
-            self._validate_role_permissions(role)
-
-    def _validate_role_permissions(self, role: CustomAppRole) -> None:
-        """Validate that role permissions exist in the inventory."""
-        for permission in role.permissions:
-            if permission not in self.inventory.permissions:
-                logger.error("Role %s has permission %s that is not defined", role, permission)
-                raise ValueError(f"Role {role} has permission {permission} that is not defined")
-
-    def _validate_assignments(self) -> None:
-        """Validate assignment data in the inventory."""
-        for assignment in self.inventory.assignments.values():
-            self._validate_assignment_fields(assignment)
-            self._validate_assignment_principal_type(assignment)
-            self._validate_assignment_references(assignment)
-
-    def _validate_assignment_fields(self, assignment: CustomAppRoleAssignment) -> None:
-        """Validate mandatory fields for an assignment."""
-        mandatory_fields = ['principalId', 'roleId']
-        for f in mandatory_fields:
-            if not getattr(assignment, f):
-                logger.error("Assignment %s has no %s", assignment, f)
-                raise ValueError(f"Assignment {assignment} has no {f}")
-
-    def _validate_assignment_principal_type(self, assignment: CustomAppRoleAssignment) -> None:
-        """Validate that assignment principal type is valid."""
-        if assignment.principalType not in PrincipalType:
-            logger.error("Assignment %s has invalid principalType %s",
-                         assignment, assignment.principalType)
-            raise ValueError(
-                f"Assignment {assignment.id} has invalid principalType {assignment.principalType}")
-
-    def _validate_assignment_references(self, assignment: CustomAppRoleAssignment) -> None:
-        """Validate that assignment references exist in the inventory."""
-        # Validate principal exists if it's a human
-        if (assignment.principalType == PrincipalType.HUMAN.name and
-            assignment.principalId not in self.inventory.users):
-            logger.error("Assignment %s has invalid principalId %s",
-                         assignment, assignment.principalId)
-            raise ValueError(
-                f"Assignment {assignment} has invalid principalId {assignment.principalId}")
-        # Validate role exists
-        if assignment.roleId not in self.inventory.roles:
-            logger.error("Assignment %s has invalid roleId %s",
-                         assignment, assignment.roleId)
-            raise ValueError(f"Assignment {assignment} has invalid roleId {assignment.roleId}")
+        errors = validate_inventory_consistency(self.inventory, strict_enums=True)
+        if errors:
+            error_msg = f"Inventory validation failed with {len(errors)} error(s):\n"
+            error_msg += "\n".join(f"  - {err}" for err in errors)
+            logger.error(error_msg)
+            raise ValueError(error_msg)
 
     def process_csv_row(self, row: Dict[str, str], errors: List[Dict[str, str]]):
         """Process a single CSV row and update inventory."""

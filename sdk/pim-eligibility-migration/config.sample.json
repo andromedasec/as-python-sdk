@@ -1,0 +1,23 @@
+{
+    "andromeda": {
+        "apiEndpoint": "https://api.live.andromedasecurity.com"
+    },
+    "migration": {
+        "dryRun": true,
+        "skipIngestion": false,
+        "cleanup": false
+    },
+    "azureConfig": {
+        "azureTenantId": "YOUR_AZURE_AD_TENANT_ID",
+        "andromedaProviderId": "REPLACE_WITH_ANDROMEDA_PROVIDER_ID",
+        "subscriptionIds": [],
+        "azureResourceAssignmentsDiscoveryEnabled": true
+    },
+    "entraConfig": {
+        "azureTenantId": "YOUR_AZURE_AD_TENANT_ID",
+        "andromedaProviderId": "REPLACE_WITH_ANDROMEDA_PROVIDER_ID",
+        "groupIds": [],
+        "entraRoleAssignmentsDiscoveryEnabled": true,
+        "groupAssignmentsDiscoveryEnabled": true
+    }
+}
