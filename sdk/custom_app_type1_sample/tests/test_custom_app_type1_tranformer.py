@@ -3,6 +3,8 @@ Test the custom app type1 transformer
 """
 import logging
 import json
+import os
+from pathlib import Path
 from dataclasses import asdict
 from deepdiff import DeepDiff
 from sdk.custom_app_type1_sample.custom_app_type1_transformer import CustomAppSampleTransformer, CustomAppRoleAssignment
@@ -12,11 +14,14 @@ from sdk.customapp.custom_app_utils import convert_to_andromeda_dict
 
 logger = logging.getLogger(__name__)
 
+# Get the directory containing this test file
+TEST_DIR = Path(__file__).parent
+
 def test_transform_custom_type1_inventory_csv():
     """
     Test the custom app sample transformer
     """
-    inventory_file = "beatles-custom-app.csv"
+    inventory_file = str(TEST_DIR / "beatles-custom-app.csv")
     csv_transformer = CustomAppSampleTransformer(
         app_name="beatles",
         inventory_file=inventory_file,
@@ -29,7 +34,7 @@ def test_transform_custom_type1_inventory_csv():
     inventory_dict = asdict(inventory)
     inventory_dict = convert_to_andromeda_dict(inventory_dict)
     logger.debug("Inventory %s", json.dumps(inventory_dict, indent=2))
-    with open('beatles-custom-app.json', 'r', encoding="utf-8") as f:
+    with open(TEST_DIR / 'beatles-custom-app.json', 'r', encoding="utf-8") as f:
         expected_inventory = json.load(f)
         diff = DeepDiff(inventory_dict, expected_inventory, ignore_order=True)
         assert not diff, f"Inventory mismatch {diff}"
@@ -38,7 +43,7 @@ def test_inventory_invalid_permission_validation():
     """
     Test the inventory validation
     """
-    inventory_file = "beatles-custom-app.csv"
+    inventory_file = str(TEST_DIR / "beatles-custom-app.csv")
     csv_transformer = CustomAppSampleTransformer(
         app_name="beatles",
         inventory_file=inventory_file,
@@ -62,7 +67,7 @@ def test_inventory_invalid_user():
     """
     Test the inventory validation
     """
-    inventory_file = "beatles-custom-app.csv"
+    inventory_file = str(TEST_DIR / "beatles-custom-app.csv")
     csv_transformer = CustomAppSampleTransformer(
         app_name="beatles",
         inventory_file=inventory_file,
@@ -86,7 +91,7 @@ def test_inventory_invalid_assignment_validation():
     """
     Test the inventory validation
     """
-    inventory_file = "beatles-custom-app.csv"
+    inventory_file = str(TEST_DIR / "beatles-custom-app.csv")
     csv_transformer = CustomAppSampleTransformer(
         app_name="beatles",
         inventory_file=inventory_file,
@@ -101,9 +106,9 @@ def test_inventory_invalid_assignment_validation():
 
     invalid_assignment = CustomAppRoleAssignment(
         id="1",
-        principalId="invalid_principal",
-        principalType="HUMAN",
-        roleId="1"
+        principal_id="invalid_principal",
+        principal_type="HUMAN",
+        role_id="1"
     )
     inventory.assignments[invalid_assignment.id] = invalid_assignment
 
@@ -118,7 +123,7 @@ def test_okta_bookmark_torq():
     """
     Test the Okta Bookmark Torq transformer
     """
-    inventory_file = "beatles-okta-bookmark-torq.csv"
+    inventory_file = str(TEST_DIR / "beatles-okta-bookmark-torq.csv")
     csv_transformer = CustomAppOktaBookmarkTransformer(
         app_name="beatles",
         inventory_file=inventory_file,

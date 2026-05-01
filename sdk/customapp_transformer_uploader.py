@@ -87,7 +87,8 @@ class CustomAppTransformerUploader:
 
 
     def update_custom_app_config(self, provider_id: str, provider_name: str, file_id: str,
-                                 file_type: str = "INVENTORY_TRANSLATOR_FILE_PYTHON") -> bool:
+                                 file_type: str = "INVENTORY_TRANSLATOR_FILE_PYTHON",
+                                 customapp_type: str = "CUSTOM_INVENTORY_WITH_SCRIPT") -> bool:
         """
         Update a custom app provider configuration with the new file ID.
 
@@ -108,6 +109,11 @@ class CustomAppTransformerUploader:
         current_config = response.json()
         logger.debug("Current config for provider %s: %s \n config:%s",
                     provider_id, provider_name, current_config)
+        if current_config.get('type', 'UNSPECIFIED') == 'UNSPECIFIED':
+            current_config['type'] = customapp_type
+        if current_config['type'] == 'CUSTOM_INVENTORY_SCRIPT_FOR_DOWNLOAD':
+            current_config.pop('inventoryFileId', '')
+            current_config.pop('inventoryFileType', '')
         current_config['translatorFileId'] = file_id
         current_config['translatorFileType'] = file_type
 
@@ -120,7 +126,8 @@ class CustomAppTransformerUploader:
         return True
 
     def upload_and_update(self, app_names: str, file_name: str,
-                          file_type: str = "INVENTORY_TRANSLATOR_FILE_PYTHON") -> None:
+                          file_type: str = "INVENTORY_TRANSLATOR_FILE_PYTHON",
+                          customapp_type: str = 'CUSTOM_INVENTORY_WITH_SCRIPT') -> None:
         """
         Main method to upload file and update custom apps.
 
@@ -142,7 +149,8 @@ class CustomAppTransformerUploader:
             # Get the provider id for the app.
             app_obj = next(self.as_inventory.app_provider_itr(provider_filter))
             file_ref = self._upload_file(file_name, app_obj['id'], app_obj['name'], file_type)
-            self.update_custom_app_config(app_obj['id'], app_obj['name'], file_ref, file_type)
+            self.update_custom_app_config(app_obj['id'], app_obj['name'], file_ref, file_type,
+                                          customapp_type=customapp_type)
 
 
 
@@ -188,6 +196,12 @@ def parse_arguments() -> argparse.Namespace:
         '--as_gql_endpoint',
         default="https://api.live.andromedasecurity.com/graphql",
         help='GQL endpoint for the inventory')
+
+    parser.add_argument(
+        "--type", default="CUSTOM_INVENTORY_WITH_SCRIPT",
+        choices=["CUSTOM_INVENTORY_WITH_SCRIPT", "CUSTOM_INVENTORY_SCRIPT_FOR_DOWNLOAD"],
+        help="choose from CUSTOM_INVENTORY_WITH_SCRIPT or CUSTOM_INVENTORY_SCRIPT_FOR_DOWNLOAD"
+    )
 
     return parser.parse_args()
 

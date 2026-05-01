@@ -8,6 +8,7 @@ for custom applications using mock data from an external JSON file.
 import os
 import logging
 import datetime
+import traceback
 import json
 from dataclasses import asdict
 from pathlib import Path
@@ -627,8 +628,8 @@ class CustomAppInventoryTransformer:
                 id=nhi_data["id"],
                 type=nhi_data.get("type"),
                 is_external_client=nhi_data.get("is_external_client", False),
-                ownerId=nhi_data.get("ownerId"),
-                custodianId=nhi_data.get("custodianId"),
+                owner_id=nhi_data.get("ownerId"),
+                custodian_id=nhi_data.get("custodianId"),
                 status=nhi_data.get("status"),
             )
 
@@ -638,8 +639,8 @@ class CustomAppInventoryTransformer:
             groups[key] = CustomAppGroup(
                 name=group_data["name"],
                 id=group_data["id"],
-                memberUserIds=group_data.get("memberUserIds", []),
-                memberSubgroupIds=group_data.get("memberSubgroupIds", []),
+                member_user_ids=group_data.get("memberUserIds", []),
+                member_subgroup_ids=group_data.get("memberSubgroupIds", []),
             )
 
         # Parse scopes
@@ -649,7 +650,7 @@ class CustomAppInventoryTransformer:
                 id=scope_data["id"],
                 name=scope_data["name"],
                 type=scope_data["type"],
-                parentScopeId=scope_data.get("parentScopeId"),
+                parent_scope_id=scope_data.get("parentScopeId"),
             )
 
         # Parse roles
@@ -667,10 +668,10 @@ class CustomAppInventoryTransformer:
         for key, assignment_data in data.get("assignments", {}).items():
             assignments[key] = CustomAppRoleAssignment(
                 id=assignment_data["id"],
-                principalId=assignment_data["principalId"],
-                principalType=assignment_data["principalType"],
-                roleId=assignment_data["roleId"],
-                scopeId=assignment_data.get("scopeId"),
+                principal_id=assignment_data["principalId"],
+                principal_type=assignment_data["principalType"],
+                role_id=assignment_data["roleId"],
+                scope_id=assignment_data.get("scopeId"),
             )
 
         return CustomAppInventory(
@@ -749,8 +750,9 @@ def main() -> None:
                 logger.info("no metadata passed")
         except Exception as e:
             logger.info("exception %s", e)
+            logger.info("traceback %s", traceback.format_exc())
 
-
+        logger.info("Triggering Transformation")
         transformer = CustomAppInventoryTransformer()
         transformer.transform_and_export(
             app_name_prefix=args.app_name.strip(),
@@ -760,7 +762,6 @@ def main() -> None:
     except Exception as e:
         logger.error("Transformation failed: %s", e)
         raise
-
 
 if __name__ == '__main__':
     main()

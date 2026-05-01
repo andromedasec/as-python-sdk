@@ -280,45 +280,45 @@
   "assignments": {
     "fred.marsh@beatles.ai_partner_support_l1": {
       "id": "fred.marsh@beatles.ai_partner_support_l1",
-      "principalId": "fred.marsh@beatles.ai",
-      "principalType": "HUMAN",
-      "roleId": "partner_support_l1"
+      "principal_id": "fred.marsh@beatles.ai",
+      "principal_type": "HUMAN",
+      "role_id": "partner_support_l1"
     },
     "matt.cooper@beatles.ai_beatles-matt-cooper-role": {
       "id": "matt.cooper@beatles.ai_beatles-matt-cooper-role",
-      "principalId": "matt.cooper@beatles.ai",
-      "principalType": "HUMAN",
-      "roleId": "beatles-matt-cooper-role"
+      "principal_id": "matt.cooper@beatles.ai",
+      "principal_type": "HUMAN",
+      "role_id": "beatles-matt-cooper-role"
     },
     "richar.Mike@beatles.ai_tech_support_l1": {
       "id": "richar.Mike@beatles.ai_tech_support_l1",
-      "principalId": "richar.Mike@beatles.ai",
-      "principalType": "HUMAN",
-      "roleId": "tech_support_l1"
+      "principal_id": "richar.Mike@beatles.ai",
+      "principal_type": "HUMAN",
+      "role_id": "tech_support_l1"
     },
     "marcus.smith@beatles.ai_processing_l1": {
       "id": "marcus.smith@beatles.ai_processing_l1",
-      "principalId": "marcus.smith@beatles.ai",
-      "principalType": "HUMAN",
-      "roleId": "processing_l1"
+      "principal_id": "marcus.smith@beatles.ai",
+      "principal_type": "HUMAN",
+      "role_id": "processing_l1"
     },
     "matt.james@beatles.ai_tech_support_l1": {
       "id": "matt.james@beatles.ai_tech_support_l1",
-      "principalId": "matt.james@beatles.ai",
-      "principalType": "HUMAN",
-      "roleId": "tech_support_l1"
+      "principal_id": "matt.james@beatles.ai",
+      "principal_type": "HUMAN",
+      "role_id": "tech_support_l1"
     },
     "matt.james@beatles.ai_riskops_manager": {
       "id": "matt.james@beatles.ai_riskops_manager",
-      "principalId": "matt.james@beatles.ai",
-      "principalType": "HUMAN",
-      "roleId": "riskops_manager"
+      "principal_id": "matt.james@beatles.ai",
+      "principal_type": "HUMAN",
+      "role_id": "riskops_manager"
     },
     "samy.joseph@beatles.ai_internal_support_l1": {
       "id": "samy.joseph@beatles.ai_internal_support_l1",
-      "principalId": "samy.joseph@beatles.ai",
-      "principalType": "HUMAN",
-      "roleId": "internal_support_l1"
+      "principal_id": "samy.joseph@beatles.ai",
+      "principal_type": "HUMAN",
+      "role_id": "internal_support_l1"
     }
   },
   "permissions": {

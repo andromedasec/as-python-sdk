@@ -27,10 +27,13 @@ import logging
 import datetime
 import json
 import tempfile
-from dataclasses import asdict, dataclass, field
-from enum import Enum
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Dict, Optional
+
+from sdk.customapp.custom_app_models import (
+    CustomAppUser, CustomAppInventory, HrType, CustomAppUserHRISAttributes
+)
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -50,90 +53,6 @@ HR_CATEGORY_MAP = {
 STATUS_ENABLED = "ENABLED"
 STATUS_DEACTIVATED = "DEACTIVATED"
 
-
-# Data Classes
-class UserStatus(Enum):
-    """Represents a user status in the custom application inventory."""
-    ENABLED = "ENABLED"
-    DEACTIVATED = "DEACTIVATED"
-    IDENTITY_STATUS_UNRESOLVED = "IDENTITY_STATUS_UNRESOLVED"
-    SUSPENDED = "SUSPENDED"
-
-class PrincipalType(Enum):
-    """Represents a principal type in the custom application inventory."""
-    HUMAN = "HUMAN"
-    NHI = "NHI"
-    GROUP = "GROUP"
-
-class RoleType(Enum):
-    """Represents a role type in the custom application inventory."""
-    CUSTOM_APP_ROLE = "CUSTOM_APP_ROLE"
-    CUSTOM_APP_USER_ROLE = "CUSTOM_APP_USER_ROLE"
-
-class PermissionAccessLevel(Enum):
-    """Represents a permission access level in the custom application inventory."""
-    UNSPECIFIED = "UNSPECIFIED"
-    LIST = "LIST"
-    WRITE_TAG = "WRITE_TAG"
-    DELETE_TAG = "DELETE_TAG"
-    READ_METADATA = "READ_METADATA"
-    READ_DATA = "READ_DATA"
-    WRITE_METADATA = "WRITE_METADATA"
-    CREATE = "CREATE"
-    WRITE_DATA = "WRITE_DATA"
-    DELETE_DATA = "DELETE_DATA"
-    DELETE = "DELETE"
-    PERMISSIONS_MANAGEMENT = "PERMISSIONS_MANAGEMENT"
-
-class ScopeType(Enum):
-    """Represents a scope type in the custom application inventory."""
-    UNSPECIFIED = "UNSPECIFIED"
-    PROVIDER = "PROVIDER"
-    FOLDER = "FOLDER"
-    ACCOUNT = "ACCOUNT"
-    RESOURCE_GROUP = "RESOURCE_GROUP"
-
-class HrType(str, Enum):
-    """Represents a HR type in the custom application inventory."""
-    HR_TYPE_UNSPECIFIED = ""
-    EMPLOYEE = "EMPLOYEE"
-    CONTINGENT_WORKER = "CONTINGENT_WORKER"
-    THIRD_PARTY = "THIRD_PARTY"
-
-class NhiType(Enum):
-    """Represents a service identity type in the custom application inventory."""
-    CUSTOM_APP_NHI = "CUSTOM_APP_NHI"
-
-@dataclass
-class CustomAppUserHRISAttributes:
-    """HRIS attributes for a custom app user (matches CustomAppUserHRISAttributes proto)."""
-    email: Optional[str] = None
-    org_name: Optional[str] = None
-    business_title: Optional[str] = None
-    manager_id: Optional[str] = None
-    manager_name: Optional[str] = None
-    position_title: Optional[str] = None
-    division: Optional[str] = None
-    city: Optional[str] = None
-    state: Optional[str] = None
-    country: Optional[str] = None
-    hire_date: Optional[str] = None
-    termination_date: Optional[str] = None
-
-@dataclass
-class CustomAppUser:
-    """Represents a user in the custom application inventory (matches CustomAppUser proto)."""
-    id: str
-    username: str
-    name: str
-    status: Optional[str] = UserStatus.ENABLED.value
-    hr_type: Optional[HrType] = None
-    hris_attributes: Optional[CustomAppUserHRISAttributes] = None
-
-@dataclass
-class CustomAppInventory:
-    """Container for all custom application inventory data."""
-    users: Dict[str, CustomAppUser] = field(default_factory=dict)
 
 class InventoryBuilder:
     """Builds CustomAppUser objects from CSV row data."""
