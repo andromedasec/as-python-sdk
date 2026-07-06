@@ -10,9 +10,21 @@ import os
 from datetime import datetime, timedelta
 from sdk.api_utils import APIUtils, InvalidInputException
 from sdk.as_inventory import AndromedaInventory
+from api.proto.andromeda.api.models.config import enums_pb2
 import requests
 
 logger = logging.getLogger(__name__)
+
+
+def _event_name_choices() -> list:
+    """Valid AndromedaEvent names for the --as_event_name filter.
+
+    Derived from the generated AndromedaEventNameEnum proto enum so the list
+    never drifts from records/proto/andromeda/api/models/config/enums.proto.
+    UNDEFINED (the zero value) is excluded as it is not a real event name.
+    """
+    names = enums_pb2.AndromedaEventNameEnum.AndromedaEventName.keys()
+    return sorted(name for name in names if name != "UNDEFINED")
 
 
 def _setup_args() -> argparse.Namespace:
@@ -68,7 +80,7 @@ def _setup_args() -> argparse.Namespace:
 
     parser.add_argument('--as_event_name',
                         help='Comma Separated event names',
-                        choices=sorted(["USER_AUTH_LOGIN", "USER_REQUEST_ACCESS_KEY", "PROVIDER_CONFIG_CREATE", "PROVIDER_CONFIG_MODIFY", "PROVIDER_CONFIG_DELETE", "AWS_PROVIDER_CONFIG_CREATE", "AWS_PROVIDER_CONFIG_UPDATE", "AWS_PROVIDER_CONFIG_DELETE", "TENANT_INTERNAL_CONFIG_CREATE", "TENANT_INTERNAL_CONFIG_UPDATE", "TENANT_INTERNAL_CONFIG_DELETE", "AZURE_PROVIDER_CONFIG_CREATE", "AZURE_PROVIDER_CONFIG_UPDATE", "ENTRA_PROVIDER_CONFIG_CREATE", "ENTRA_PROVIDER_CONFIG_UPDATE", "OKTA_PROVIDER_CONFIG_CREATE", "OKTA_PROVIDER_CONFIG_UPDATE", "TENANT_SETTINGS_UPDATE", "ACCEPTED_IDENTITY_RISK_CONFIG_CREATE", "ACCEPTED_IDENTITY_RISK_CONFIG_DELETE", "ELIGIBILITY_MAPPING_CREATE", "ELIGIBILITY_MAPPING_DELETE", "ACCESS_REQUEST_CREATE", "ACCESS_REQUEST_REVIEW", "ACCESS_REQUEST_ADMIN_OVERRIDE_REVIEW", "ACCESS_REQUEST_USER_ACTION", "ACCESS_REQUEST_USER_ACTION_CLOSE", "ACCESS_REQUEST_USER_ACTION_EXTEND", "ACCESS_REQUEST_ADMIN_OVERRIDE_REVIEW_APPROVE", "ACCESS_REQUEST_ADMIN_OVERRIDE_REVIEW_REJECT", "ACCESS_REQUEST_REVIEW_APPROVE", "ACCESS_REQUEST_REVIEW_REJECT", "ACCESS_REQUEST_ANALYZED", "ACCESS_REQUEST_APPROVED", "ACCESS_REQUEST_PROVISIONED", "ACCESS_REQUEST_DEPROVISIONED", "ACCESS_REQUEST_REJECTED", "ACCESS_REQUEST_FAILED", "ACCESS_REQUEST_TIMED_OUT"]))
+                        choices=_event_name_choices())
 
     return parser.parse_args()
 

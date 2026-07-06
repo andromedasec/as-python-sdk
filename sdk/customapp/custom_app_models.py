@@ -105,13 +105,61 @@ class PermissionAccessLevel(Enum):
     PERMISSIONS_MANAGEMENT = "ACCESS_LEVEL_PERMISSIONS_MANAGEMENT"
 
 class ScopeType(Enum):
-    """Represents a scope type in t
-    he custom application inventory."""
+    """Represents a scope type in the custom application inventory."""
     UNSPECIFIED = "UNSPECIFIED"
     PROVIDER = "PROVIDER"
     FOLDER = "FOLDER"
     ACCOUNT = "ACCOUNT"
     RESOURCE_GROUP = "RESOURCE_GROUP"
+    RESOURCE = "RESOURCE"
+
+
+class AgentModelProvider(Enum):
+    """Mirrors AgentModelProviderMessage.AgentModelProvider in enums.proto."""
+    AGENT_MODEL_PROVIDER_UNSPECIFIED = "AGENT_MODEL_PROVIDER_UNSPECIFIED"
+    OPENAI = "OPENAI"
+    ANTHROPIC = "ANTHROPIC"
+    GOOGLE_GEMINI = "GOOGLE_GEMINI"
+    AWS_BEDROCK = "AWS_BEDROCK"
+    META_LLAMA = "META_LLAMA"
+    MISTRAL = "MISTRAL"
+    COHERE = "COHERE"
+    AGENT_MODEL_PROVIDER_CUSTOM = "AGENT_MODEL_PROVIDER_CUSTOM"
+    AGENT_MODEL_PROVIDER_UNKNOWN = "AGENT_MODEL_PROVIDER_UNKNOWN"
+
+
+class AgentModelKind(Enum):
+    """Mirrors AgentModelKindMessage.AgentModelKind in enums.proto."""
+    AGENT_MODEL_KIND_UNSPECIFIED = "AGENT_MODEL_KIND_UNSPECIFIED"
+    PREBUILT = "PREBUILT"
+    FINE_TUNED = "FINE_TUNED"
+    CUSTOM = "CUSTOM"
+
+
+class AgentEndUserAuthType(Enum):
+    """Mirrors AgentEndUserAuthTypeMessage.AgentEndUserAuthType in enums.proto."""
+    END_USER_AUTH_UNSPECIFIED = "END_USER_AUTH_UNSPECIFIED"
+    NO_AUTHENTICATION = "NO_AUTHENTICATION"
+    SSO = "SSO"
+    MANUAL_OAUTH = "MANUAL_OAUTH"
+    API_KEY = "API_KEY"
+    OAUTH_PER_USER = "OAUTH_PER_USER"
+
+
+class LicenseTier(Enum):
+    """Mirrors CustomAppLicenseTier.LicenseTier in customapp_agent.proto."""
+    LICENSE_TIER_UNSPECIFIED = "LICENSE_TIER_UNSPECIFIED"
+    FREE = "FREE"
+    INDIVIDUAL = "INDIVIDUAL"
+    CUSTOM = "CUSTOM"
+    ENTERPRISE = "ENTERPRISE"
+
+
+class AgentType(Enum):
+    """Mirrors AgentTypeMessage.AgentType in enums.proto (subset used by inventory)."""
+    AGENT_TYPE_UNSPECIFIED = "AGENT_TYPE_UNSPECIFIED"
+    CURSOR_DESKTOP = "CURSOR_DESKTOP"
+    CLAUDE_DESKTOP = "CLAUDE_DESKTOP"
 
 
 class HrType(str, Enum):
@@ -152,6 +200,8 @@ class CustomAppUserV2:
     status: Optional[str] = UserStatus.ENABLED.value
     hr_type: Optional[HrType] = None
     hris_attributes: Optional[CustomAppUserHRISAttributes] = None
+    idp_attributes_map: Optional[Dict[str, str]] = None
+    identity_origin_type: Optional[str] = None
 
 class CustomAppUser(CustomAppUserV2):
     """Deprecated class. Use only for backward compatibility"""
@@ -257,12 +307,14 @@ class CustomAppGroupV2:
     id: str
     member_user_ids: List[str] = field(default_factory=list)
     member_subgroup_ids: List[str] = field(default_factory=list)
+    member_nhi_ids: List[str] = field(default_factory=list)
 
 class CustomAppGroup(CustomAppGroupV2):
     """Deprecated class. Use only for backward compatibility"""
     _DEPRECATED_ATTRS = {
         'memberUserIds': 'member_user_ids',
-        'memberSubgroupIds': 'member_subgroup_ids'
+        'memberSubgroupIds': 'member_subgroup_ids',
+        'memberNhiIds': 'member_nhi_ids',
     }
 
     def __init__(self, **kwargs):
@@ -351,12 +403,72 @@ class CustomAppScope(CustomAppScopeV2):
         self.parent_scope_id = value
 
 @dataclass
+class Tag:
+    """Represents a key/value tag."""
+    key: str
+    value: str
+
+
+@dataclass
+class CustomAppResource:
+    """Represents a resource in the custom application inventory."""
+    id: str
+    name: str
+    parent_scope_id: str
+    parent_scope_type: str
+    resource_properties: Optional[Dict] = field(default_factory=dict)
+    is_enabled: bool = True
+    owners: List[str] = field(default_factory=list)
+    tags: List[Tag] = field(default_factory=list)
+    # Granular classification set on the graph Resource node's `type` field
+    # (ResourceTypeMessage.ResourceType, e.g. DEVICE). Matches customapp_resource.proto#9.
+    type: Optional[str] = None
+
+
+@dataclass
+class CustomAppAgentModel:
+    """Describes the foundation model an agent is wired to."""
+    name: str
+    provider: str = AgentModelProvider.AGENT_MODEL_PROVIDER_UNKNOWN.value
+    id: Optional[str] = None
+    version: Optional[str] = None
+    kind: Optional[str] = AgentModelKind.PREBUILT.value
+
+
+@dataclass
+class CustomAppAgentLicenseProfile:
+    """A named license profile for an agent."""
+    name: str
+    tier: str = LicenseTier.LICENSE_TIER_UNSPECIFIED.value
+    license_data: Optional[Dict] = field(default_factory=dict)
+
+
+@dataclass
+class CustomAppAgent:
+    """Represents an AI agent in the custom application inventory."""
+    id: str
+    name: str
+    end_user_auth_type: str = AgentEndUserAuthType.END_USER_AUTH_UNSPECIFIED.value
+    agent_model: Optional[CustomAppAgentModel] = None
+    license_profiles: List[CustomAppAgentLicenseProfile] = field(default_factory=list)
+    device_id: Optional[str] = None
+    user_id: Optional[str] = None
+    # AgentTypeMessage.AgentType (CLAUDE_DESKTOP / CURSOR_DESKTOP). The ingester derives
+    # the resource/external types from this. Matches customapp_agent.proto#8.
+    agent_type: Optional[str] = None
+
+
+@dataclass
 class CustomAppRole:
     """Represents a role in the custom application inventory."""
     name: str
     id: str
     type: Optional[str] = RoleType.CUSTOM_APP_ROLE.name
     permissions: List[str] = field(default_factory=list)
+    # Whether this role grants agent-level permissions. Matches customapp_role.proto#5.
+    has_agent_permissions: Optional[bool] = None
+    # Whether this role grants admin privileges. Matches customapp_role.proto#6.
+    has_admin_privilege: Optional[bool] = None
 
 @dataclass
 class CustomAppRoleAssignmentV2:
@@ -366,6 +478,9 @@ class CustomAppRoleAssignmentV2:
     principal_type: str
     role_id: str
     scope_id: Optional[str] = None
+    # ExternalResourceType of the scope (e.g. RESOURCE_TYPE_CLAUDE_DESKTOP_AGENT) so an
+    # assignment scoped to an agent resolves to that node. Matches customapp_role.proto#6.
+    scope_type: Optional[str] = None
 
 class CustomAppRoleAssignment(CustomAppRoleAssignmentV2):
     """Deprecated class. Use only for backward compatibility"""
@@ -534,6 +649,8 @@ class CustomAppInventory:
     permissions: Dict[str, CustomAppPermission] = field(default_factory=dict)
     groups: Dict[str, CustomAppGroup] = field(default_factory=dict)
     scopes: Dict[str, CustomAppScope] = field(default_factory=dict)
+    resources: Dict[str, CustomAppResource] = field(default_factory=dict)
+    agents: Dict[str, CustomAppAgent] = field(default_factory=dict)
 
 
 def load_inventory_from_json(data: dict) -> CustomAppInventory:
@@ -588,6 +705,27 @@ def load_inventory_from_json(data: dict) -> CustomAppInventory:
     if 'assignments' in data:
         for assign_id, assign_data in data['assignments'].items():
             inventory.assignments[assign_id] = CustomAppRoleAssignment(**assign_data)
+
+    # Load resources
+    if 'resources' in data:
+        for resource_id, resource_data in data['resources'].items():
+            resource_data = resource_data.copy()
+            if 'tags' in resource_data and isinstance(resource_data['tags'], list):
+                resource_data['tags'] = [Tag(**t) if isinstance(t, dict) else t for t in resource_data['tags']]
+            inventory.resources[resource_id] = CustomAppResource(**resource_data)
+
+    # Load agents
+    if 'agents' in data:
+        for agent_id, agent_data in data['agents'].items():
+            agent_data = agent_data.copy()
+            if 'agent_model' in agent_data and isinstance(agent_data['agent_model'], dict):
+                agent_data['agent_model'] = CustomAppAgentModel(**agent_data['agent_model'])
+            if 'license_profiles' in agent_data and isinstance(agent_data['license_profiles'], list):
+                agent_data['license_profiles'] = [
+                    CustomAppAgentLicenseProfile(**p) if isinstance(p, dict) else p
+                    for p in agent_data['license_profiles']
+                ]
+            inventory.agents[agent_id] = CustomAppAgent(**agent_data)
 
     return inventory
 
@@ -685,6 +823,56 @@ def _check_permission_enums(inventory: CustomAppInventory, strict_enums: bool) -
     return ("Permission Enum Validation", errors)
 
 
+def _check_resource_references(inventory: CustomAppInventory, strict_enums: bool) -> tuple:
+    """Check resource parent scope references and enum validations.
+
+    Returns:
+        Tuple of (check_name, list_of_errors)
+    """
+    errors = []
+    valid_scope_types = [e.value for e in ScopeType]
+    for resource_id, resource in inventory.resources.items():
+        if resource.parent_scope_id not in inventory.scopes:
+            errors.append(f"Resource '{resource_id}' parent_scope_id '{resource.parent_scope_id}' not found in scopes")
+        if strict_enums:
+            if resource.parent_scope_type not in valid_scope_types:
+                errors.append(f"Resource '{resource_id}' has invalid parent_scope_type: '{resource.parent_scope_type}'")
+        for owner_id in resource.owners:
+            if owner_id not in inventory.users:
+                errors.append(f"Resource '{resource_id}' owner '{owner_id}' not found in users")
+    return ("Resource Reference Validation", errors)
+
+
+def _check_agent_references(inventory: CustomAppInventory, strict_enums: bool) -> tuple:
+    """Check agent model and license tier enum validations.
+
+    Returns:
+        Tuple of (check_name, list_of_errors)
+    """
+    errors = []
+    valid_providers = [e.value for e in AgentModelProvider]
+    valid_kinds = [e.value for e in AgentModelKind]
+    valid_auth_types = [e.value for e in AgentEndUserAuthType]
+    valid_tiers = [e.value for e in LicenseTier]
+    for agent_id, agent in inventory.agents.items():
+        if strict_enums:
+            if agent.end_user_auth_type and agent.end_user_auth_type not in valid_auth_types:
+                errors.append(f"Agent '{agent_id}' has invalid end_user_auth_type: '{agent.end_user_auth_type}'")
+            if agent.agent_model:
+                if agent.agent_model.provider and agent.agent_model.provider not in valid_providers:
+                    errors.append(f"Agent '{agent_id}' agent_model has invalid provider: '{agent.agent_model.provider}'")
+                if agent.agent_model.kind and agent.agent_model.kind not in valid_kinds:
+                    errors.append(f"Agent '{agent_id}' agent_model has invalid kind: '{agent.agent_model.kind}'")
+            for i, profile in enumerate(agent.license_profiles):
+                if profile.tier and profile.tier not in valid_tiers:
+                    errors.append(f"Agent '{agent_id}' license_profiles[{i}] has invalid tier: '{profile.tier}'")
+        if agent.device_id and agent.device_id not in inventory.resources:
+            errors.append(f"Agent '{agent_id}' device_id '{agent.device_id}' not found in resources")
+        if agent.user_id and agent.user_id not in inventory.users:
+            errors.append(f"Agent '{agent_id}' user_id '{agent.user_id}' not found in users")
+    return ("Agent Validation", errors)
+
+
 def _check_assignment_references(inventory: CustomAppInventory, strict_enums: bool) -> tuple:
     """Check assignment references (most complex check).
 
@@ -741,6 +929,8 @@ def validate_inventory_consistency(
         _check_role_references,
         _check_permission_enums,
         _check_assignment_references,
+        _check_resource_references,
+        _check_agent_references,
     ]
 
     all_errors = []

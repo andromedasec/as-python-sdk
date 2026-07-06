@@ -264,6 +264,21 @@
      "name": "pVirtualCardPFY",
      "access_level": "ACCESS_LEVEL_CREATE",
      "service_name": "Billing"
+   },
+   "Modify": {
+     "name": "Modify",
+     "access_level": "ACCESS_LEVEL_WRITE_DATA",
+     "service_name": "Schema"
+   },
+   "Modify-S": {
+     "name": "Modify-S",
+     "access_level": "ACCESS_LEVEL_WRITE_DATA",
+     "service_name": "Schema"
+   },
+   "Read": {
+     "name": "Read",
+     "access_level": "ACCESS_LEVEL_READ_DATA",
+     "service_name": "Schema"
    }
  },
  "groups": {
@@ -326,7 +341,7 @@
       "status": "ENABLED"
     },
     "fred.marsh@beatles.ai": {
-      "id": "fred.marsh@beatles.ai",
+      "id": "id-fred.marsh@beatles.ai",
       "username": "fred.marsh@beatles.ai",
       "name": "Fred Marsh",
       "status": "ENABLED"
@@ -403,7 +418,25 @@
       "id": "mike.richard@beatles.ai",
       "name": "Mike Richard",
       "status": "ENABLED",
-      "username": "mike.richard@beatles.ai"
+      "username": "mike.richard@beatles.ai",
+      "hris_attributes": {
+        "email": "mike.richard@beatles.ai",
+        "org_name": "Human Resources",
+        "business_title": "Sr. HR Administrator",
+        "manager_id": "ashley.porter@beatles.ai",
+        "manager_name": "Ashley, Porter",
+        "position_title": "Sr. HR Administrator",
+        "division": "North America",
+        "city": "Lindon",
+        "state": "Utah",
+        "country": "United States",
+        "hire_date": "2025-01-06T00:00:00Z",
+        "termination_date": "2030-02-06T00:00:00Z"
+      },
+      "idp_attributes_map": {
+        "cost_center": "4242",
+        "security_clearance": "Top Secret"
+      }
     },
     "ashley.porter@beatles.ai": {
       "hr_type": "EMPLOYEE",
@@ -693,52 +726,32 @@
         "pManageVendorsAdvanced",
         "pManageStripeAccount",
         "enabedBillbaseUI",
-        "enabledNewSuperOrgPage",
-        "pModifyData",
-        "pModifyBank",
-        "pModifyBilling",
-        "pViewOrg",
-        "pViewACH",
-        "pViewBank",
-        "pViewBilling",
-        "pViewCheckInfo",
-        "pViewCheckImage",
-        "pModifyCheckImage",
-        "pDataEntry",
-        "pViewCheckReports",
-        "pViewTxnReports",
-        "pMergeRecords",
-        "pModifyEmail",
-        "pImpersonation",
-        "pDoCsEmulation",
-        "pSyncTools",
-        "pUpdateOrgBilling",
-        "pSyncConfig",
-        "pAccessToHighSecurityPartnersData",
-        "pManageFederatedDomains",
-        "pAccessHIPAAOrgs",
-        "pViewRiskProfile",
-        "pViewChecks",
-        "pManageVendorsAdvanced",
-        "pManageStripeAccount",
-        "enabedBillbaseUI",
         "enabledNewSuperOrgPage"
       ]
     },
     "Modify": {
       "id": "Modify",
       "name": "Modify",
-      "type": "CUSTOM_APP_ROLE"
+      "type": "CUSTOM_APP_ROLE",
+      "permissions": [
+        "Modify"
+      ]
     },
     "Modify-S": {
       "id": "Modify-S",
       "name": "Modify-S",
-      "type": "CUSTOM_APP_ROLE"
+      "type": "CUSTOM_APP_ROLE",
+      "permissions": [
+        "Modify-S"
+      ]
     },
     "Read": {
       "id": "Read",
       "name": "Read",
-      "type": "CUSTOM_APP_ROLE"
+      "type": "CUSTOM_APP_ROLE",
+      "permissions": [
+        "Read"
+      ]
     }
   },
   "assignments": {
@@ -826,6 +839,175 @@
       "principal_type": "GROUP",
       "role_id": "Read",
       "scope_id": "Server A/Drive:\\location\\general\\Team Folder"
+    }
+  },
+  "resources": {
+    "resource-finance-reports-db": {
+      "id": "resource-finance-reports-db",
+      "name": "Finance Reports Database",
+      "parent_scope_id": "Server A/Drive:\\location\\finance\\Reports",
+      "parent_scope_type": "ACCOUNT",
+      "resource_properties": {
+        "type": "database",
+        "engine": "postgres",
+        "region": "us-east-1"
+      },
+      "is_enabled": true,
+      "owners": ["matt.james@beatles.ai", "marcus.smith@beatles.ai"],
+      "tags": [
+        {"key": "env", "value": "production"},
+        {"key": "team", "value": "finance"}
+      ]
+    },
+    "resource-team-folder-docs": {
+      "id": "resource-team-folder-docs",
+      "name": "Team Shared Documents",
+      "parent_scope_id": "Server A/Drive:\\location\\general\\Team Folder",
+      "parent_scope_type": "ACCOUNT",
+      "resource_properties": {
+        "type": "storage",
+        "path": "Drive:\\location\\general\\Team Folder\\docs",
+        "size_mb": 2048
+      },
+      "is_enabled": true,
+      "owners": ["chip.brown@beatles.ai"],
+      "tags": [
+        {"key": "env", "value": "production"},
+        {"key": "classification", "value": "internal"}
+      ]
+    },
+    "resource-laptop-mike.richard": {
+      "id": "resource-laptop-mike.richard",
+      "name": "Mike Richard's Laptop",
+      "parent_scope_id": "Server A/Drive:\\location\\general\\Team Folder",
+      "parent_scope_type": "ACCOUNT",
+      "resource_properties": {
+        "type": "device",
+        "device_type": "laptop",
+        "os": "macOS",
+        "serial_number": "C02XR1XMJGH5"
+      },
+      "is_enabled": true,
+      "owners": ["mike.richard@beatles.ai"],
+      "tags": [
+        {"key": "owner", "value": "mike.richard@beatles.ai"},
+        {"key": "device_type", "value": "laptop"}
+      ]
+    },
+    "resource-laptop-bobbie.laundry": {
+      "id": "resource-laptop-bobbie.laundry",
+      "name": "Bobbie Laundry's Laptop",
+      "parent_scope_id": "Server A/Drive:\\location\\general\\Team Folder",
+      "parent_scope_type": "ACCOUNT",
+      "resource_properties": {
+        "type": "device",
+        "device_type": "laptop",
+        "os": "macOS",
+        "serial_number": "C02YK9XMJGH6"
+      },
+      "is_enabled": true,
+      "owners": ["bobbie.laundry@beatles.ai"],
+      "tags": [
+        {"key": "owner", "value": "bobbie.laundry@beatles.ai"},
+        {"key": "device_type", "value": "laptop"}
+      ]
+    }
+  },
+  "agents": {
+    "agent-cursor-mike.richard": {
+      "id": "agent-cursor-mike.richard",
+      "name": "Cursor (mike.richard@beatles.ai)",
+      "end_user_auth_type": "OAUTH_PER_USER",
+      "device_id": "resource-laptop-mike.richard",
+      "user_id": "mike.richard@beatles.ai",
+      "agent_model": {
+        "id": "ANTHROPIC/claude-sonnet-4/4.6",
+        "name": "claude-sonnet-4",
+        "version": "4.6",
+        "provider": "ANTHROPIC",
+        "kind": "PREBUILT"
+      },
+      "license_profiles": [
+        {
+          "name": "cursor-pro",
+          "tier": "INDIVIDUAL",
+          "license_data": {
+            "licensed_user": "mike.richard@beatles.ai",
+            "plan": "pro"
+          }
+        }
+      ]
+    },
+    "agent-claude-desktop-mike.richard": {
+      "id": "agent-claude-desktop-mike.richard",
+      "name": "Claude Desktop (mike.richard@beatles.ai)",
+      "end_user_auth_type": "OAUTH_PER_USER",
+      "device_id": "resource-laptop-mike.richard",
+      "user_id": "mike.richard@beatles.ai",
+      "agent_model": {
+        "id": "ANTHROPIC/claude-sonnet-4/4.6",
+        "name": "claude-sonnet-4",
+        "version": "4.6",
+        "provider": "ANTHROPIC",
+        "kind": "PREBUILT"
+      },
+      "license_profiles": [
+        {
+          "name": "claude-pro",
+          "tier": "INDIVIDUAL",
+          "license_data": {
+            "licensed_user": "mike.richard@beatles.ai",
+            "plan": "pro"
+          }
+        }
+      ]
+    },
+    "agent-antigravity-mike.richard": {
+      "id": "agent-antigravity-mike.richard",
+      "name": "Antigravity (mike.richard@beatles.ai)",
+      "end_user_auth_type": "OAUTH_PER_USER",
+      "device_id": "resource-laptop-mike.richard",
+      "user_id": "mike.richard@beatles.ai",
+      "agent_model": {
+        "id": "AGENT_MODEL_PROVIDER_UNKNOWN/antigravity/",
+        "name": "antigravity",
+        "version": "",
+        "provider": "AGENT_MODEL_PROVIDER_UNKNOWN",
+        "kind": "AGENT_MODEL_KIND_UNSPECIFIED"
+      },
+      "license_profiles": [
+        {
+          "name": "antigravity-standard",
+          "tier": "INDIVIDUAL",
+          "license_data": {
+            "licensed_user": "mike.richard@beatles.ai"
+          }
+        }
+      ]
+    },
+    "agent-claude-desktop-bobbie.laundry": {
+      "id": "agent-claude-desktop-bobbie.laundry",
+      "name": "Claude Desktop (bobbie.laundry@beatles.ai)",
+      "end_user_auth_type": "OAUTH_PER_USER",
+      "device_id": "resource-laptop-bobbie.laundry",
+      "user_id": "bobbie.laundry@beatles.ai",
+      "agent_model": {
+        "id": "ANTHROPIC/claude-sonnet-4/4.6",
+        "name": "claude-sonnet-4",
+        "version": "4.6",
+        "provider": "ANTHROPIC",
+        "kind": "PREBUILT"
+      },
+      "license_profiles": [
+        {
+          "name": "claude-pro",
+          "tier": "INDIVIDUAL",
+          "license_data": {
+            "licensed_user": "bobbie.laundry@beatles.ai",
+            "plan": "pro"
+          }
+        }
+      ]
     }
   }
 }

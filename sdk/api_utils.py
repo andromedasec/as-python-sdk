@@ -729,6 +729,13 @@ class APIUtils:
                 "groupFilter": ad_configuration["ldapFilters"]["groupFilter"],
             }
         }
+        # Pass through the user data mapping profile if the YAML carries one —
+        # it carries user_attribute_exclude_keys / user_attribute_filter_exclude_keys
+        # plus source/data mapping rules that the apiserver expects on the proto.
+        if "userDataMappingProfile" in ad_configuration:
+            ad_provider["userDataMappingProfile"] = ad_configuration["userDataMappingProfile"]
+        elif "user_data_mapping_profile" in ad_configuration:
+            ad_provider["userDataMappingProfile"] = ad_configuration["user_data_mapping_profile"]
         return ad_provider
 
     def create_or_update_ad_provider_config(

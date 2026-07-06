@@ -1,0 +1,7 @@
+provider,eligible_group,eligible_users,access_group,access_profile_name, description
+Beatles Entra,Beatles Entra Users Eligibility,,as-en-l1-uc1;as-en-l1-uc2,testing, multiple groups
+Beatles Entra,Beatles Entra Users Eligibility,,as-en-l1-uc1;as-en-l1-uc2,Beatles-invalid-profile, invalid profile
+Beatles Entra,Beatles Entra Users Eligibility,,invalid group,Beatles-default, invalid access group
+Beatles Entra,Beatles Entra Users Eligibility,,as-en-l2-uc2,,Beatles-default, non default profile
+Beatles Entra,,mike.richard_007@beatlesandromedasecurity.onmicrosoft.com,as-en-l2-uc2,, empty profile choose default
+Beatles Entra,Beatles Entra Users Eligibility, mike.richard@beatlesandromedasecurity.onmicrosoft.com;mike.richard_007@beatlesandromedasecurity.onmicrosoft.com,as-en-l3-uc2,, mix with default profile

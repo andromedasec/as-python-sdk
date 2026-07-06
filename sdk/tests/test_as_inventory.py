@@ -208,6 +208,49 @@ def test_identity_access_requests(ai: AndromedaInventory):
         assert request["providerDetailsData"]['name'], f"Provider name is missing for {request}"
         assert request["requesterUser"], f"requester user is missing for {request}"
 
+def test_identity_eligible_resources(ai: AndromedaInventory):
+    """
+    Test the identity eligible resources
+    This test is to ensure that the individual resources an identity is eligible to
+    request JIT access to (RESOURCE_ACCESS) are fetched correctly
+    """
+    identity_filter = {"email": {"icontains": "bobbie.landry"}}
+    identity = next(ai.as_humans_itr(filters=identity_filter))
+    logger.debug("Identity: %s eligible resources count %s", identity["id"],
+        len(list(ai.as_identity_eligible_resources_itr(identity["id"]))))
+    for resource in ai.as_identity_eligible_resources_itr(identity["id"]):
+        logger.debug("Identity eligible resource: %s", resource)
+        assert resource["serviceType"], f"Service type is missing for {resource}"
+        assert resource["scopeId"], f"Scope ID is missing for {resource}"
+        # A specific-resource record carries eligibleResource details; an
+        # allResources=True record (service-type-wide) intentionally has none.
+        if not resource["allResources"]:
+            assert resource["eligibleResource"]["id"], f"Resource ID is missing for {resource}"
+            assert resource["eligibleResource"]["name"], f"Resource name is missing for {resource}"
+
+def test_identity_eligible_resource_roles(ai: AndromedaInventory):
+    """
+    Test the identity eligible resource roles
+    This test is to ensure that the eligible roles for a chosen resource are fetched correctly
+    """
+    identity_filter = {"email": {"icontains": "bobbie.landry"}}
+    identity = next(ai.as_humans_itr(filters=identity_filter))
+    resource = next(ai.as_identity_eligible_resources_itr(identity["id"]))
+    filters = {
+        "scopeId": {"equals": resource["scopeId"]},
+        "serviceType": {"equals": resource["serviceType"]},
+    }
+    if resource["allResources"]:
+        filters["allResourcesFilter"] = True
+    else:
+        filters["eligibleResourceId"] = {"equals": resource["resourceId"]}
+    logger.debug("Identity: %s eligible resource roles count %s", identity["id"],
+        len(list(ai.as_identity_eligible_resource_roles_itr(identity["id"], filters=filters))))
+    for role in ai.as_identity_eligible_resource_roles_itr(identity["id"], filters=filters):
+        logger.debug("Identity eligible resource role: %s", role)
+        assert role["policyId"], f"Policy ID is missing for {role}"
+        assert role["policyName"], f"Policy name is missing for {role}"
+
 def test_non_human_identities(ai: AndromedaInventory):
     """
     Test the non human identities
@@ -307,3 +350,119 @@ def test_provider_itr(ai: AndromedaInventory):
         assert provider['mode'], f"provider missing mode {provider}"
         count += 1
     assert count > 0, "no providers found"
+
+
+def test_tenant_departments_itr(ai: AndromedaInventory):
+    """Departments iterator returns items with a department field."""
+    dept = next(ai.as_tenant_departments_itr())
+    logger.debug("First department: %s", dept)
+    assert "department" in dept, f"department key missing in {dept}"
+    assert dept["department"] is not None, f"department value is empty in {dept}"
+
+
+def test_tenant_departments_itr_with_filter(ai: AndromedaInventory):
+    """Departments iterator respects icontains filter on department name."""
+    dept = next(ai.as_tenant_departments_itr())
+    first_name: str = dept["department"]
+    search_prefix = first_name[:3]
+    results = list(ai.as_tenant_departments_itr(
+        filters={"department": {"icontains": search_prefix}}
+    ))
+    logger.debug("Departments matching %r: %s", search_prefix, results)
+    assert results, f"No departments returned for prefix {search_prefix!r}"
+    for item in results:
+        assert item["department"].lower().find(search_prefix.lower()) != -1, (
+            f"department {item['department']!r} does not contain {search_prefix!r}"
+        )
+
+
+def test_user_attribute_values_itr(ai: AndromedaInventory):
+    """user_attribute_values_itr returns value dicts for a known key."""
+    # Discover a real key first so the test is not hardcoded to tenant data.
+    attr = next(ai.as_user_attributes_itr())
+    key = attr["key"]
+    logger.debug("Testing user attribute values for key=%r", key)
+    value = next(ai.as_user_attribute_values_itr(key=key))
+    logger.debug("First value for key=%r: %s", key, value)
+    assert "value" in value, f"'value' key missing in {value}"
+    assert value["value"], f"value is empty for key={key!r}"
+
+
+def test_user_attribute_values_itr_with_search(ai: AndromedaInventory):
+    """user_attribute_values_itr respects icontains value filter."""
+    attr = next(ai.as_user_attributes_itr())
+    key = attr["key"]
+    first_value: str = next(ai.as_user_attribute_values_itr(key=key))["value"]
+    search_prefix = first_value[:3]
+    results = list(ai.as_user_attribute_values_itr(
+        key=key, value_filters={"value": {"icontains": search_prefix}}
+    ))
+    logger.debug("Values for key=%r matching %r: %s", key, search_prefix, results)
+    assert results, f"No values returned for key={key!r} prefix={search_prefix!r}"
+    for item in results:
+        assert item["value"].lower().find(search_prefix.lower()) != -1, (
+            f"value {item['value']!r} does not contain {search_prefix!r}"
+        )
+
+
+def test_user_attributes_itr(ai: AndromedaInventory):
+    """user_attributes_itr returns {key, values} items with no filter."""
+    attr = next(ai.as_user_attributes_itr())
+    logger.debug("First user attribute: %s", attr)
+    assert "key" in attr, f"'key' missing in {attr}"
+    assert attr["key"], f"key is empty in {attr}"
+    assert "values" in attr, f"'values' missing in {attr}"
+    assert isinstance(attr["values"], list), f"values is not a list in {attr}"
+
+
+def test_user_attributes_itr_key_search(ai: AndromedaInventory):
+    """user_attributes_itr filters by key icontains."""
+    attr = next(ai.as_user_attributes_itr())
+    key: str = attr["key"]
+    search_prefix = key[:3]
+    results = list(ai.as_user_attributes_itr(
+        filters={"key": {"icontains": search_prefix}}
+    ))
+    logger.debug("Attributes matching key prefix %r: %s", search_prefix, results)
+    assert results, f"No attributes returned for key prefix {search_prefix!r}"
+    for item in results:
+        assert item["key"].lower().find(search_prefix.lower()) != -1, (
+            f"key {item['key']!r} does not contain {search_prefix!r}"
+        )
+
+
+def test_user_attributes_itr_value_search(ai: AndromedaInventory):
+    """user_attributes_itr filters by value icontains."""
+    attr = next(ai.as_user_attributes_itr())
+    if not attr["values"]:
+        pytest.skip(f"No values for key={attr['key']!r}, skipping value_search test")
+    first_value: str = attr["values"][0]
+    search_prefix = first_value[:3]
+    results = list(ai.as_user_attributes_itr(
+        filters={"value": {"icontains": search_prefix}}
+    ))
+    logger.debug("Attributes matching value prefix %r: %s", search_prefix, results)
+    assert results, f"No attributes returned for value prefix {search_prefix!r}"
+    for item in results:
+        matched = any(v.lower().find(search_prefix.lower()) != -1 for v in item["values"])
+        assert matched, f"No value in {item['values']} contains {search_prefix!r}"
+
+
+def test_user_attributes_itr_combined_filter(ai: AndromedaInventory):
+    """user_attributes_itr with both key and value filter returns consistent results."""
+    attr = next(ai.as_user_attributes_itr())
+    key: str = attr["key"]
+    if not attr["values"]:
+        pytest.skip(f"No values for key={key!r}, skipping combined filter test")
+    first_value: str = attr["values"][0]
+    results = list(ai.as_user_attributes_itr(
+        filters={
+            "key": {"icontains": key[:3]},
+            "value": {"icontains": first_value[:3]},
+        }
+    ))
+    logger.debug("Attributes with combined key/value filter: %s", results)
+    for item in results:
+        assert item["key"].lower().find(key[:3].lower()) != -1, (
+            f"key {item['key']!r} does not match key filter"
+        )

@@ -16,7 +16,7 @@ from typing import Dict
 
 from sdk.customapp.custom_app_models import (
     CustomAppUser, CustomAppNhi, CustomAppGroup, CustomAppScope,
-    CustomAppRole, CustomAppRoleAssignment,
+    CustomAppRole, CustomAppRoleAssignment, CustomAppPermission,
     CustomAppInventory
 )
 from sdk.customapp.custom_app_utils import (
@@ -28,10 +28,277 @@ logger = logging.getLogger(__name__)
 
 # Load mock data from external JSON file
 mock_data = {
+ "permissions": {
+   "enabedBillbaseUI": {
+     "name": "enabedBillbaseUI",
+     "access_level": "ACCESS_LEVEL_READ_METADATA",
+     "service_name": "Application"
+   },
+   "enabledNewSuperOrgPage": {
+     "name": "enabledNewSuperOrgPage",
+     "access_level": "ACCESS_LEVEL_READ_METADATA",
+     "service_name": "Application"
+   },
+   "pAccessHIPAAOrgs": {
+     "name": "pAccessHIPAAOrgs",
+     "access_level": "ACCESS_LEVEL_READ_DATA",
+     "service_name": "Application"
+   },
+   "pAccessToHighSecurityPartnersData": {
+     "name": "pAccessToHighSecurityPartnersData",
+     "access_level": "ACCESS_LEVEL_READ_DATA",
+     "service_name": "Application"
+   },
+   "pAccessToTinEin": {
+     "name": "pAccessToTinEin",
+     "access_level": "ACCESS_LEVEL_READ_DATA",
+     "service_name": "Application"
+   },
+   "pARApproval": {
+     "name": "pARApproval",
+     "access_level": "ACCESS_LEVEL_WRITE_DATA",
+     "service_name": "Billing"
+   },
+   "pDataEntry": {
+     "name": "pDataEntry",
+     "access_level": "ACCESS_LEVEL_WRITE_DATA",
+     "service_name": "Application"
+   },
+   "pDoCsEmulation": {
+     "name": "pDoCsEmulation",
+     "access_level": "ACCESS_LEVEL_WRITE_DATA",
+     "service_name": "Application"
+   },
+   "pEditComplianceFields": {
+     "name": "pEditComplianceFields",
+     "access_level": "ACCESS_LEVEL_WRITE_METADATA",
+     "service_name": "Application"
+   },
+   "pEditFraudControl": {
+     "name": "pEditFraudControl",
+     "access_level": "ACCESS_LEVEL_WRITE_METADATA",
+     "service_name": "Application"
+   },
+   "pEditPaymentStatus": {
+     "name": "pEditPaymentStatus",
+     "access_level": "ACCESS_LEVEL_WRITE_DATA",
+     "service_name": "Billing"
+   },
+   "pEditTaxExempt": {
+     "name": "pEditTaxExempt",
+     "access_level": "ACCESS_LEVEL_WRITE_METADATA",
+     "service_name": "Billing"
+   },
+   "pEnterVoidChecks": {
+     "name": "pEnterVoidChecks",
+     "access_level": "ACCESS_LEVEL_WRITE_DATA",
+     "service_name": "Billing"
+   },
+   "pImpersonation": {
+     "name": "pImpersonation",
+     "access_level": "ACCESS_LEVEL_WRITE_DATA",
+     "service_name": "PermissionsManagement"
+   },
+   "pManageBillingDiscounts": {
+     "name": "pManageBillingDiscounts",
+     "access_level": "ACCESS_LEVEL_WRITE_METADATA",
+     "service_name": "Billing"
+   },
+   "pManageFederatedDomains": {
+     "name": "pManageFederatedDomains",
+     "access_level": "ACCESS_LEVEL_WRITE_METADATA",
+     "service_name": "Infrastructure"
+   },
+   "pManageIntlPayments": {
+     "name": "pManageIntlPayments",
+     "access_level": "ACCESS_LEVEL_WRITE_METADATA",
+     "service_name": "Billing"
+   },
+   "pManageStripeAccount": {
+     "name": "pManageStripeAccount",
+     "access_level": "ACCESS_LEVEL_WRITE_METADATA",
+     "service_name": "Billing"
+   },
+   "pManageUsers": {
+     "name": "pManageUsers",
+     "access_level": "ACCESS_LEVEL_PERMISSIONS_MANAGEMENT",
+     "service_name": "PermissionsManagement"
+   },
+   "pManageVendorsAdvanced": {
+     "name": "pManageVendorsAdvanced",
+     "access_level": "ACCESS_LEVEL_WRITE_METADATA",
+     "service_name": "Application"
+   },
+   "pManageWalletBalance": {
+     "name": "pManageWalletBalance",
+     "access_level": "ACCESS_LEVEL_WRITE_DATA",
+     "service_name": "Billing"
+   },
+   "pManualCharges": {
+     "name": "pManualCharges",
+     "access_level": "ACCESS_LEVEL_CREATE",
+     "service_name": "Billing"
+   },
+   "pManualRefunds": {
+     "name": "pManualRefunds",
+     "access_level": "ACCESS_LEVEL_CREATE",
+     "service_name": "Billing"
+   },
+   "pMergeRecords": {
+     "name": "pMergeRecords",
+     "access_level": "ACCESS_LEVEL_WRITE_DATA",
+     "service_name": "Application"
+   },
+   "pModifyBank": {
+     "name": "pModifyBank",
+     "access_level": "ACCESS_LEVEL_WRITE_METADATA",
+     "service_name": "Billing"
+   },
+   "pModifyBilling": {
+     "name": "pModifyBilling",
+     "access_level": "ACCESS_LEVEL_WRITE_METADATA",
+     "service_name": "Billing"
+   },
+   "pModifyCheckImage": {
+     "name": "pModifyCheckImage",
+     "access_level": "ACCESS_LEVEL_WRITE_DATA",
+     "service_name": "Billing"
+   },
+   "pModifyData": {
+     "name": "pModifyData",
+     "access_level": "ACCESS_LEVEL_WRITE_DATA",
+     "service_name": "Application"
+   },
+   "pModifyEmail": {
+     "name": "pModifyEmail",
+     "access_level": "ACCESS_LEVEL_WRITE_METADATA",
+     "service_name": "Application"
+   },
+   "pModifyFundingBank": {
+     "name": "pModifyFundingBank",
+     "access_level": "ACCESS_LEVEL_WRITE_METADATA",
+     "service_name": "Billing"
+   },
+   "pModifyPayment": {
+     "name": "pModifyPayment",
+     "access_level": "ACCESS_LEVEL_WRITE_DATA",
+     "service_name": "Billing"
+   },
+   "pModifyVerify": {
+     "name": "pModifyVerify",
+     "access_level": "ACCESS_LEVEL_WRITE_METADATA",
+     "service_name": "Application"
+   },
+   "pPhotoIDVerification": {
+     "name": "pPhotoIDVerification",
+     "access_level": "ACCESS_LEVEL_WRITE_DATA",
+     "service_name": "Application"
+   },
+   "pPrintChecks": {
+     "name": "pPrintChecks",
+     "access_level": "ACCESS_LEVEL_READ_DATA",
+     "service_name": "Billing"
+   },
+   "pSyncConfig": {
+     "name": "pSyncConfig",
+     "access_level": "ACCESS_LEVEL_WRITE_METADATA",
+     "service_name": "Infrastructure"
+   },
+   "pSyncTools": {
+     "name": "pSyncTools",
+     "access_level": "ACCESS_LEVEL_WRITE_DATA",
+     "service_name": "Infrastructure"
+   },
+   "pUpdateOrgBilling": {
+     "name": "pUpdateOrgBilling",
+     "access_level": "ACCESS_LEVEL_WRITE_METADATA",
+     "service_name": "Billing"
+   },
+   "pViewACH": {
+     "name": "pViewACH",
+     "access_level": "ACCESS_LEVEL_READ_DATA",
+     "service_name": "Billing"
+   },
+   "pViewBank": {
+     "name": "pViewBank",
+     "access_level": "ACCESS_LEVEL_READ_DATA",
+     "service_name": "Billing"
+   },
+   "pViewBilling": {
+     "name": "pViewBilling",
+     "access_level": "ACCESS_LEVEL_READ_DATA",
+     "service_name": "Billing"
+   },
+   "pViewCheckFiles": {
+     "name": "pViewCheckFiles",
+     "access_level": "ACCESS_LEVEL_READ_DATA",
+     "service_name": "Billing"
+   },
+   "pViewCheckImage": {
+     "name": "pViewCheckImage",
+     "access_level": "ACCESS_LEVEL_READ_DATA",
+     "service_name": "Billing"
+   },
+   "pViewCheckInfo": {
+     "name": "pViewCheckInfo",
+     "access_level": "ACCESS_LEVEL_READ_METADATA",
+     "service_name": "Billing"
+   },
+   "pViewCheckReports": {
+     "name": "pViewCheckReports",
+     "access_level": "ACCESS_LEVEL_READ_DATA",
+     "service_name": "Billing"
+   },
+   "pViewChecks": {
+     "name": "pViewChecks",
+     "access_level": "ACCESS_LEVEL_LIST",
+     "service_name": "Billing"
+   },
+   "pViewComplianceFields": {
+     "name": "pViewComplianceFields",
+     "access_level": "ACCESS_LEVEL_READ_METADATA",
+     "service_name": "Application"
+   },
+   "pViewOrg": {
+     "name": "pViewOrg",
+     "access_level": "ACCESS_LEVEL_READ_METADATA",
+     "service_name": "Application"
+   },
+   "pViewPositivePay": {
+     "name": "pViewPositivePay",
+     "access_level": "ACCESS_LEVEL_READ_DATA",
+     "service_name": "Billing"
+   },
+   "pViewRiskProfile": {
+     "name": "pViewRiskProfile",
+     "access_level": "ACCESS_LEVEL_READ_DATA",
+     "service_name": "Application"
+   },
+   "pViewTaxIdReports": {
+     "name": "pViewTaxIdReports",
+     "access_level": "ACCESS_LEVEL_READ_DATA",
+     "service_name": "Billing"
+   },
+   "pViewTxnReports": {
+     "name": "pViewTxnReports",
+     "access_level": "ACCESS_LEVEL_READ_DATA",
+     "service_name": "Billing"
+   },
+   "pViewVerify": {
+     "name": "pViewVerify",
+     "access_level": "ACCESS_LEVEL_READ_DATA",
+     "service_name": "Application"
+   },
+   "pVirtualCardPFY": {
+     "name": "pVirtualCardPFY",
+     "access_level": "ACCESS_LEVEL_CREATE",
+     "service_name": "Billing"
+   }
+ },
  "groups": {
     "Group A": {
       "id": "Group A",
-      "memberUserIds": [
+      "member_user_ids": [
         "chip.brown@beatles.ai",
         "kieran.juarez@beatles.ai",
         "devin.chapman@beatles.ai"
@@ -40,21 +307,21 @@ mock_data = {
     },
     "Group B": {
       "id": "Group B",
-      "memberUserIds": [
+      "member_user_ids": [
         "bobbie.laundry@beatles.ai"
       ],
       "name": "Group B"
     },
     "Group C": {
       "id": "Group C",
-      "memberUserIds": [
+      "member_user_ids": [
         "abby.palmer@beatles.ai"
       ],
       "name": "Group C"
     },
     "Group D": {
       "id": "Group D",
-      "memberUserIds": [
+      "member_user_ids": [
         "john.smith@beatles.ai",
         "jane.doe@beatles.ai"
       ],
@@ -62,7 +329,7 @@ mock_data = {
     },
     "Group E": {
       "id": "Group E",
-      "memberUserIds": [
+      "member_user_ids": [
         "mike.richard@beatles.ai"
       ],
       "name": "Group E"
@@ -112,63 +379,63 @@ mock_data = {
       "status": "ENABLED"
     },
     "abby.palmer@beatles.ai": {
-      "hrType": "EMPLOYEE",
+      "hr_type": "EMPLOYEE",
       "id": "abby.palmer@beatles.ai",
       "name": "Abby Palmer",
       "status": "ENABLED",
       "username": "abby.palmer@beatles.ai"
     },
     "bobbie.laundry@beatles.ai": {
-      "hrType": "EMPLOYEE",
+      "hr_type": "CONTINGENT_WORKER",
       "id": "bobbie.laundry@beatles.ai",
       "name": "Bobbie Laundry",
       "status": "ENABLED",
       "username": "bobbie.laundry@beatles.ai"
     },
     "chip.brown@beatles.ai": {
-      "hrType": "EMPLOYEE",
+      "hr_type": "EMPLOYEE",
       "id": "chip.brown@beatles.ai",
       "name": "Brown Chip",
       "status": "ENABLED",
       "username": "chip.brown@beatles.ai"
     },
     "devin.chapman@beatles.ai": {
-      "hrType": "EMPLOYEE",
+      "hr_type": "EMPLOYEE",
       "id": "devin.chapman@beatles.ai",
       "name": "Devin Chapman",
       "status": "ENABLED",
       "username": "devin.chapman@beatles.ai"
     },
     "jane.doe@beatles.ai": {
-      "hrType": "EMPLOYEE",
+      "hr_type": "EMPLOYEE",
       "id": "jane.doe@beatles.ai",
       "name": "Jane Doe",
       "status": "ENABLED",
       "username": "jane.doe@beatles.ai"
     },
     "john.smith@beatles.ai": {
-      "hrType": "EMPLOYEE",
+      "hr_type": "EMPLOYEE",
       "id": "john.smith@beatles.ai",
       "name": "John Smith",
       "status": "ENABLED",
       "username": "john.smith@beatles.ai"
     },
     "kieran.juarez@beatles.ai": {
-      "hrType": "EMPLOYEE",
+      "hr_type": "EMPLOYEE",
       "id": "kieran.juarez@beatles.ai",
       "name": "Kieran Juarez",
       "status": "ENABLED",
       "username": "kieran.juarez@beatles.ai"
     },
     "mike.richard@beatles.ai": {
-      "hrType": "EMPLOYEE",
+      "hr_type": "EMPLOYEE",
       "id": "mike.richard@beatles.ai",
       "name": "Mike Richard",
       "status": "ENABLED",
       "username": "mike.richard@beatles.ai"
     },
     "ashley.porter@beatles.ai": {
-      "hrType": "EMPLOYEE",
+      "hr_type": "EMPLOYEE",
       "id": "ashley.porter@beatles.ai",
       "name": "Ashley Porter",
       "status": "ENABLED",
@@ -181,40 +448,40 @@ mock_data = {
       "id": "app-uuid-00001",
       "username": "application-1",
       "name": "Application 1 Service Identity",
-      "ownerId": "matt.james@beatles.ai",
-      "custodianId": "marcus.smith@beatles.ai",
+      "owner_id": "matt.james@beatles.ai",
+      "custodian_id": "marcus.smith@beatles.ai",
       "status": "ENABLED"
     },
     "application-2": {
       "id": "app-uuid-00002",
       "username": "application-2",
       "name": "Application 2 Service Identity",
-      "ownerId": "matt.james@beatles.ai",
-      "custodianId": "marcus.smith@beatles.ai",
+      "owner_id": "matt.james@beatles.ai",
+      "custodian_id": "marcus.smith@beatles.ai",
       "status": "ENABLED"
     },
     "application-3": {
       "id": "app-uuid-00003",
       "username": "application-3",
       "name": "Application 3 Service Identity",
-      "ownerId": "matt.cooper@beatles.ai",
-      "custodianId": "matt.james@beatles.ai",
+      "owner_id": "matt.cooper@beatles.ai",
+      "custodian_id": "matt.james@beatles.ai",
       "status": "ENABLED"
     },
     "application-4": {
       "id": "app-uuid-00004",
       "username": "application-4",
       "name": "Application 4 Service Identity",
-      "ownerId": "matt.cooper@beatles.ai",
-      "custodianId": "marcus.smith@beatles.ai",
+      "owner_id": "matt.cooper@beatles.ai",
+      "custodian_id": "marcus.smith@beatles.ai",
       "status": "DISABLED"
     },
     "application-5": {
       "id": "app-uuid-00005",
       "username": "application-5",
       "name": "Application 5 Service Identity",
-      "ownerId": "marcus.smith@beatles.ai",
-      "custodianId": "matt.cooper@beatles.ai",
+      "owner_id": "marcus.smith@beatles.ai",
+      "custodian_id": "matt.cooper@beatles.ai",
       "status": "ENABLED"
     }
   },
@@ -227,13 +494,13 @@ mock_data = {
     "Server A/Drive:\\location\\finance\\Reports": {
       "id": "Server A/Drive:\\location\\finance\\Reports",
       "name": "Drive:\\location\\finance\\Reports",
-      "parentScopeId": "Server A",
+      "parent_scope_id": "Server A",
       "type": "ACCOUNT"
     },
     "Server A/Drive:\\location\\general\\Team Folder": {
       "id": "Server A/Drive:\\location\\general\\Team Folder",
       "name": "Drive:\\location\\general\\Team Folder",
-      "parentScopeId": "Server A",
+      "parent_scope_id": "Server A",
       "type": "ACCOUNT"
     },
     "Server B": {
@@ -244,7 +511,7 @@ mock_data = {
     "Server B/Drive:\\projects\\Engineering": {
       "id": "Server B/Drive:\\projects\\Engineering",
       "name": "Drive:\\projects\\Engineering",
-      "parentScopeId": "Server B",
+      "parent_scope_id": "Server B",
       "type": "ACCOUNT"
     }
   },
@@ -506,90 +773,92 @@ mock_data = {
   "assignments": {
     "fred.marsh@beatles.ai_partner_support_l1": {
       "id": "fred.marsh@beatles.ai_partner_support_l1",
-      "principalId": "fred.marsh@beatles.ai",
-      "principalType": "HUMAN",
-      "roleId": "partner_support_l1"
+      "principal_id": "fred.marsh@beatles.ai",
+      "principal_type": "HUMAN",
+      "role_id": "partner_support_l1"
     },
     "matt.cooper@beatles.ai_beatles-matt-cooper-role": {
       "id": "matt.cooper@beatles.ai_beatles-matt-cooper-role",
-      "principalId": "matt.cooper@beatles.ai",
-      "principalType": "HUMAN",
-      "roleId": "beatles-matt-cooper-role"
+      "principal_id": "matt.cooper@beatles.ai",
+      "principal_type": "HUMAN",
+      "role_id": "beatles-matt-cooper-role"
     },
     "richar.Mike@beatles.ai_tech_support_l1": {
       "id": "richar.Mike@beatles.ai_tech_support_l1",
-      "principalId": "richar.Mike@beatles.ai",
-      "principalType": "HUMAN",
-      "roleId": "tech_support_l1"
+      "principal_id": "richar.Mike@beatles.ai",
+      "principal_type": "HUMAN",
+      "role_id": "tech_support_l1"
     },
     "marcus.smith@beatles.ai_processing_l1": {
       "id": "marcus.smith@beatles.ai_processing_l1",
-      "principalId": "marcus.smith@beatles.ai",
-      "principalType": "HUMAN",
-      "roleId": "processing_l1"
+      "principal_id": "marcus.smith@beatles.ai",
+      "principal_type": "HUMAN",
+      "role_id": "processing_l1"
     },
     "matt.james@beatles.ai_tech_support_l1": {
       "id": "matt.james@beatles.ai_tech_support_l1",
-      "principalId": "matt.james@beatles.ai",
-      "principalType": "HUMAN",
-      "roleId": "tech_support_l1"
+      "principal_id": "matt.james@beatles.ai",
+      "principal_type": "HUMAN",
+      "role_id": "tech_support_l1"
     },
     "matt.james@beatles.ai_riskops_manager": {
       "id": "matt.james@beatles.ai_riskops_manager",
-      "principalId": "matt.james@beatles.ai",
-      "principalType": "HUMAN",
-      "roleId": "riskops_manager"
+      "principal_id": "matt.james@beatles.ai",
+      "principal_type": "HUMAN",
+      "role_id": "riskops_manager"
     },
     "samy.joseph@beatles.ai_internal_support_l1": {
       "id": "samy.joseph@beatles.ai_internal_support_l1",
-      "principalId": "samy.joseph@beatles.ai",
-      "principalType": "HUMAN",
-      "roleId": "internal_support_l1"
+      "principal_id": "samy.joseph@beatles.ai",
+      "principal_type": "HUMAN",
+      "role_id": "internal_support_l1",
+      "scope_id": "Server A/Drive:\\location\\general\\Team Folder"
     },
     "netapp_beatles|Group A|Modify|Server A/Drive:\\location\\general\\Team Folder": {
       "id": "netapp_beatles|Group A|Modify|Server A/Drive:\\location\\general\\Team Folder",
-      "principalId": "Group A",
-      "principalType": "GROUP",
-      "roleId": "Modify",
-      "scopeId": "Server A/Drive:\\location\\general\\Team Folder"
+      "principal_id": "Group A",
+      "principal_type": "GROUP",
+      "role_id": "Modify",
+      "scope_id": "Server A/Drive:\\location\\general\\Team Folder"
     },
     "netapp_beatles|Group B|Modify-S|Server A/Drive:\\location\\finance\\Reports": {
       "id": "netapp_beatles|Group B|Modify-S|Server A/Drive:\\location\\finance\\Reports",
-      "principalId": "Group B",
-      "principalType": "GROUP",
-      "roleId": "Modify-S",
-      "scopeId": "Server A/Drive:\\location\\finance\\Reports"
+      "principal_id": "Group B",
+      "principal_type": "GROUP",
+      "role_id": "Modify-S",
+      "scope_id": "Server A/Drive:\\location\\finance\\Reports"
     },
     "netapp_beatles|Group C|Read|Server A/Drive:\\location\\finance\\Reports": {
       "id": "netapp_beatles|Group C|Read|Server A/Drive:\\location\\finance\\Reports",
-      "principalId": "Group C",
-      "principalType": "GROUP",
-      "roleId": "Read",
-      "scopeId": "Server A/Drive:\\location\\finance\\Reports"
+      "principal_id": "Group C",
+      "principal_type": "GROUP",
+      "role_id": "Read",
+      "scope_id": "Server A/Drive:\\location\\finance\\Reports"
     },
     "netapp_beatles|Group D|Modify|Server B/Drive:\\projects\\Engineering": {
       "id": "netapp_beatles|Group D|Modify|Server B/Drive:\\projects\\Engineering",
-      "principalId": "Group D",
-      "principalType": "GROUP",
-      "roleId": "Modify",
-      "scopeId": "Server B/Drive:\\projects\\Engineering"
+      "principal_id": "Group D",
+      "principal_type": "GROUP",
+      "role_id": "Modify",
+      "scope_id": "Server B/Drive:\\projects\\Engineering"
     },
     "netapp_beatles|Group D|Read|Server B/Drive:\\projects\\Engineering": {
       "id": "netapp_beatles|Group D|Read|Server B/Drive:\\projects\\Engineering",
-      "principalId": "Group D",
-      "principalType": "GROUP",
-      "roleId": "Read",
-      "scopeId": "Server B/Drive:\\projects\\Engineering"
+      "principal_id": "Group D",
+      "principal_type": "GROUP",
+      "role_id": "Read",
+      "scope_id": "Server B/Drive:\\projects\\Engineering"
     },
     "netapp_beatles|Group E|Read|Server A/Drive:\\location\\general\\Team Folder": {
       "id": "netapp_beatles|Group E|Read|Server A/Drive:\\location\\general\\Team Folder",
-      "principalId": "Group E",
-      "principalType": "GROUP",
-      "roleId": "Read",
-      "scopeId": "Server A/Drive:\\location\\general\\Team Folder"
+      "principal_id": "Group E",
+      "principal_type": "GROUP",
+      "role_id": "Read",
+      "scope_id": "Server A/Drive:\\location\\general\\Team Folder"
     }
   }
 }
+
 
 # Constants
 DEFAULT_BATCH_SIZE = 100
@@ -616,7 +885,7 @@ class CustomAppInventoryTransformer:
                 username=user_data["username"],
                 name=user_data["name"],
                 status=user_data.get("status"),
-                hr_type=user_data.get("hrType"),
+                hr_type=user_data.get("hr_type"),
             )
 
         # Parse nhis
@@ -628,8 +897,8 @@ class CustomAppInventoryTransformer:
                 id=nhi_data["id"],
                 type=nhi_data.get("type"),
                 is_external_client=nhi_data.get("is_external_client", False),
-                owner_id=nhi_data.get("ownerId"),
-                custodian_id=nhi_data.get("custodianId"),
+                owner_id=nhi_data.get("owner_id"),
+                custodian_id=nhi_data.get("custodian_id"),
                 status=nhi_data.get("status"),
             )
 
@@ -639,8 +908,8 @@ class CustomAppInventoryTransformer:
             groups[key] = CustomAppGroup(
                 name=group_data["name"],
                 id=group_data["id"],
-                member_user_ids=group_data.get("memberUserIds", []),
-                member_subgroup_ids=group_data.get("memberSubgroupIds", []),
+                member_user_ids=group_data.get("member_user_ids", []),
+                member_subgroup_ids=group_data.get("member_subgroup_ids", []),
             )
 
         # Parse scopes
@@ -650,7 +919,7 @@ class CustomAppInventoryTransformer:
                 id=scope_data["id"],
                 name=scope_data["name"],
                 type=scope_data["type"],
-                parent_scope_id=scope_data.get("parentScopeId"),
+                parent_scope_id=scope_data.get("parent_scope_id"),
             )
 
         # Parse roles
@@ -668,10 +937,19 @@ class CustomAppInventoryTransformer:
         for key, assignment_data in data.get("assignments", {}).items():
             assignments[key] = CustomAppRoleAssignment(
                 id=assignment_data["id"],
-                principal_id=assignment_data["principalId"],
-                principal_type=assignment_data["principalType"],
-                role_id=assignment_data["roleId"],
-                scope_id=assignment_data.get("scopeId"),
+                principal_id=assignment_data["principal_id"],
+                principal_type=assignment_data["principal_type"],
+                role_id=assignment_data["role_id"],
+                scope_id=assignment_data.get("scope_id"),
+            )
+
+        # Parse permissions
+        permissions: Dict[str, CustomAppPermission] = {}
+        for key, permission_data in data.get("permissions", {}).items():
+            permissions[key] = CustomAppPermission(
+                name=permission_data["name"],
+                access_level=permission_data.get("access_level"),
+                service_name=permission_data.get("service_name"),
             )
 
         return CustomAppInventory(
@@ -679,7 +957,7 @@ class CustomAppInventoryTransformer:
             nhis=nhis,
             roles=roles,
             assignments=assignments,
-            permissions={},  # No permissions in mock_data
+            permissions=permissions,
             groups=groups,
             scopes=scopes,
         )
