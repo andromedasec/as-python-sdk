@@ -21,6 +21,11 @@ output/<run_name>_eligibilities.json via the API and rewrites that file, droppin
 rows that were removed (or already absent). It then exits without fetching,
 transforming, or creating new eligibilities.
 
+When migration.skipTransformation is True, the script skips PIM fetch and the
+transform step. It reads desired eligibilities from output/<run_name>_eligibilities.json
+and runs the same POST/PUT apply as a normal run (dryRun false). Populate that
+file with eligibility payloads (JSON list or { "eligibilities": [...] }).
+
 After each apply run (dryRun false), the same file is rewritten with the latest
 API responses for every tracked eligibility (creates/updates merge in full
 response bodies).
@@ -48,6 +53,7 @@ from andromeda import (
 from eligibility_sync import apply_eligibilities_sync
 from fetchers import fetch_pim_eligible_assignments
 from transformer import (
+    parse_eligibility_status,
     transform,
     DEFAULT_AZURE_PROVIDER_ID,
     DEFAULT_ENTRA_PROVIDER_ID,
@@ -82,7 +88,8 @@ def load_config(path: str) -> dict:
         cfg = json.load(f)
 
     from_input = cfg.get("migration", {}).get("skipIngestion", False)
-    if not from_input:
+    skip_transformation = cfg.get("migration", {}).get("skipTransformation", False)
+    if not from_input and not skip_transformation:
         errors = []
         azure_cfg = cfg.get("azureConfig", {}) or {}
         entra_cfg = cfg.get("entraConfig", {}) or {}
@@ -100,6 +107,8 @@ def load_config(path: str) -> dict:
             errors.append("ENTRA_SECRET environment variable is required")
         if errors:
             raise ValueError("; ".join(errors))
+
+    parse_eligibility_status(cfg)
 
     return cfg
 
@@ -188,14 +197,19 @@ def main():
 
     dry_run = cfg.get("migration", {}).get("dryRun", True)
     from_input = cfg.get("migration", {}).get("skipIngestion", False)
+    skip_transformation = cfg.get("migration", {}).get("skipTransformation", False)
     cleanup = cfg.get("migration", {}).get("cleanup", False)
+    eligibility_status = (cfg.get("migration", {}) or {}).get("eligibilityStatus")
     azure_tid = cfg.get("azureConfig", {}).get("azureTenantId", "")
     entra_tid = cfg.get("entraConfig", {}).get("azureTenantId", "")
     logger.info(
-        "Configuration loaded: dryRun=%s, skipIngestion=%s, cleanup=%s, azureTenantId=%s, entraTenantId=%s",
+        "Configuration loaded: dryRun=%s, skipIngestion=%s, skipTransformation=%s, cleanup=%s, "
+        "eligibilityStatus=%s, azureTenantId=%s, entraTenantId=%s",
         dry_run,
         from_input,
+        skip_transformation,
         cleanup,
+        eligibility_status if eligibility_status is not None else "(default INACTIVE)",
         azure_tid or "(skipped)",
         entra_tid or "(skipped)",
     )
@@ -222,55 +236,101 @@ def main():
                 "ANDROMEDA_ACCESS_KEY or andromeda.accessKey)."
             )
 
-    if from_input:
-        logger.info("skipIngestion=true: loading assignments from %s (skipping Azure fetch)", assignments_path)
-        try:
-            with open(assignments_path) as f:
-                assignments = json.load(f)
-        except FileNotFoundError:
-            logger.error("Input file not found: %s. Run without skipIngestion first to fetch from Azure.", assignments_path)
-            sys.exit(1)
-        except json.JSONDecodeError as e:
-            logger.error("Invalid JSON in input file %s: %s", assignments_path, e)
-            sys.exit(1)
-        if not isinstance(assignments, list):
-            logger.error("Input file must contain a JSON list of PIM assignments")
-            sys.exit(1)
-        logger.info("Loaded %d assignments from input file", len(assignments))
-    else:
-        logger.info("Fetching PIM eligible assignments from Entra...")
-        try:
-            assignments = fetch_pim_eligible_assignments(cfg)
-        except Exception as e:
-            logger.error("Failed to fetch PIM assignments: %s", e)
-            sys.exit(1)
-        logger.info("Total eligible assignments found: %d", len(assignments))
-        logger.info("Writing PIM assignments to %s...", assignments_path)
-        write_pim_assignments(assignments, str(assignments_path))
-
-    # Initialize Andromeda client (cookie-based auth) before transform and apply
-    if api_endpoint and access_key:
-        init_client_and_login(api_endpoint, access_key)
-
-    logger.info("Transforming assignments to Andromeda eligibilities...")
+    eligibilities_path = OUTPUT_DIR / f"{run_name}_eligibilities.json"
     entra_provider_id = cfg.get("entraConfig", {}).get("andromedaProviderId")
     azure_provider_id = cfg.get("azureConfig", {}).get("andromedaProviderId")
-    output_path = transform(
-        str(assignments_path),
-        entra_provider_id=entra_provider_id,
-        azure_provider_id=azure_provider_id,
-        config_path="config.json",
-        dry_run=dry_run,
-    )
-    logger.info("Eligibilities written to %s", output_path)
+
+    if skip_transformation:
+        logger.info(
+            "skipTransformation=true: skipping PIM fetch and transform; apply will use "
+            "desired eligibilities from %s",
+            eligibilities_path,
+        )
+        if not eligibilities_path.exists():
+            logger.error(
+                "Eligibilities file not found: %s. Run a full transform first or create this file.",
+                eligibilities_path,
+            )
+            sys.exit(1)
+        try:
+            with open(eligibilities_path) as f:
+                _pre = json.load(f)
+        except (json.JSONDecodeError, OSError) as e:
+            logger.error("Invalid or unreadable eligibilities file %s: %s", eligibilities_path, e)
+            sys.exit(1)
+        if isinstance(_pre, dict) and "eligibilities" in _pre:
+            _n = len(_pre["eligibilities"]) if isinstance(_pre.get("eligibilities"), list) else 0
+        elif isinstance(_pre, list):
+            _n = len(_pre)
+        else:
+            logger.error(
+                "Eligibilities file must be a JSON array or { \"eligibilities\": [...] }"
+            )
+            sys.exit(1)
+        logger.info("Loaded eligibilities file for apply (%d record(s))", _n)
+        output_path = str(eligibilities_path)
+    else:
+        if from_input:
+            logger.info(
+                "skipIngestion=true: loading assignments from %s (skipping Azure fetch)",
+                assignments_path,
+            )
+            try:
+                with open(assignments_path) as f:
+                    assignments = json.load(f)
+            except FileNotFoundError:
+                logger.error(
+                    "Input file not found: %s. Run without skipIngestion first to fetch from Azure.",
+                    assignments_path,
+                )
+                sys.exit(1)
+            except json.JSONDecodeError as e:
+                logger.error("Invalid JSON in input file %s: %s", assignments_path, e)
+                sys.exit(1)
+            if not isinstance(assignments, list):
+                logger.error("Input file must contain a JSON list of PIM assignments")
+                sys.exit(1)
+            logger.info("Loaded %d assignments from input file", len(assignments))
+        else:
+            logger.info("Fetching PIM eligible assignments from Entra...")
+            try:
+                assignments = fetch_pim_eligible_assignments(cfg)
+            except Exception as e:
+                logger.error("Failed to fetch PIM assignments: %s", e)
+                sys.exit(1)
+            logger.info("Total eligible assignments found: %d", len(assignments))
+            logger.info("Writing PIM assignments to %s...", assignments_path)
+            write_pim_assignments(assignments, str(assignments_path))
+
+        # Initialize Andromeda client (cookie-based auth) before transform and apply
+        if api_endpoint and access_key:
+            init_client_and_login(api_endpoint, access_key)
+
+        logger.info("Transforming assignments to Andromeda eligibilities...")
+        output_path = transform(
+            str(assignments_path),
+            entra_provider_id=entra_provider_id,
+            azure_provider_id=azure_provider_id,
+            config_path="config.json",
+            dry_run=dry_run,
+        )
+        logger.info("Eligibilities written to %s", output_path)
 
     has_valid_provider = (
         (entra_provider_id and entra_provider_id not in _PLACEHOLDER_PROVIDER_IDS)
         or (azure_provider_id and azure_provider_id not in _PLACEHOLDER_PROVIDER_IDS)
     )
+    if (
+        skip_transformation
+        and not dry_run
+        and has_valid_provider
+        and api_endpoint
+        and access_key
+    ):
+        init_client_and_login(api_endpoint, access_key)
+
     if not dry_run and has_valid_provider:
         if api_endpoint and access_key:
-            eligibilities_path = OUTPUT_DIR / f"{run_name}_eligibilities.json"
             created, updated, failed, merged = apply_eligibilities_sync(
                 output_path,
                 eligibilities_path,

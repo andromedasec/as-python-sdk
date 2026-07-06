@@ -1,0 +1,107 @@
+{
+  "users": {
+    "bobbie.landry@beatles.ai": {
+      "id": "bobbie.landry@beatles.ai",
+      "username": "bobbie.landry",
+      "name": "Bobby landry"
+    }
+  },
+  "roles": {
+    "claude_owner": {
+      "id": "claude_owner",
+      "name": "Claude Owner",
+      "type": "CUSTOM_APP_ROLE",
+      "has_agent_permissions": true
+    },
+    "cursor_owner": {
+      "id": "cursor_owner",
+      "name": "Cursor Owner",
+      "type": "CUSTOM_APP_ROLE",
+      "has_agent_permissions": true
+    }
+  },
+  "assignments": {
+    "bobbie.landry@beatles.ai.claude_owner": {
+      "id": "bobbie.landry@beatles.ai.claude_owner",
+      "principal_id": "bobbie.landry@beatles.ai",
+      "principal_type": "HUMAN",
+      "role_id": "claude_owner",
+      "scope_id": "claude_userID_bobby_landry",
+      "scope_type": "RESOURCE_TYPE_CLAUDE_DESKTOP_AGENT"
+    },
+    "bobbie.landry@beatles.ai.cursor_owner": {
+      "id": "bobbie.landry@beatles.ai.cursor_owner",
+      "principal_id": "bobbie.landry@beatles.ai",
+      "principal_type": "HUMAN",
+      "role_id": "cursor_owner",
+      "scope_id": "cursor_userID_bobby_landry",
+      "scope_type": "RESOURCE_TYPE_CURSOR_DESKTOP_AGENT"
+    }
+  },
+  "resources": {
+    "bobby_landry_aid": {
+      "id": "bobby_landry_aid",
+      "name": "Bobby's Mac",
+      "parent_scope_type": "PROVIDER",
+      "type": "DESKTOP",
+      "owners": ["bobbie.landry@beatles.ai"],
+      "resource_properties": {
+        "os": "macOS 14.5",
+        "asset_id": "AST-7F3C-MAC-0099"
+      }
+    }
+  },
+  "agents": {
+    "claude_userID_bobby_landry": {
+      "id": "claude_userID_bobby_landry",
+      "name": "Bobby's Claude Desktop",
+      "device_id": "bobby_landry_aid",
+      "user_id": "bobbie.landry@beatles.ai",
+      "agent_type": "CLAUDE_DESKTOP",
+      "license_profiles": [
+        {
+          "name": "claude-pro",
+          "tier": "INDIVIDUAL",
+          "license_data": {
+            "licensed_user": "bobbie.landry@personal.user",
+            "lastUsedAt": "2026-06-24T11:56:02.366Z"
+          }
+        }
+      ],
+      "end_user_auth_type": "MANUAL_OAUTH",
+      "agent_model": {
+        "id": "ANTHROPIC/claude-sonnet-4/4.6",
+        "name": "claude-sonnet-4",
+        "version": "4.6",
+        "provider": "ANTHROPIC",
+        "kind": "PREBUILT"
+      }
+    },
+    "cursor_userID_bobby_landry": {
+      "id": "cursor_userID_bobby_landry",
+      "name": "Bobby's Cursor Desktop",
+      "device_id": "bobby_landry_aid",
+      "user_id": "bobbie.landry@beatles.ai",
+      "agent_type": "CURSOR_DESKTOP",
+      "license_profiles": [
+        {
+          "name": "cursor-enterprise",
+          "tier": "ENTERPRISE",
+          "license_data": {
+            "licensed_user": "bobbie.landry@beatles.ai",
+            "plan": "enterprise",
+            "lastUsedAt": "2026-06-24T11:56:02.366Z"
+          }
+        }
+      ],
+      "end_user_auth_type": "MANUAL_OAUTH",
+      "agent_model": {
+        "id": "OPENAI/gpt-5",
+        "name": "gpt-5",
+        "version": "5",
+        "provider": "OPENAI",
+        "kind": "PREBUILT"
+      }
+    }
+  }
+}

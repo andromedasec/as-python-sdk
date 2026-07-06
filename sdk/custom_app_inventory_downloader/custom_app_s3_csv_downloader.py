@@ -1,11 +1,25 @@
 """
-Custom App S3 CSV Downloader
+Custom App S3 CSV Downloader — Full HRIS Provider Support
 
 Downloads a CSV file from S3 using static IAM user credentials,
 transforms it into the standardized CustomApp JSON format for ingestion.
 
-The output JSON matches the CustomAppUser proto definition (protojson format),
-which is consumed by the ingester's customapp user transformer.
+Uses a plugin architecture that mirrors every resource type the ingester
+supports (``services/ingester/pkg/inventory/datasources/customapp/resources``):
+
+  * users        → CustomAppUserV2   (with full HRIS attributes)
+  * nhis         → CustomAppNhiV2
+  * groups       → CustomAppGroupV2  (+ auto-derived department / division groups)
+  * roles        → CustomAppRole
+  * assignments  → CustomAppRoleAssignmentV2
+  * scopes       → CustomAppScopeV2
+  * permissions  → CustomAppPermissionV2
+
+(``group_memberships`` are embedded in groups via ``member_user_ids`` /
+``member_subgroup_ids`` — no separate top-level key.)
+
+Each plugin checks whether the CSV contains the columns it needs.
+If the data is present it ingests; otherwise it logs and skips.
 
 Auth config (via AS_CUSTOM_APP_AUTH_JSON env var):
 {
@@ -20,170 +34,165 @@ Example:
     python3 custom_app_s3_csv_downloader.py --app_name=acme --output_dir=/tmp/customapp_export
 """
 
+from __future__ import annotations
+
 import os
-import csv
 import argparse
 import logging
-import datetime
 import json
 import tempfile
-from dataclasses import asdict
-from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Dict, List, Optional
 
-from sdk.customapp.custom_app_models import (
-    CustomAppUser, CustomAppInventory, HrType, CustomAppUserHRISAttributes
+from sdk.customapp.csv_transformer import CustomAppCsvTransformer
+from sdk.customapp.hris_resource_plugins import (
+    CsvFieldAccessor,
+    HrisPlugins,
+    HrisResourcePlugin,
 )
 
-# Configure logging
 logger = logging.getLogger(__name__)
 
+# ---------------------------------------------------------------------------
 # Constants
+# ---------------------------------------------------------------------------
 DEFAULT_OUTPUT_DIR = "/tmp/customapp_export"
 DEFAULT_APP_NAME_PREFIX = "test"
 
-# HR category string → proto HrType enum name mapping
-HR_CATEGORY_MAP = {
-    "employee": "EMPLOYEE",
-    "contingent worker": "CONTINGENT_WORKER",
-    "third party": "THIRD_PARTY",
+# Default CSV column → HRIS attribute mapping.
+# Overridable via ``hris_field_map`` in AS_CUSTOM_APP_METADATA.
+DEFAULT_FIELD_MAP: Dict[str, str] = {
+    # --- user fields ---
+    "user_id": "user_id",
+    "first_name": "first_name",
+    "last_name": "last_name",
+    "email": "email",
+    "username": "username",
+    "active": "active",
+    "category": "category",
+    "org_name": "org_name",
+    "business_title": "business_title",
+    "manager_id": "super_ref",
+    "manager_name": "managername",
+    "position_title": "position_title",
+    "division": "division",
+    "city": "city",
+    "state": "state",
+    "country": "country",
+    "hire_date": "hire_date",
+    "termination_date": "termination_date",
+    "cost_center": "cost_center",
+    "department": "department",
+    "team": "team",
+    # --- nhi fields ---
+    "nhi_id": "nhi_id",
+    "nhi_username": "nhi_username",
+    "nhi_name": "nhi_name",
+    "nhi_owner_id": "nhi_owner_id",
+    "nhi_custodian_id": "nhi_custodian_id",
+    "nhi_status": "nhi_status",
+    # --- role fields ---
+    "role_id": "role_id",
+    "role_name": "role_name",
+    "role_type": "role_type",
+    "role_permissions": "role_permissions",
+    # --- assignment fields ---
+    "assignment_id": "assignment_id",
+    "principal_id": "principal_id",
+    "principal_type": "principal_type",
+    "assignment_role_id": "assignment_role_id",
+    "scope_id": "scope_id",
+    # --- scope fields ---
+    "scope_name": "scope_name",
+    "scope_type": "scope_type",
+    "parent_scope_id": "parent_scope_id",
+    # --- permission fields ---
+    "permission_name": "permission_name",
+    "access_level": "access_level",
+    "service_name": "service_name",
+    # --- group fields (explicit CSV columns) ---
+    "group_id": "group_id",
+    "group_name": "group_name",
+    "group_member_user_ids": "group_member_user_ids",
+    "group_member_subgroup_ids": "group_member_subgroup_ids",
+    "group_member_nhi_ids": "group_member_nhi_ids",
 }
 
-# IdentityStatus enum name mapping
-STATUS_ENABLED = "ENABLED"
-STATUS_DEACTIVATED = "DEACTIVATED"
 
+# ═══════════════════════════════════════════════════════════════════════════
+# Transformer (plugin-driven)
+# ═══════════════════════════════════════════════════════════════════════════
 
-class InventoryBuilder:
-    """Builds CustomAppUser objects from CSV row data."""
+class CustomAppInventoryTransformer(CustomAppCsvTransformer):
+    """Plugin-driven transformer that extends ``CustomAppCsvTransformer``.
 
-    @staticmethod
-    def _get_csv_field(row: dict, field: str, default: str = "") -> str:
-        """Get a trimmed CSV field value using the column map."""
-        return row.get(field, default).strip()
+    Reuses the base class's CSV batch reader, validation, and export
+    infrastructure from ``sdk.customapp.csv_transformer``, while adding a
+    plugin-per-resource architecture for HRIS ingestion.
 
-    @staticmethod
-    def parse_hr_type(category: str) -> Optional[HrType]:
-        """Convert CSV category value to HrType enum."""
-        if not category:
-            return None
-        name = HR_CATEGORY_MAP.get(category.strip().lower())
-        if name is None:
-            return None
-        return HrType(name)
+    Each plugin checks if its required columns are present in the CSV.
+    If data is present it processes; otherwise it logs and skips.
+    """
 
-    @staticmethod
-    def parse_active_status(active: str) -> str:
-        """Convert CSV active boolean string to proto IdentityStatus enum string."""
-        if active.strip().lower() == "true":
-            return STATUS_ENABLED
-        return STATUS_DEACTIVATED
+    def __init__(self, app_name: str, inventory_file: str,
+                 output_dir: str = DEFAULT_OUTPUT_DIR,
+                 plugins: Optional[List[HrisResourcePlugin]] = None,
+                 field_map: Optional[Dict[str, str]] = None) -> None:
+        super().__init__(app_name=app_name, inventory_file=inventory_file,
+                         output_dir=output_dir)
+        self.plugins = plugins or HrisPlugins.get_default_plugins()
+        self.accessor = CsvFieldAccessor(field_map or dict(DEFAULT_FIELD_MAP))
 
-    @staticmethod
-    def format_timestamp(date_str: str) -> Optional[str]:
-        """Convert a date string (YYYY-MM-DD) to RFC 3339 format for protojson Timestamp."""
-        if not date_str:
-            return None
-        try:
-            dt = datetime.datetime.strptime(date_str, "%Y-%m-%d")
-            return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
-        except ValueError:
-            logger.warning("Could not parse date: %s", date_str)
-            return None
+    def process_csv_row(self, row: Dict[str, str], errors: List[Dict[str, str]]) -> None:
+        """Not used — plugin-driven transform() overrides the row-by-row pattern."""
 
-    def create_user_from_mapped_row(self, row: dict) -> Optional[CustomAppUser]:
-        """Create a CustomAppUser from a CSV row.
+    def transform(self) -> List[Dict[str, str]]:
+        """Override base transform to use plugin architecture instead of row-by-row."""
+        rows: List[dict] = []
+        for batch in self.csv_batch_reader(self.inventory_file):
+            rows.extend(batch)
 
-        Returns None if the row has no user_id.
-        """
-        g = lambda field, default="": self._get_csv_field(row, field, default)
+        if not rows:
+            logger.warning("CSV file is empty: %s", self.inventory_file)
+            return []
 
-        user_id = g("user_id")
-        if not user_id:
-            logger.warning("Skipping row with empty user_id: %s", row)
-            return None
+        headers = list(rows[0].keys())
+        logger.info("Read %d CSV rows from %s (columns: %s)",
+                     len(rows), self.inventory_file, ", ".join(headers))
 
-        first_name = g("first_name")
-        last_name = g("last_name")
-        email = g("email")
-        username = g("username") or email or user_id
+        for plugin in self.plugins:
+            if plugin.can_run(headers, self.accessor):
+                logger.info("Running plugin: %s", plugin.name)
+                plugin.process(rows, self.inventory, self.accessor)
+            else:
+                logger.info("Skipping plugin %s — required columns not found in CSV",
+                            plugin.name)
 
-        hris_attrs = CustomAppUserHRISAttributes(
-            email=email or None,
-            org_name=g("org_name") or None,
-            business_title=g("business_title") or None,
-            manager_id=g("super_ref") or None,
-            manager_name=g("managername") or None,
-            position_title=g("position_title") or None,
-            division=g("division") or None,
-            city=g("city") or None,
-            state=g("state") or None,
-            country=g("country") or None,
-            hire_date=self.format_timestamp(g("hire_date")),
-            termination_date=self.format_timestamp(g("termination_date")),
+        logger.info(
+            "Transformation complete: %d users, %d nhis, %d groups, "
+            "%d roles, %d assignments, %d scopes, %d permissions",
+            len(self.inventory.users), len(self.inventory.nhis),
+            len(self.inventory.groups), len(self.inventory.roles),
+            len(self.inventory.assignments), len(self.inventory.scopes),
+            len(self.inventory.permissions),
         )
+        return []
 
-        return CustomAppUser(
-            id=user_id,
-            username=username,
-            name=f"{first_name} {last_name}".strip(),
-            status=self.parse_active_status(g("active", "true")),
-            hr_type=self.parse_hr_type(g("category")),
-            hris_attributes=hris_attrs,
-        )
 
-class CustomAppInventoryTransformer:
-    """Transforms CSV inventory files into a CustomAppInventory."""
-    inventory: CustomAppInventory
-    _builder: InventoryBuilder
-
-    def __init__(self) -> None:
-        self.inventory = CustomAppInventory()
-        self._builder = InventoryBuilder()
-
-    def transform_csv(self, csv_path: str) -> None:
-        """Parse a CSV file and populate self.inventory with CustomAppUser objects."""
-        users: Dict[str, CustomAppUser] = {}
-
-        with open(csv_path, "r", encoding="utf-8") as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                user = self._builder.create_user_from_mapped_row(row)
-                if user is not None:
-                    users[user.username] = user
-
-        self.inventory.users = users
-        logger.info("Parsed %d users from CSV", len(users))
-
-    @staticmethod
-    def convert_to_andromeda_dict(obj: Any) -> Any:
-        """Recursively remove empty values from nested dicts/lists."""
-        if isinstance(obj, str):
-            return obj
-        if isinstance(obj, dict):
-            return {
-                k: CustomAppInventoryTransformer.convert_to_andromeda_dict(v)
-                for k, v in obj.items() if v
-            }
-        if isinstance(obj, list):
-            return [
-                CustomAppInventoryTransformer.convert_to_andromeda_dict(item)
-                for item in obj if item
-            ]
-        return obj
+# ═══════════════════════════════════════════════════════════════════════════
+# I/O handler
+# ═══════════════════════════════════════════════════════════════════════════
 
 class CustomAppInventoryIOHandler:
-    """Handles input and output of custom application inventory data."""
-    def download_csv_from_s3(self, auth_config: dict, metadata: dict) -> str:
-        """Download a CSV file from S3 and return the local file path.
+    """Handles S3 download."""
 
-        Requires static IAM user credentials (aws_access_key_id,
-        aws_secret_access_key, aws_region) plus s3_bucket and s3_key.
-        """
+    @staticmethod
+    def download_csv_from_s3(auth_config: dict, metadata: dict) -> str:
         try:
             import boto3
         except ImportError:
-            raise ImportError("boto3 is required for S3 downloads. Install it with: pip install boto3")
+            raise ImportError(
+                "boto3 is required for S3 downloads. Install it with: pip install boto3"
+            )
 
         aws_access_key_id = auth_config.get("aws_access_key_id")
         aws_secret_access_key = auth_config.get("aws_secret_access_key")
@@ -201,9 +210,10 @@ class CustomAppInventoryIOHandler:
             }.items() if not v
         ]
         if missing:
-            raise ValueError(f"Missing required fields in auth config: {', '.join(missing)}")
+            raise ValueError(f"Missing required fields: {', '.join(missing)}")
 
-        logger.info("Downloading CSV from S3 bucket=%s file_path=%s region=%s", s3_bucket, file_path, aws_region)
+        logger.info("Downloading CSV from S3 bucket=%s file_path=%s region=%s",
+                     s3_bucket, file_path, aws_region)
 
         session = boto3.Session(
             aws_access_key_id=aws_access_key_id,
@@ -221,119 +231,107 @@ class CustomAppInventoryIOHandler:
             os.unlink(tmp_file.name)
             raise
 
-    def export_inventory(self, inventory: CustomAppInventory, app_name_prefix: str, output_dir: str) -> str:
-        """Export inventory to a timestamped JSON file.
 
-        Converts dataclass objects to dicts, strips empty values, and writes JSON.
-
-        Returns:
-            Path to the written JSON file.
-        """
-        Path(output_dir).mkdir(parents=True, exist_ok=True)
-
-        timestamp = datetime.datetime.now().replace(microsecond=0, second=0).isoformat()
-        output_file = Path(output_dir) / f"{app_name_prefix}-{timestamp}.json"
-
-        users_dict = {k: asdict(v) for k, v in inventory.users.items()}
-        cleaned = CustomAppInventoryTransformer.convert_to_andromeda_dict({"users": users_dict})
-
-        with open(output_file, "w", encoding="utf-8") as f:
-            json.dump(cleaned, f, indent=2)
-
-        logger.info("Written inventory to file %s", output_file)
-        return str(output_file)
-
+# ═══════════════════════════════════════════════════════════════════════════
+# CLI
+# ═══════════════════════════════════════════════════════════════════════════
 
 def setup_logging() -> None:
-    """Setup logging configuration."""
     logger.setLevel(logging.INFO)
     for handler in logger.handlers[:]:
         logger.removeHandler(handler)
-    console_handler = logging.StreamHandler()
-    formatter = logging.Formatter(
+    ch = logging.StreamHandler()
+    ch.setFormatter(logging.Formatter(
         "%(asctime)s:%(levelname)s:%(module)s:%(funcName)s:%(lineno)s: %(message)s"
-    )
-    console_handler.setFormatter(formatter)
-    logger.addHandler(console_handler)
+    ))
+    logger.addHandler(ch)
 
 
 def parse_arguments() -> argparse.Namespace:
-    """Parse command line arguments."""
-    help_text = """
-    Downloads a CSV from S3 and transforms it into
-    the Andromeda custom app inventory JSON format.
+    help_text = f"""
+    Downloads a CSV from S3 and transforms it into the Andromeda custom app
+    inventory JSON format using a plugin-per-resource architecture.
 
-    Auth config (via AS_CUSTOM_APP_AUTH_JSON env var):
+    Plugins (one per ingester resource type + HRIS enrichment):
 
-        AS_CUSTOM_APP_AUTH_JSON='{"aws_access_key_id":"AKIA...","aws_secret_access_key":"...","aws_region":"us-west-2","s3_bucket":"my-bucket","s3_key":"folder/users.csv"}'
+        {', '.join(HrisPlugins.REGISTRY.keys())}
+
+    Each plugin auto-detects whether the CSV has the columns it needs.
+    If present → ingest.  If absent → log and skip.
+
+    Override via AS_CUSTOM_APP_METADATA:
+
+        "enabled_plugins": ["users","departments","roles","assignments"]
+        "hris_field_map":  {{"manager_id":"supervisorEId"}}
     """
-
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
         description=help_text,
     )
-
-    parser.add_argument(
-        "--app_name",
-        help="Application name prefix for output file",
-        default=DEFAULT_APP_NAME_PREFIX,
-    )
-    parser.add_argument(
-        "--output_dir",
-        help="Output directory for JSON file",
-        default=DEFAULT_OUTPUT_DIR,
-    )
-
+    parser.add_argument("--app_name", default=DEFAULT_APP_NAME_PREFIX,
+                        help="Application name prefix for output file")
+    parser.add_argument("--output_dir", default=DEFAULT_OUTPUT_DIR,
+                        help="Output directory for JSON file")
     return parser.parse_args()
 
 
 def main() -> None:
-    """Main entry point for the script."""
     setup_logging()
     args = parse_arguments()
-
     csv_path = None
-    auth_config: Optional[dict] = None
-    metadata: Optional[dict] = None
 
     try:
-        auth_json = os.environ.get('AS_CUSTOM_APP_AUTH_JSON', '')
-        if auth_json:
-            # load the auth JSON as a dictionary
-            auth_config = json.loads(auth_json)
-            logger.info("Auth JSON found for app: %s", args.app_name.strip())
+        auth_json_str = os.environ.get("AS_CUSTOM_APP_AUTH_JSON", "")
+        if not auth_json_str:
+            raise ValueError("AS_CUSTOM_APP_AUTH_JSON env var is required")
+        auth_config: dict = json.loads(auth_json_str)
+        logger.info("Auth JSON found for app: %s", args.app_name.strip())
+
+        metadata_json_str = os.environ.get("AS_CUSTOM_APP_METADATA", "")
+        if not metadata_json_str:
+            raise ValueError(
+                "AS_CUSTOM_APP_METADATA is required (s3_bucket, file_path, aws_region)"
+            )
+        metadata: dict = json.loads(metadata_json_str)
+        logger.info("Metadata JSON found for app: %s", args.app_name.strip())
+
+        # Resolve plugins
+        enabled_names = metadata.get("enabled_plugins")
+        if isinstance(enabled_names, list) and enabled_names:
+            plugins = HrisPlugins.get_plugins_by_names(enabled_names)
+            logger.info("Using configured plugins: %s", [p.name for p in plugins])
         else:
-            logger.error("No auth JSON found for app: %s", args.app_name.strip())
-            raise ValueError("No auth JSON found for app: %s", args.app_name.strip())
+            plugins = HrisPlugins.get_default_plugins()
+            logger.info("Using all default plugins: %s", [p.name for p in plugins])
 
-        metadata_json = os.environ.get('AS_CUSTOM_APP_METADATA', '')
-        if metadata_json:
-            metadata = json.loads(metadata_json)
-            logger.info("Metadata JSON found for app: %s", args.app_name.strip())
-        else:
-            logger.info("No metadata JSON found for app: %s", args.app_name.strip())
-            raise ValueError("No metadata JSON found for app: %s, s3 bucked name, path-to-file, aws-region is required", args.app_name.strip())
+        # Resolve field map overrides
+        field_map = dict(DEFAULT_FIELD_MAP)
+        overrides = metadata.get("hris_field_map") or metadata.get("hrisFieldMap") or {}
+        if isinstance(overrides, dict):
+            field_map.update(overrides)
 
-        io_handler = CustomAppInventoryIOHandler()
-        csv_path = io_handler.download_csv_from_s3(auth_config or {}, metadata or {})
+        # Download CSV from S3 to a temp file
+        csv_path = CustomAppInventoryIOHandler.download_csv_from_s3(auth_config, metadata)
 
-        transformer = CustomAppInventoryTransformer()
-        transformer.transform_csv(csv_path)
-
-        output_file = io_handler.export_inventory(
-            transformer.inventory,
-            app_name_prefix=args.app_name.strip(),
+        # Build transformer (extends CustomAppCsvTransformer)
+        # and use inherited transform_and_export() for validation + export
+        transformer = CustomAppInventoryTransformer(
+            app_name=args.app_name.strip(),
+            inventory_file=csv_path,
             output_dir=args.output_dir.strip(),
+            plugins=plugins,
+            field_map=field_map,
         )
-        logger.info("Transformation completed successfully of file: %s for app: %s", output_file, args.app_name.strip())
+        inventory_dict, output_file = transformer.transform_and_export()
+        logger.info("Transformation completed successfully: %s", output_file)
 
     except Exception as e:
-        logger.error("Transformation failed for app: %s: %s", args.app_name.strip(), e)
+        logger.error("Transformation failed for app %s: %s", args.app_name.strip(), e)
         raise
     finally:
         if csv_path and os.path.exists(csv_path):
             os.unlink(csv_path)
-            logger.info("Cleaned up temporary CSV file for app: %s", args.app_name.strip())
+            logger.info("Cleaned up temporary CSV file")
 
 
 if __name__ == "__main__":

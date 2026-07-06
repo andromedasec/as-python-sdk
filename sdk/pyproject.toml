@@ -1,0 +1,45 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "as-python-sdk"
+version = "1.0.0"
+description = "Andromeda Security Python SDK"
+readme = "README.md"
+license = { text = "Andromeda Security" }
+authors = [{ name = "Andromeda Security", email = "support@andromedasecurity.com" }]
+requires-python = ">=3.12"
+dependencies = [
+    "PyYAML==6.0.2",
+    "gql[all]==3.5.0",
+    "polling2==0.5.0",
+    "protobuf==4.24.3",
+    "requests==2.32.3",
+    "google-api-core==2.21.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "requests_mock==1.12.1",
+    "pytest>=7.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/andromedasec/as-python-sdk"
+
+[tool.hatch.build.targets.wheel]
+include = [
+    "api_utils.py",
+    "as_inventory.py",
+    "customapp_csv_uploader.py",
+    "customapp_transformer_uploader.py",
+    "customapp/",
+    "custom_app_inventory_downloader/",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "requests_mock==1.12.1",
+    "pytest>=7.0",
+]

@@ -39,6 +39,27 @@ PLACEHOLDER_ANDROMEDA_PROVIDER_ID = "REPLACE_WITH_ANDROMEDA_PROVIDER_ID"
 # Value used in payload when an external ID could not be resolved in Andromeda
 NOT_FOUND = "NOT_FOUND"
 
+_ELIGIBILITY_STATUSES = frozenset({"ACTIVE", "INACTIVE"})
+
+
+def parse_eligibility_status(cfg: dict | None) -> str:
+    """
+    Read migration.eligibilityStatus (ACTIVE or INACTIVE). Default INACTIVE if unset.
+
+    Controls the `status` field on created/updated eligibility payloads after transformation.
+    """
+    if not cfg:
+        return "INACTIVE"
+    raw = (cfg.get("migration", {}) or {}).get("eligibilityStatus")
+    if raw is None or raw == "":
+        return "INACTIVE"
+    s = str(raw).strip().upper()
+    if s not in _ELIGIBILITY_STATUSES:
+        raise ValueError(
+            f'migration.eligibilityStatus must be "ACTIVE" or "INACTIVE", got {raw!r}'
+        )
+    return s
+
 
 def _unique_eligibility_name(base: str) -> str:
     """Append a random hex suffix so eligibility names stay unique when the base label duplicates."""
@@ -84,6 +105,7 @@ def _transform_role_assignments(
     provider_id: str,
     id_map: dict[tuple[str, str], str],
     principal_id_type: dict[str, str],
+    eligibility_status: str,
 ) -> list[dict]:
     """Aggregate Role (Entra directory role) assignments by roleDefinitionId. Uses id_map for resolution; NOT_FOUND for unresolved IDs."""
     by_role: dict[str, list[str]] = defaultdict(list)
@@ -115,7 +137,7 @@ def _transform_role_assignments(
             "roleEligibilityData": {"roleIds": [andromeda_role_id]},
             "eligibleUserIds": eligible_user_ids,
             "eligibleGroupIds": eligible_group_ids,
-            "status": "INACTIVE",
+            "status": eligibility_status,
             "name": _unique_eligibility_name(role_names.get(role_id, f"PIM role {role_id}")),
         })
     return eligibilities
@@ -126,6 +148,7 @@ def _transform_group_assignments(
     provider_id: str,
     id_map: dict[tuple[str, str], str],
     principal_id_type: dict[str, str],
+    eligibility_status: str,
 ) -> list[dict]:
     """Aggregate Group (PIM for groups) assignments by groupId. Uses id_map for resolution; NOT_FOUND for unresolved IDs."""
     by_group: dict[str, list[str]] = defaultdict(list)
@@ -159,7 +182,7 @@ def _transform_group_assignments(
             },
             "eligibleUserIds": eligible_user_ids,
             "eligibleGroupIds": eligible_group_ids,
-            "status": "INACTIVE",
+            "status": eligibility_status,
             "name": _unique_eligibility_name(group_names.get(group_id, f"PIM group {group_id}")),
         })
     return eligibilities
@@ -199,6 +222,7 @@ def _transform_azure_resource_assignments(
     id_map: dict[tuple[str, str], str],
     principal_id_type: dict[str, str],
     entra_provider_id: str,
+    eligibility_status: str,
 ) -> list[dict]:
     """
     Transform AzureResource assignments. Supports:
@@ -265,7 +289,7 @@ def _transform_azure_resource_assignments(
             "roleEligibilityData": {"roleIds": [andromeda_role_id]},
             "eligibleUserIds": eligible_user_ids,
             "eligibleGroupIds": eligible_group_ids,
-            "status": "INACTIVE",
+            "status": eligibility_status,
             "name": _unique_eligibility_name(f"Azure eligible assignment for {role_name} @ {sub_id}"),
         })
 
@@ -295,7 +319,7 @@ def _transform_azure_resource_assignments(
             "roleEligibilityData": {"roleIds": [andromeda_role_id]},
             "eligibleUserIds": eligible_user_ids,
             "eligibleGroupIds": eligible_group_ids,
-            "status": "INACTIVE",
+            "status": eligibility_status,
             "name": _unique_eligibility_name(f"Azure eligible assignment for {role_name} @ {rg_name}"),
         })
     return eligibilities
@@ -367,6 +391,9 @@ def transform(
         except (FileNotFoundError, json.JSONDecodeError):
             pass
 
+    eligibility_status = parse_eligibility_status(cfg)
+    logger.info("Eligibility payload status from config: %s", eligibility_status)
+
     principal_id_type: dict[str, str] = {}
     if api_endpoint and access_key:
         id_map, principal_id_type, not_found = resolve_external_ids_to_andromeda(
@@ -385,11 +412,24 @@ def transform(
 
     all_eligibilities: list[dict] = []
 
-    all_eligibilities.extend(_transform_role_assignments(assignments, entra_prov_id, id_map, principal_id_type))
-    all_eligibilities.extend(_transform_group_assignments(assignments, entra_prov_id, id_map, principal_id_type))
+    all_eligibilities.extend(
+        _transform_role_assignments(
+            assignments, entra_prov_id, id_map, principal_id_type, eligibility_status
+        )
+    )
+    all_eligibilities.extend(
+        _transform_group_assignments(
+            assignments, entra_prov_id, id_map, principal_id_type, eligibility_status
+        )
+    )
     all_eligibilities.extend(
         _transform_azure_resource_assignments(
-            assignments, azure_prov_id, id_map, principal_id_type, entra_prov_id
+            assignments,
+            azure_prov_id,
+            id_map,
+            principal_id_type,
+            entra_prov_id,
+            eligibility_status,
         )
     )
 

@@ -5,7 +5,9 @@
     "migration": {
         "dryRun": true,
         "skipIngestion": false,
-        "cleanup": false
+        "skipTransformation": false,
+        "cleanup": false,
+        "eligibilityStatus": "INACTIVE"
     },
     "azureConfig": {
         "azureTenantId": "YOUR_AZURE_AD_TENANT_ID",

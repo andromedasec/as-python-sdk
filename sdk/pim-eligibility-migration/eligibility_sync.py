@@ -1,8 +1,10 @@
 """
 Idempotent apply against output/<run>_eligibilities.json (state file).
 
-On POST/PUT 400 with "The users(s) (...) in the eligibility were not found or are not assignable",
-the script removes those user IDs from eligibleUserIds and retries once. A second failure counts as failed.
+On POST/PUT 400 with "The users(s) (...) ... not assignable" or "The groups(s) (...) ... not assignable",
+the script removes those IDs from eligibleUserIds / eligibleGroupIds and retries (bounded attempts).
+If no principals remain after pruning, PUT deletes the eligibility; POST skips create and drops local state,
+or deletes by saved id when present.
 
 Match each desired eligibility from *_output.json to the state file using a stable identity:
 provider, eligibility type, eligibility scope, constraint (e.g. resource group), role/policy
@@ -30,6 +32,7 @@ import requests
 from andromeda import (
     _get_response_error_details,
     create_policy_eligibility_mapping,
+    delete_policy_eligibility_mapping,
     get_policy_eligibility_mapping,
     update_policy_eligibility_mapping,
 )
@@ -41,6 +44,14 @@ _UNASSIGNABLE_USERS_RE = re.compile(
     r"The users\(s\)\s*\(([^)]+)\)\s+in the eligibility were not found or are not assignable",
     re.IGNORECASE,
 )
+# Same shape with title "groups" from JitPolicyEligibilityNotAssignableError.
+_UNASSIGNABLE_GROUPS_RE = re.compile(
+    r"The groups\(s\)\s*\(([^)]+)\)\s+in the eligibility were not found or are not assignable",
+    re.IGNORECASE,
+)
+
+# Servers validate users then groups; allow multiple strip rounds in one sync step.
+_MAX_UNASSIGNABLE_STRIP_ATTEMPTS = 8
 
 
 def _parse_unassignable_user_ids_from_error(exc: BaseException) -> list[str]:
@@ -65,6 +76,28 @@ def _parse_unassignable_user_ids_from_error(exc: BaseException) -> list[str]:
     return [p.strip() for p in inner.split(",") if p.strip()]
 
 
+def _parse_unassignable_group_ids_from_error(exc: BaseException) -> list[str]:
+    """
+    Extract group UUIDs from a 400 response that lists groups not found / not assignable.
+    Returns [] if the error does not match that pattern.
+    """
+    chunks: list[str] = [str(exc)]
+    if isinstance(exc, requests.HTTPError) and exc.response is not None:
+        chunks.append(_get_response_error_details(exc.response))
+        try:
+            chunks.append(exc.response.text or "")
+        except Exception:
+            pass
+    combined = " ".join(chunks)
+    m = _UNASSIGNABLE_GROUPS_RE.search(combined)
+    if not m:
+        return []
+    inner = (m.group(1) or "").strip()
+    if not inner:
+        return []
+    return [p.strip() for p in inner.split(",") if p.strip()]
+
+
 def _remove_user_ids_from_eligible_user_ids(payload: dict, bad_ids: list[str]) -> int:
     """Remove bad_ids from payload['eligibleUserIds']. Returns how many entries were removed."""
     bad = {str(x).strip() for x in bad_ids if x}
@@ -76,6 +109,28 @@ def _remove_user_ids_from_eligible_user_ids(payload: dict, bad_ids: list[str]) -
     before = len(eu)
     payload["eligibleUserIds"] = [x for x in eu if str(x).strip() not in bad]
     return before - len(payload["eligibleUserIds"])
+
+
+def _remove_group_ids_from_eligible_group_ids(payload: dict, bad_ids: list[str]) -> int:
+    """Remove bad_ids from payload['eligibleGroupIds']. Returns how many entries were removed."""
+    bad = {str(x).strip() for x in bad_ids if x}
+    if not bad:
+        return 0
+    eg = payload.get("eligibleGroupIds")
+    if not isinstance(eg, list) or not eg:
+        return 0
+    before = len(eg)
+    payload["eligibleGroupIds"] = [x for x in eg if str(x).strip() not in bad]
+    return before - len(payload["eligibleGroupIds"])
+
+
+def _eligible_principal_lists_empty(payload: dict) -> bool:
+    """True when there are no eligible users and no eligible groups (missing or empty lists)."""
+    u = payload.get("eligibleUserIds")
+    g = payload.get("eligibleGroupIds")
+    u_nonempty = isinstance(u, list) and len(u) > 0
+    g_nonempty = isinstance(g, list) and len(g) > 0
+    return not u_nonempty and not g_nonempty
 
 
 # Proto EligibilityConfigurationType (numeric JSON) → name
@@ -396,129 +451,193 @@ def apply_eligibilities_sync(
             )
         if existing_id:
             el_work = copy.deepcopy(el)
-            try:
-                current = get_policy_eligibility_mapping(prov_id, existing_id)
-                body = _prepare_put_body(current, el_work)
-                result = update_policy_eligibility_mapping(prov_id, existing_id, body)
-                merged_by_fp[fp] = result
-                updated += 1
-                reason = eligibility_put_change_summary(current, body)
-                logger.info(
-                    "Updated eligibility %d/%d: %s (%s)",
+            attempt_idx = 0
+            while attempt_idx < _MAX_UNASSIGNABLE_STRIP_ATTEMPTS:
+                attempt_idx += 1
+                try:
+                    current = get_policy_eligibility_mapping(prov_id, existing_id)
+                    body = _prepare_put_body(current, el_work)
+                    result = update_policy_eligibility_mapping(prov_id, existing_id, body)
+                    merged_by_fp[fp] = result
+                    updated += 1
+                    reason = eligibility_put_change_summary(current, body)
+                    suffix = (
+                        " [after stripping unassignable principals]"
+                        if attempt_idx > 1
+                        else ""
+                    )
+                    logger.info(
+                        "Updated eligibility %d/%d: %s (%s)%s",
+                        i + 1,
+                        len(desired_list),
+                        name,
+                        reason,
+                        suffix,
+                    )
+                    break
+                except Exception as e:
+                    bad_u = _parse_unassignable_user_ids_from_error(e)
+                    bad_g = _parse_unassignable_group_ids_from_error(e)
+                    ru = _remove_user_ids_from_eligible_user_ids(el_work, bad_u) if bad_u else 0
+                    rg = _remove_group_ids_from_eligible_group_ids(el_work, bad_g) if bad_g else 0
+                    if bad_u or bad_g:
+                        if ru == 0 and rg == 0:
+                            failed += 1
+                            logger.error(
+                                "Failed to update eligibility %d/%d %s: API reported unassignable "
+                                "principals users=%s groups=%s but none matched eligible lists: %s",
+                                i + 1,
+                                len(desired_list),
+                                name,
+                                bad_u,
+                                bad_g,
+                                e,
+                            )
+                            break
+                        logger.warning(
+                            "Removing %d user(s) and %d group id(s) from eligibility (unassignable), retrying: "
+                            "%s — users=%s groups=%s",
+                            ru,
+                            rg,
+                            name,
+                            bad_u,
+                            bad_g,
+                        )
+                        if _eligible_principal_lists_empty(el_work):
+                            logger.warning(
+                                "No eligible users or groups remain after pruning; deleting eligibility %s",
+                                name,
+                            )
+                            if delete_policy_eligibility_mapping(prov_id, existing_id):
+                                merged_by_fp.pop(fp, None)
+                                logger.info(
+                                    "Deleted eligibility %d/%d: %s (no principals after pruning)",
+                                    i + 1,
+                                    len(desired_list),
+                                    name,
+                                )
+                            else:
+                                failed += 1
+                                logger.error(
+                                    "Failed to delete eligibility %d/%d %s after principals emptied",
+                                    i + 1,
+                                    len(desired_list),
+                                    name,
+                                )
+                            break
+                        continue
+                    failed += 1
+                    logger.error(
+                        "Failed to update eligibility %d/%d %s: %s",
+                        i + 1,
+                        len(desired_list),
+                        name,
+                        e,
+                    )
+                    break
+            else:
+                failed += 1
+                logger.error(
+                    "Failed to update eligibility %d/%d %s: exhausted %d unassignable strip attempts",
                     i + 1,
                     len(desired_list),
                     name,
-                    reason,
+                    _MAX_UNASSIGNABLE_STRIP_ATTEMPTS,
                 )
-            except Exception as e:
-                bad_ids = _parse_unassignable_user_ids_from_error(e)
-                removed = _remove_user_ids_from_eligible_user_ids(el_work, bad_ids) if bad_ids else 0
-                if not bad_ids or removed == 0:
-                    failed += 1
-                    if bad_ids and removed == 0:
-                        logger.error(
-                            "Failed to update eligibility %d/%d %s: API reported unassignable users %s "
-                            "but none matched eligibleUserIds: %s",
-                            i + 1,
-                            len(desired_list),
-                            name,
-                            bad_ids,
-                            e,
-                        )
-                    else:
-                        logger.error(
-                            "Failed to update eligibility %d/%d %s: %s",
-                            i + 1,
-                            len(desired_list),
-                            name,
-                            e,
-                        )
-                else:
-                    logger.warning(
-                        "Removing %d unassignable user id(s) from eligibleUserIds, retrying update once: %s — %s",
-                        removed,
-                        name,
-                        bad_ids,
-                    )
-                    try:
-                        current = get_policy_eligibility_mapping(prov_id, existing_id)
-                        body = _prepare_put_body(current, el_work)
-                        result = update_policy_eligibility_mapping(prov_id, existing_id, body)
-                        merged_by_fp[fp] = result
-                        updated += 1
-                        reason = eligibility_put_change_summary(current, body)
-                        logger.info(
-                            "Updated eligibility %d/%d: %s (%s) [after stripping unassignable users]",
-                            i + 1,
-                            len(desired_list),
-                            name,
-                            reason,
-                        )
-                    except Exception as e2:
-                        failed += 1
-                        logger.error(
-                            "Failed to update eligibility %d/%d %s (after one retry): %s",
-                            i + 1,
-                            len(desired_list),
-                            name,
-                            e2,
-                        )
         else:
             payload = copy.deepcopy(el)
-            try:
-                result = create_policy_eligibility_mapping(prov_id, payload)
-                merged_by_fp[fp] = result
-                created += 1
-                logger.info("Created eligibility %d/%d: %s", i + 1, len(desired_list), name)
-            except Exception as e:
-                bad_ids = _parse_unassignable_user_ids_from_error(e)
-                removed = _remove_user_ids_from_eligible_user_ids(payload, bad_ids) if bad_ids else 0
-                if not bad_ids or removed == 0:
-                    failed += 1
-                    if bad_ids and removed == 0:
-                        logger.error(
-                            "Failed to create eligibility %d/%d %s: API reported unassignable users %s "
-                            "but none matched eligibleUserIds: %s",
-                            i + 1,
-                            len(desired_list),
-                            name,
-                            bad_ids,
-                            e,
-                        )
-                    else:
-                        logger.error(
-                            "Failed to create eligibility %d/%d %s: %s",
-                            i + 1,
-                            len(desired_list),
-                            name,
-                            e,
-                        )
-                else:
-                    logger.warning(
-                        "Removing %d unassignable user id(s) from eligibleUserIds, retrying create once: %s — %s",
-                        removed,
-                        name,
-                        bad_ids,
+            attempt_idx = 0
+            while attempt_idx < _MAX_UNASSIGNABLE_STRIP_ATTEMPTS:
+                attempt_idx += 1
+                try:
+                    result = create_policy_eligibility_mapping(prov_id, payload)
+                    merged_by_fp[fp] = result
+                    created += 1
+                    suffix = (
+                        " [after stripping unassignable principals]"
+                        if attempt_idx > 1
+                        else ""
                     )
-                    try:
-                        result = create_policy_eligibility_mapping(prov_id, payload)
-                        merged_by_fp[fp] = result
-                        created += 1
-                        logger.info(
-                            "Created eligibility %d/%d: %s [after stripping unassignable users]",
-                            i + 1,
-                            len(desired_list),
+                    logger.info(
+                        "Created eligibility %d/%d: %s%s",
+                        i + 1,
+                        len(desired_list),
+                        name,
+                        suffix,
+                    )
+                    break
+                except Exception as e:
+                    bad_u = _parse_unassignable_user_ids_from_error(e)
+                    bad_g = _parse_unassignable_group_ids_from_error(e)
+                    ru = _remove_user_ids_from_eligible_user_ids(payload, bad_u) if bad_u else 0
+                    rg = _remove_group_ids_from_eligible_group_ids(payload, bad_g) if bad_g else 0
+                    if bad_u or bad_g:
+                        if ru == 0 and rg == 0:
+                            failed += 1
+                            logger.error(
+                                "Failed to create eligibility %d/%d %s: API reported unassignable "
+                                "principals users=%s groups=%s but none matched eligible lists: %s",
+                                i + 1,
+                                len(desired_list),
+                                name,
+                                bad_u,
+                                bad_g,
+                                e,
+                            )
+                            break
+                        logger.warning(
+                            "Removing %d user(s) and %d group id(s) before retry create: %s — users=%s groups=%s",
+                            ru,
+                            rg,
                             name,
+                            bad_u,
+                            bad_g,
                         )
-                    except Exception as e2:
-                        failed += 1
-                        logger.error(
-                            "Failed to create eligibility %d/%d %s (after one retry): %s",
-                            i + 1,
-                            len(desired_list),
-                            name,
-                            e2,
-                        )
+                        if _eligible_principal_lists_empty(payload):
+                            logger.warning(
+                                "No principals remain after pruning; skipping create for eligibility %s",
+                                name,
+                            )
+                            stale_id = _record_id(existing) if existing else None
+                            if stale_id:
+                                if delete_policy_eligibility_mapping(prov_id, stale_id):
+                                    merged_by_fp.pop(fp, None)
+                                    logger.info(
+                                        "Deleted existing eligibility %d/%d: %s (no principals after pruning)",
+                                        i + 1,
+                                        len(desired_list),
+                                        name,
+                                    )
+                                else:
+                                    failed += 1
+                                    logger.error(
+                                        "Failed to delete eligibility %d/%d %s after empty principals",
+                                        i + 1,
+                                        len(desired_list),
+                                        name,
+                                    )
+                            else:
+                                merged_by_fp.pop(fp, None)
+                            break
+                        continue
+                    failed += 1
+                    logger.error(
+                        "Failed to create eligibility %d/%d %s: %s",
+                        i + 1,
+                        len(desired_list),
+                        name,
+                        e,
+                    )
+                    break
+            else:
+                failed += 1
+                logger.error(
+                    "Failed to create eligibility %d/%d %s: exhausted %d unassignable strip attempts",
+                    i + 1,
+                    len(desired_list),
+                    name,
+                    _MAX_UNASSIGNABLE_STRIP_ATTEMPTS,
+                )
 
     merged_records = list(merged_by_fp.values())
     return created, updated, failed, merged_records
