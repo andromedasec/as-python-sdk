@@ -96,7 +96,7 @@ def _setup_args() -> argparse.Namespace:
 
 
 def _setup_logging() -> None:
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
     handler = logging.StreamHandler()
     handler.setFormatter(logging.Formatter(
         '%(asctime)s:%(levelname)s:%(module)s:%(lineno)s: %(message)s'))
@@ -140,18 +140,27 @@ class Resolver:
 
     def provider(self, name: str) -> dict:
         if name in self._provider_by_name:
+            logger.debug("provider cache hit name=%s id=%s",
+                         name, self._provider_by_name[name].get('id'))
             return self._provider_by_name[name]
+        logger.debug("resolving provider name=%s", name)
         provider = next(self.inv.as_provider_itr(
             filters={"name": {"equals": name}}), None)
         if not provider:
             raise InvalidInputException(f"Provider '{name}' not found")
+        logger.debug("resolved provider name=%s id=%s type=%s",
+                     name, provider.get('id'), provider.get('type'))
         self._provider_by_name[name] = provider
         return provider
 
     def assignable_group_id(self, provider: dict, name: str) -> str:
         key = (provider['id'], name)
         if key in self._assignable_group_id:
+            logger.debug("assignable_group cache hit provider=%s name=%s id=%s",
+                         provider.get('name'), name, self._assignable_group_id[key])
             return self._assignable_group_id[key]
+        logger.debug("resolving assignable_group provider=%s name=%s",
+                     provider.get('name'), name)
         group = next(self.inv.provider_assignable_groups_itr(
             provider['id'], provider, filters={"name": {"equals": name}}), None)
         if not group:
@@ -161,13 +170,19 @@ class Resolver:
         if not group_id:
             raise InvalidInputException(
                 f"Assignable group '{name}' has no id in provider '{provider['name']}'")
+        logger.debug("resolved assignable_group provider=%s name=%s id=%s",
+                     provider.get('name'), name, group_id)
         self._assignable_group_id[key] = group_id
         return group_id
 
     def provider_group_id(self, provider: dict, name: str) -> str:
         key = (provider['id'], name)
         if key in self._provider_group_id:
+            logger.debug("provider_group cache hit provider=%s name=%s id=%s",
+                         provider.get('name'), name, self._provider_group_id[key])
             return self._provider_group_id[key]
+        logger.debug("resolving provider_group provider=%s name=%s",
+                     provider.get('name'), name)
         group = next(self.inv.as_provider_groups_itr(
             provider['id'], provider, filters={"name": {"equals": name}}), None)
         if not group:
@@ -177,41 +192,59 @@ class Resolver:
         if not group_id:
             raise InvalidInputException(
                 f"Provider group '{name}' has no id in provider '{provider['name']}'")
+        logger.debug("resolved provider_group provider=%s name=%s id=%s",
+                     provider.get('name'), name, group_id)
         self._provider_group_id[key] = group_id
         return group_id
 
     def user_id(self, username: str) -> str:
         if username in self._user_id:
+            logger.debug("user cache hit username=%s id=%s",
+                         username, self._user_id[username])
             return self._user_id[username]
+        logger.debug("resolving user username=%s", username)
         user = next(self.inv.as_users_itr(
             filters={"username": {"equals": username}}), None)
         if not user:
             raise InvalidInputException(f"User '{username}' not found")
+        logger.debug("resolved user username=%s id=%s", username, user['id'])
         self._user_id[username] = user['id']
         return user['id']
 
     def _load_access_profiles(self) -> Dict[str, dict]:
         if self._access_profiles is not None:
             return self._access_profiles
-        resp = self.session.get(f"{self.endpoint}/accessrequestprofiles")
+        url = f"{self.endpoint}/accessrequestprofiles"
+        logger.debug("fetching access request profiles from %s", url)
+        resp = self.session.get(url)
         resp.raise_for_status()
         payload = resp.json()
         if isinstance(payload, list):
             items = payload
+            envelope = "list"
         elif isinstance(payload, dict):
+            envelope = "dict"
             items = payload.get('accessRequestProfiles') or payload.get('items') or []
             if not items:
-                for value in payload.values():
+                for key, value in payload.items():
                     if isinstance(value, list):
                         items = value
+                        envelope = f"dict[{key}]"
                         break
         else:
             items = []
+            envelope = f"unknown({type(payload).__name__})"
         profiles: Dict[str, dict] = {}
         for profile in items:
             name = profile.get('name')
             if name:
                 profiles[name] = profile
+        logger.info("loaded %d AccessRequestProfiles (envelope=%s)",
+                    len(profiles), envelope)
+        if not profiles:
+            logger.warning("no AccessRequestProfiles found — is the endpoint / "
+                           "auth correct? payload keys=%s",
+                           list(payload.keys()) if isinstance(payload, dict) else type(payload).__name__)
         self._access_profiles = profiles
         return profiles
 
@@ -219,8 +252,11 @@ class Resolver:
         profiles = self._load_access_profiles()
         profile = profiles.get(name)
         if not profile:
+            logger.error("AccessRequestProfile '%s' not found among %d loaded profiles: %s",
+                         name, len(profiles), sorted(profiles.keys()))
             raise InvalidInputException(
                 f"AccessRequestProfile '{name}' not found")
+        logger.debug("resolved access_profile name=%s id=%s", name, profile['id'])
         return profile['id']
 
     def tenant_default_access_profile_id(self) -> str:
@@ -270,16 +306,27 @@ class EligibilityCache:
         provider_id = provider['id']
         if provider_id in self._by_provider:
             return self._by_provider[provider_id]
+        logger.info("loading existing GROUP_ELIGIBILITY records for provider name=%s id=%s",
+                    provider.get('name'), provider_id)
         eligibilities: List[dict] = []
         filters = {"eligibilityType": {"equals": ELIGIBILITY_TYPE}}
+        stub_count = 0
         for stub in self.inv.provider_eligibilities_itr(
                 provider_id, provider, filters=filters):
+            stub_count += 1
             eligibility_id = stub.get('eligibilityId') or stub.get('id')
             if not eligibility_id:
+                logger.debug("skipping eligibility stub with no id: %s", stub)
                 continue
             full = self._fetch_full(provider_id, eligibility_id)
             if full and full.get('eligibilityType') == ELIGIBILITY_TYPE:
                 eligibilities.append(full)
+            else:
+                logger.debug("skipping eligibility id=%s (missing or wrong type=%s)",
+                             eligibility_id,
+                             full.get('eligibilityType') if full else None)
+        logger.info("provider=%s: loaded %d GROUP_ELIGIBILITY records (from %d stubs)",
+                    provider.get('name'), len(eligibilities), stub_count)
         self._by_provider[provider_id] = eligibilities
         return eligibilities
 
@@ -300,12 +347,26 @@ class EligibilityCache:
     def find_match(self, provider: dict, target_ids: List[str],
                    access_request_profile_id: str) -> Optional[dict]:
         target = tuple(sorted(target_ids))
-        for eligibility in self._load_provider(provider):
-            if self._target_key(eligibility) != target:
+        candidates = self._load_provider(provider)
+        logger.debug("find_match provider=%s target=%s profile_id=%s candidates=%d",
+                     provider.get('name'), target, access_request_profile_id, len(candidates))
+        for eligibility in candidates:
+            candidate_target = self._target_key(eligibility)
+            candidate_profile = eligibility.get('accessRequestProfileId') or ""
+            if candidate_target != target:
+                logger.debug("  no match eligibility_id=%s target=%s (wanted %s)",
+                             eligibility.get('eligibilityId') or eligibility.get('id'),
+                             candidate_target, target)
                 continue
-            if (eligibility.get('accessRequestProfileId') or "") != (access_request_profile_id or ""):
+            if candidate_profile != (access_request_profile_id or ""):
+                logger.debug("  no match eligibility_id=%s profile=%s (wanted %s)",
+                             eligibility.get('eligibilityId') or eligibility.get('id'),
+                             candidate_profile, access_request_profile_id)
                 continue
+            logger.info("find_match: matched existing eligibility_id=%s",
+                        eligibility.get('eligibilityId') or eligibility.get('id'))
             return eligibility
+        logger.debug("find_match: no existing eligibility matches — will CREATE")
         return None
 
     def upsert(self, provider_id: str, eligibility: dict) -> None:
@@ -380,6 +441,8 @@ def _process_row(row: Dict[str, str], row_num: int,
                  resolver: Resolver, cache: EligibilityCache,
                  api_session: requests.Session, as_api_endpoint: str,
                  dry_run: bool) -> Dict[str, str]:
+    logger.info("--- processing row %d ---", row_num)
+    logger.debug("row %d raw: %s", row_num, row)
     report_row = _empty_report_row(row, row_num)
 
     provider_name = (row.get(CSV_COL_PROVIDER) or "").strip()
@@ -389,6 +452,10 @@ def _process_row(row: Dict[str, str], row_num: int,
     access_profile_name = (row.get(CSV_COL_ACCESS_PROFILE) or "").strip()
     description = (row.get(CSV_COL_DESCRIPTION) or "").strip()
     report_row[CSV_COL_DESCRIPTION] = description
+    logger.info("row %d parsed: provider=%r eligible_group=%r eligible_users=%r "
+                "access_group=%r access_profile=%r description=%r",
+                row_num, provider_name, eligible_group_name, eligible_user_names,
+                access_group_names, access_profile_name, description)
 
     if not provider_name:
         report_row["action"] = "ERROR"
@@ -418,6 +485,17 @@ def _process_row(row: Dict[str, str], row_num: int,
         access_request_profile_id = resolver.access_profile_id(access_profile_name)
     else:
         access_request_profile_id = resolver.tenant_default_access_profile_id()
+        if access_request_profile_id:
+            logger.info("row %d: no access_profile_name in CSV — using tenant default id=%s",
+                        row_num, access_request_profile_id)
+        else:
+            logger.info("row %d: no access_profile_name in CSV and tenant has no default — "
+                        "eligibility will be created without accessRequestProfileId", row_num)
+
+    logger.info("row %d resolved ids: provider=%s eligible_groups=%s eligible_users=%s "
+                "target_groups=%s access_request_profile=%s",
+                row_num, provider_id, eligible_group_ids, eligible_user_ids,
+                target_group_ids, access_request_profile_id or "(none)")
 
     existing = cache.find_match(
         provider, target_group_ids, access_request_profile_id)
@@ -476,11 +554,21 @@ def create_group_eligibilities(as_api_endpoint: str,
     report_rows: List[Dict[str, str]] = []
     totals = {"CREATED": 0, "UPDATED": 0, "SKIPPED": 0, "ERROR": 0}
 
+    logger.info("reading CSV file %s (dry_run=%s)", eligibility_file, dry_run)
     with open(eligibility_file, "r", newline="") as fh:
         reader = csv.DictReader(fh)
         if reader.fieldnames:
             reader.fieldnames = [(name or "").strip() for name in reader.fieldnames]
+        logger.info("CSV headers: %s", reader.fieldnames)
+        expected = {CSV_COL_PROVIDER, CSV_COL_ELIG_GROUP, CSV_COL_ELIG_USERS,
+                    CSV_COL_ACCESS_GROUP, CSV_COL_ACCESS_PROFILE}
+        missing = expected - set(reader.fieldnames or [])
+        if missing:
+            logger.warning("CSV is missing expected columns %s — rows will be "
+                           "processed with those fields blank", sorted(missing))
+        row_count = 0
         for index, row in enumerate(reader, start=2):  # header is row 1
+            row_count += 1
             try:
                 result = _process_row(
                     row, index, resolver, cache,
@@ -493,11 +581,22 @@ def create_group_eligibilities(as_api_endpoint: str,
             except requests.HTTPError as exc:
                 result = _empty_report_row(row, index)
                 result["action"] = "ERROR"
-                body = getattr(exc.response, "text", "")
-                result["error"] = f"HTTP {exc.response.status_code}: {body[:200]}"
-                logger.error("row %d: %s", index, result["error"])
+                body = getattr(exc.response, "text", "") if exc.response is not None else ""
+                status = exc.response.status_code if exc.response is not None else "?"
+                result["error"] = f"HTTP {status}: {body[:400]}"
+                logger.error("row %d: HTTP %s body=%s", index, status, body[:1000])
+            except Exception as exc:
+                # Catch-all so a single bad row doesn't silently abort the batch.
+                result = _empty_report_row(row, index)
+                result["action"] = "ERROR"
+                result["error"] = f"{type(exc).__name__}: {exc}"
+                logger.exception("row %d: unhandled exception", index)
             totals[result["action"]] = totals.get(result["action"], 0) + 1
             report_rows.append(result)
+        logger.info("CSV read complete: %d data rows", row_count)
+        if row_count == 0:
+            logger.warning("CSV had zero data rows — is the file empty or has "
+                           "only a header?")
 
     with open(report_file, "w", newline="") as fh:
         writer = csv.DictWriter(fh, fieldnames=REPORT_COLS, extrasaction="ignore")
@@ -513,6 +612,7 @@ if __name__ == '__main__':
     args = _setup_args()
     _setup_logging()
     api_session = _get_api_session(args.as_api_endpoint)
+    logger.info("Established session with %s", args.as_api_endpoint)
     as_inventory = AndromedaInventory(
         None, api_session=api_session,
         output_dir="/tmp/andromeda-inventory",
