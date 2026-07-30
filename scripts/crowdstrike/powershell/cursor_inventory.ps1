@@ -2,7 +2,7 @@
 # 1. HEADER
 # ─────────────────────────────────────────────────────────────────────────────
 # cursor_inventory.ps1
-# SCRIPT_VERSION: 1.0.0
+# SCRIPT_VERSION: 1.2.0
 # Inventory Cursor account + plan + security metadata from the SQLite state DB on
 # Windows. Falcon RTR (SYSTEM). ALL profiles under C:\Users. Default path ->
 # alternates -> bounded search. Prefers sqlite3.exe (RTR `put` it first); else a
@@ -38,6 +38,53 @@ function Emit-Results([string]$product,[string]$emptyStatus){
     $results | ForEach-Object { $_ | ConvertTo-Json -Compress -Depth 4 }
   }
 }
+
+# Secret-pattern table: service -> regex. Flags credential-SHAPED strings by
+# pattern only — never captures or emits the matched substring, just which
+# service it maps to and where (file + line number). Extend to add services.
+$SecretPatterns = [ordered]@{
+  aws_access_key      = 'AKIA[0-9A-Z]{16}'
+  github_token        = 'gh[pousr]_[A-Za-z0-9]{20,}'
+  github_fine_grained = 'github_pat_[A-Za-z0-9_]{60,}'
+  slack_token         = 'xox[baprs]-[A-Za-z0-9-]{10,}'
+  slack_webhook       = 'hooks\.slack\.com/services/T[0-9A-Za-z]+/B[0-9A-Za-z]+/[0-9A-Za-z]+'
+  openai_key          = 'sk-[A-Za-z0-9]{20,}'
+  anthropic_key       = 'sk-ant-[A-Za-z0-9_-]{20,}'
+  google_api_key      = 'AIza[0-9A-Za-z_-]{35}'
+  stripe_key          = '(sk|pk)_live_[0-9A-Za-z]{20,}'
+  sendgrid_key        = 'SG\.[A-Za-z0-9_-]{15,}\.[A-Za-z0-9_-]{15,}'
+  npm_token           = 'npm_[A-Za-z0-9]{30,}'
+  private_key_block   = '-----BEGIN[A-Z ]*PRIVATE KEY-----'
+  jwt                 = 'eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+'
+  generic_credential  = '(api[_-]?key|apikey|secret|token|password)\s*[:=]\s*[A-Za-z0-9_-]{16,}'
+}
+
+# Get-SecretFindings PATH[] -> [pscustomobject]@{files_scanned; findings=@(...)}.
+# Scans each given file (skips missing/unreadable/>512KB) against $SecretPatterns
+# line by line, recording only file+service+line — never the matched text.
+# Caps total findings at 50 so one noisy file can't blow up the output.
+function Get-SecretFindings([string[]]$paths){
+  $findings=New-Object System.Collections.Generic.List[object]
+  $scanned=0; $cap=50
+  foreach($f in $paths){
+    if($findings.Count -ge $cap){break}
+    if(-not(Test-Path -LiteralPath $f -PathType Leaf)){continue}
+    try{
+      $item=Get-Item -LiteralPath $f -Force -ErrorAction Stop
+      if($item.Length -gt 524288){continue}
+      $scanned++
+      $lines=@(Get-Content -LiteralPath $f -Force -ErrorAction Stop)
+      for($i=0;$i -lt $lines.Count -and $findings.Count -lt $cap;$i++){
+        foreach($svc in $SecretPatterns.Keys){
+          if([regex]::IsMatch($lines[$i],$SecretPatterns[$svc],[Text.RegularExpressions.RegexOptions]::IgnoreCase)){
+            $findings.Add([pscustomobject]@{file=$f; service=$svc; line=($i+1)})
+          }
+        }
+      }
+    }catch{}
+  }
+  return [pscustomobject]@{files_scanned=$scanned; findings=$findings.ToArray()}
+}
 # ===== END SHARED PRELUDE =====
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -69,6 +116,25 @@ function Cursor-Version{
     if(Test-Path $p){try{return (Get-Content $p -Raw|ConvertFrom-Json).version}catch{}}
   }
   return ''
+}
+
+# Get-CursorSecretTargets PROFILE -> candidate secret-scan file paths for one
+# profile: global .cursorrules + .cursor\rules + .cursor\skills-cursor +
+# .cursor\memory. Global scope only — Cursor doesn't track a project list we
+# can cheaply reuse (unlike Claude's projects), so per-project .cursorrules/
+# .cursor\rules files are out of scope.
+function Get-CursorSecretTargets([string]$profile){
+  $out=New-Object System.Collections.Generic.List[string]
+  $legacy=Join-Path $profile '.cursorrules'
+  if(Test-Path -LiteralPath $legacy -PathType Leaf){$out.Add($legacy)}
+  foreach($sub in '.cursor\rules','.cursor\skills-cursor','.cursor\memory'){
+    $d=Join-Path $profile $sub
+    if(Test-Path -LiteralPath $d){
+      Get-ChildItem -LiteralPath $d -Recurse -Depth 4 -File -ErrorAction SilentlyContinue |
+        Where-Object{$_.Extension -in '.md','.mdc'} | ForEach-Object{$out.Add($_.FullName)}
+    }
+  }
+  return $out
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -186,6 +252,83 @@ function Get-JwtExp([string]$tok){
   return $null
 }
 
+# Get-McpTransportInfo NAME CFG -> a pscustomobject describing structural shape
+# only (transport/command-presence/arg-count/url-host) — never command/args/url
+# values themselves beyond a bare hostname for remote servers.
+function Get-McpTransportInfo([string]$name,$cfg){
+  $url=''; if($cfg.url){$url=$cfg.url}elseif($cfg.baseUrl){$url=$cfg.baseUrl}
+  $transport=''
+  if($cfg.type){$transport=([string]$cfg.type).ToLower()}elseif($cfg.transport){$transport=([string]$cfg.transport).ToLower()}
+  if(-not $transport){ if($url){$transport='http'}elseif($cfg.command){$transport='stdio'}else{$transport='unknown'} }
+  $entry=[ordered]@{name=$name; transport=$transport}
+  if($transport -eq 'stdio'){
+    $entry.command_present=[bool]$cfg.command
+    $entry.arg_count=if($cfg.args){@($cfg.args).Count}else{0}
+  }elseif(($transport -eq 'http' -or $transport -eq 'sse') -and $url){
+    try{$h=([uri]$url).Host; if($h){$entry.url_host=$h}}catch{}
+  }
+  return [pscustomobject]$entry
+}
+
+# Get-McpAuthMeta NAME CFG -> a pscustomobject with env_var_names/header_key_names/
+# filesystem_scope_paths (names/indicators only — never values), or $null if none apply.
+function Get-McpAuthMeta([string]$name,$cfg){
+  $envNames=@(); if($cfg.env){$envNames=@($cfg.env.PSObject.Properties.Name|Sort-Object)}
+  $headerNames=@(); if($cfg.headers){$headerNames=@($cfg.headers.PSObject.Properties.Name|Sort-Object)}
+  $fsPaths=@()
+  $args=@(); if($cfg.args){$args=@($cfg.args|ForEach-Object{[string]$_})}
+  $cmd=if($cfg.command){[string]$cfg.command}else{''}
+  if(($cmd + ' ' + ($args -join ' ')) -match 'server-filesystem'){
+    $fsPaths=@($args|Where-Object{$_ -notmatch '^-' -and $_ -notmatch 'server-filesystem' -and $_ -notmatch '=' -and $_ -match '^(/|\./|\.\./|~|[A-Za-z]:\\|\\\\)'})
+  }
+  $entry=[ordered]@{name=$name}
+  if($envNames.Count -gt 0){$entry.env_var_names=$envNames}
+  if($headerNames.Count -gt 0){$entry.header_key_names=$headerNames}
+  if($fsPaths.Count -gt 0){$entry.filesystem_scope_paths=$fsPaths}
+  if($entry.Count -gt 1){return [pscustomobject]$entry}
+  return $null
+}
+
+# Read-CursorMcpConfig PROFILE -> hashtable of server name -> config object, from the
+# GLOBAL PROFILE\.cursor\mcp.json (user scope). Returns an empty hashtable on any failure.
+function Read-CursorMcpConfig([string]$profile){
+  $h=@{}
+  $cfgPath=Join-Path $profile '.cursor\mcp.json'
+  if(-not(Test-Path $cfgPath)){return $h}
+  try{
+    $j=Get-Content $cfgPath -Raw|ConvertFrom-Json
+    if($j.mcpServers){foreach($mp in $j.mcpServers.PSObject.Properties){$h[$mp.Name]=$mp.Value}}
+  }catch{}
+  return $h
+}
+
+# Read-CursorProjectMcpConfigs WSDIR -> hashtable of server name -> config, from each
+# <folder>\.cursor\mcp.json for every folder Cursor has opened. Folders are enumerated
+# from WSDIR\*\workspace.json (a bounded set of known roots — never a filesystem crawl).
+# The workspace.json "folder" is a file URI (e.g. file:///c%3A/Users/x/proj);
+# ([uri]).LocalPath decodes it to a native path, with a manual fallback.
+function Read-CursorProjectMcpConfigs([string]$wsDir){
+  $h=@{}
+  if(-not(Test-Path $wsDir)){return $h}
+  foreach($wj in (Get-ChildItem $wsDir -Recurse -Filter workspace.json -EA 0)){
+    try{
+      $folder=(Get-Content -LiteralPath $wj.FullName -Raw|ConvertFrom-Json).folder
+      if(-not $folder){continue}
+      # "folder" is a file URI with a URL-encoded, forward-slashed path, e.g.
+      # file:///c%3A/Users/x/proj. [uri].LocalPath mis-handles the encoded drive colon
+      # (yields /c:/Users/...), so parse manually: strip file:/// , URL-decode, normalize.
+      $path=[uri]::UnescapeDataString(($folder -replace '^file:/+','')) -replace '/','\'
+      if(-not $path){continue}
+      $cfgPath=Join-Path $path '.cursor\mcp.json'
+      if(Test-Path -LiteralPath $cfgPath){
+        $j=Get-Content -LiteralPath $cfgPath -Raw|ConvertFrom-Json
+        if($j.mcpServers){foreach($mp in $j.mcpServers.PSObject.Properties){if(-not $h.ContainsKey($mp.Name)){$h[$mp.Name]=$mp.Value}}}
+      }
+    }catch{}
+  }
+  return $h
+}
+
 # ItemTable keys we pull as plain values (token keys are handled separately below).
 $keys=[ordered]@{
   email='cursorAuth/cachedEmail'; plan='cursorAuth/stripeMembershipType'
@@ -258,7 +401,7 @@ finally:
 # $null if the DB has no account info. Copies the DB (+ WAL/SHM sidecars) to TEMP,
 # reads it via the first available engine (winsqlite3 -> sqlite3.exe -> python3 ->
 # regex scrape), records which in `source`, then scrubs token values.
-function Collect-CursorDb([string]$u,[string]$db,[string]$sqlite,[string]$appver,[bool]$winOk,[string]$pyExe,[string[]]$pyPre){
+function Collect-CursorDb([string]$u,[string]$db,[string]$sqlite,[string]$appver,[bool]$winOk,[string]$pyExe,[string[]]$pyPre,[string]$profileHome){
   $v=@{}; foreach($k in $keys.Keys){$v[$k]=''}
   $at=''; $rt=''; $src=''; $mcpRaw=''
   $tmp=Join-Path $env:TEMP ("cur_{0}_{1}.vscdb" -f $u,([guid]::NewGuid().ToString('N').Substring(0,6)))
@@ -325,30 +468,62 @@ function Collect-CursorDb([string]$u,[string]$db,[string]$sqlite,[string]$appver
   if($atExp){$atExpired=([datetime]$atExp -lt (Get-Date).ToUniversalTime())}
   $at=$null; $rt=$null  # scrub token values
 
-  # mcp_servers: server IDs only (names — never config or secret env values);
-  # MCP servers are external data-egress surface. Stored value is a JSON array.
-  $mcp=@()
-  if($mcpRaw){ $mcp=@([regex]::Matches($mcpRaw,'"([^"]*)"')|ForEach-Object{$_.Groups[1].Value}) }
+  # mcp_servers: server config comes from config files — the global
+  # <profile>\.cursor\mcp.json (user scope) and each opened project's
+  # <folder>\.cursor\mcp.json (project scope; folders enumerated from Cursor's
+  # workspaceStorage, a bounded set of known roots). The DB's mcpService.knownServerIds
+  # is intentionally NOT used: it stores scope-mangled ids (user-<name>,
+  # project-<n>-<folder>-<name>) that can't be normalized back to the config key and
+  # would duplicate config-derived entries. Never emit config/secret env/header VALUES.
+  $wsDir=$db -replace 'globalStorage\\state\.vscdb$','workspaceStorage'
+  $mcpConfig=Read-CursorMcpConfig $profileHome
+  $projCfg=Read-CursorProjectMcpConfigs $wsDir
+  foreach($k in @($projCfg.Keys)){ if(-not $mcpConfig.ContainsKey($k)){$mcpConfig[$k]=$projCfg[$k]} }  # global wins on clash
+
+  $mcpNames=New-Object System.Collections.Generic.List[string]
+  $nameSeen=New-Object System.Collections.Generic.HashSet[string]
+  foreach($mn in @($mcpConfig.Keys)){
+    if($mn -and $nameSeen.Add($mn)){[void]$mcpNames.Add($mn)}
+  }
+
+  $mcp=@(); $authMetaServers=@()
+  foreach($mn in $mcpNames){
+    if($mcpConfig.ContainsKey($mn)){
+      $mcp += Get-McpTransportInfo $mn $mcpConfig[$mn]
+      $am=Get-McpAuthMeta $mn $mcpConfig[$mn]
+      if($am){$authMetaServers += $am}
+    } else {
+      $mcp += [pscustomobject]@{name=$mn; transport='unknown'}
+    }
+  }
+
+  $secretsScan = Get-SecretFindings (Get-CursorSecretTargets $profileHome)
 
   $dbMtime=(Get-Item $db).LastWriteTimeUtc.ToString('yyyy-MM-ddTHH:mm:ssZ')
   # last_used: currentSessionDate is the MOST recent launch; lastSessionDate is the
   # one before it (understates recency). Order: current -> last -> DB file mtime.
   $lastUsed=if($v.current_session){$v.current_session}elseif($v.last_session){$v.last_session}else{$dbMtime}
-  $wsDir=$db -replace 'globalStorage\\state\.vscdb$','workspaceStorage'
   $wsCount=0; if(Test-Path $wsDir){$wsCount=(Get-ChildItem $wsDir -Directory 2>$null).Count}
 
-  # Field order here is the output contract — keep it stable.
-  return [pscustomobject]@{
+  # Field order here is the output contract — keep it stable. auth_metadata is
+  # added below only when non-empty, so the key is entirely ABSENT from the
+  # JSON otherwise (matching the bash collector's behavior) rather than
+  # present with a $null value — ConvertTo-Json would otherwise still emit
+  # "auth_metadata":null for a property whose value is $null.
+  $out=[ordered]@{
     product='cursor'; host=$host_name; os_user=$u
     email=$v.email; plan=$v.plan; joined=$v.joined; auth_method=$v.auth_method
     scopes=$v.scopes; model=$model; last_used=$lastUsed; db_mtime=$dbMtime
     first_session=$v.first_session; current_session=$v.current_session
-    workspace_count=$wsCount; mcp_servers=@($mcp); mcp_count=$mcp.Count
+    workspace_count=$wsCount; mcp_servers=$mcp; mcp_count=$mcpNames.Count
     machine_id=$v.machine_id; dev_device_id=$v.dev_device_id
     service_machine_id=$v.service_machine_id; sqm_id=$v.sqm_id
     access_token_present=$atPresent; access_token_exp=$atExp; access_token_expired=$atExpired
     refresh_token_present=$rtPresent; app_version=$appver; db_path=$db; source=$src
+    secrets_scan=$secretsScan
   }
+  if($authMetaServers.Count -gt 0){$out.auth_metadata=[pscustomobject]@{mcp_servers=$authMetaServers}}
+  return [pscustomobject]$out
 }
 
 # --- main --------------------------------------------------------------------
@@ -383,7 +558,7 @@ foreach($profileDir in Get-Profiles){
   $u=$profileDir.Name
   foreach($db in (Find-CursorDbs $profileDir.FullName)){
     if(-not $seen.Add($db.ToLower())){continue}   # already reported this DB
-    $obj=Collect-CursorDb $u $db $sqlite $appver $winOk $pyExe $pyPre
+    $obj=Collect-CursorDb $u $db $sqlite $appver $winOk $pyExe $pyPre $profileDir.FullName
     if($obj){$results += $obj}
   }
 }

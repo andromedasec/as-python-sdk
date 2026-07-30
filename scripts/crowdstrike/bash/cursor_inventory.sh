@@ -3,7 +3,7 @@
 # 1. HEADER
 # ─────────────────────────────────────────────────────────────────────────────
 # cursor_inventory.sh
-# SCRIPT_VERSION: 1.0.0
+# SCRIPT_VERSION: 1.2.0
 # Inventory Cursor account + plan + security-relevant metadata from the local
 # SQLite state DB. Run via Falcon RTR (root). macOS + Linux. Enumerates ALL
 # user profiles (RTR runs as root/SYSTEM, not the logged-in user).
@@ -58,6 +58,64 @@ enumerate_homes() {
   esac
   return 0
 }
+
+# --- Secret-pattern scan (skills / memory / rules files) --------------------
+# service<TAB>ERE-pattern. Flags credential-SHAPED strings by pattern only —
+# never captures or emits the matched substring, just which service it maps to
+# and where (file + line number). Extend this table to add new services.
+SECRET_PATTERNS='aws_access_key	AKIA[0-9A-Z]{16}
+github_token	gh[pousr]_[A-Za-z0-9]{20,}
+github_fine_grained	github_pat_[A-Za-z0-9_]{60,}
+slack_token	xox[baprs]-[A-Za-z0-9-]{10,}
+slack_webhook	hooks\.slack\.com/services/T[0-9A-Za-z]+/B[0-9A-Za-z]+/[0-9A-Za-z]+
+openai_key	sk-[A-Za-z0-9]{20,}
+anthropic_key	sk-ant-[A-Za-z0-9_-]{20,}
+google_api_key	AIza[0-9A-Za-z_-]{35}
+stripe_key	(sk|pk)_live_[0-9A-Za-z]{20,}
+sendgrid_key	SG\.[A-Za-z0-9_-]{15,}\.[A-Za-z0-9_-]{15,}
+npm_token	npm_[A-Za-z0-9]{30,}
+private_key_block	-----BEGIN[A-Z ]*PRIVATE KEY-----
+jwt	eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+
+generic_credential	(api[_-]?key|apikey|secret|token|password)[[:space:]]*[:=][[:space:]]*[A-Za-z0-9_-]{16,}'
+
+# scan_secrets_file PATH -> print "service<TAB>lineno" per match, one per line.
+# Never prints the matched text, only which pattern matched and where. Skips
+# unreadable files and anything over 512KB (skill/rule/memory files are prose,
+# not the kind of thing that's legitimately huge).
+scan_secrets_file() {
+  local f="$1" sz
+  [ -f "$f" ] && [ -r "$f" ] || return 0
+  sz="$(stat -f %z "$f" 2>/dev/null || stat -c %s "$f" 2>/dev/null || echo 0)"
+  [ "${sz:-0}" -gt 524288 ] && return 0
+  local svc pat
+  while IFS=$'\t' read -r svc pat; do
+    [ -z "$svc" ] && continue
+    grep -EnI -e "$pat" "$f" 2>/dev/null | cut -d: -f1 | while IFS= read -r ln; do
+      [ -n "$ln" ] && printf '%s\t%s\n' "$svc" "$ln"
+    done
+  done <<< "$SECRET_PATTERNS"
+}
+
+# scan_secrets_paths PATH... -> sets SECRETS_JSON (compact JSON array of
+# {"file","service","line"}) and SECRETS_FILES_SCANNED, capped at
+# MAX_SECRET_FINDINGS total findings so one noisy file can't blow up output.
+MAX_SECRET_FINDINGS=50
+scan_secrets_paths() {
+  SECRETS_JSON="[]"; SECRETS_FILES_SCANNED=0
+  local arr="" first=1 count=0 f svc ln
+  for f in "$@"; do
+    [ -f "$f" ] || continue
+    SECRETS_FILES_SCANNED=$((SECRETS_FILES_SCANNED+1))
+    while IFS=$'\t' read -r svc ln; do
+      [ -z "$svc" ] && continue
+      [ "$count" -ge "$MAX_SECRET_FINDINGS" ] && continue
+      [ "$first" -eq 0 ] && arr="${arr},"
+      arr="${arr}{\"file\":\"$(json_escape "$f")\",\"service\":\"$(json_escape "$svc")\",\"line\":$ln}"
+      first=0; count=$((count+1))
+    done < <(scan_secrets_file "$f")
+  done
+  SECRETS_JSON="[${arr}]"
+}
 # ===== END SHARED PRELUDE =====
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -106,6 +164,18 @@ discover_dbs() {
     -type f -name 'state.vscdb' -path '*Cursor*globalStorage*' -print 2>/dev/null
 }
 
+# cursor_secret_targets HOME -> candidate secret-scan file paths for one
+# profile: global .cursorrules + .cursor/rules + .cursor/skills-cursor +
+# .cursor/memory. Global scope only — Cursor doesn't track a project list we
+# can cheaply reuse (unlike Claude's projects), so per-project .cursorrules/
+# .cursor/rules files are out of scope.
+cursor_secret_targets() {
+  local H="$1"
+  [ -f "$H/.cursorrules" ] && printf '%s\n' "$H/.cursorrules"
+  find "$H/.cursor/rules" "$H/.cursor/skills-cursor" "$H/.cursor/memory" \
+    -maxdepth 4 -type f \( -name '*.md' -o -name '*.mdc' \) 2>/dev/null
+}
+
 # ─────────────────────────────────────────────────────────────────────────────
 # 4. COLLECT — read the fields for one profile's DB (+ small read helpers)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -135,10 +205,10 @@ jwt_exp() {
 # 5. EMIT — process one DB end-to-end: copy, query, derive, build, print
 # ─────────────────────────────────────────────────────────────────────────────
 
-# process_db OS_USER DB_PATH -> emit one JSON line for that Cursor profile.
+# process_db OS_USER DB_PATH HOME_DIR -> emit one JSON line for that Cursor profile.
 # Returns 1 (emits nothing) if the DB has no account info worth reporting.
 process_db() {
-  local user="$1" DB="$2"
+  local user="$1" DB="$2" home_dir="$3"
 
   # Work on a copy so we never lock or mutate the live DB; bring WAL/SHM too.
   local TMP; TMP="$(mktemp -d)" || return 1
@@ -207,19 +277,89 @@ PYEOF
   raw_local="$(q 'anysphere.cursor-always-local')"
   user_id="$(printf '%s' "$raw_local" | grep -Eo '"(userId|machineId|user_id)"[[:space:]]*:[[:space:]]*"[^"]*"' | head -n1 | sed -E 's/.*"([^"]*)"$/\1/')"
 
-  # mcp_servers: configured MCP server IDs only (names — never config or secret
-  # env values). MCP servers are external data-egress surface. The stored value
-  # is a JSON array of ids; rebuild it as a compact, escaped JSON array.
-  local mcp_raw mcp_json mcp_count n
-  mcp_raw="$(q 'mcpService.knownServerIds')"
-  mcp_json="["; mcp_count=0
-  while IFS= read -r n; do
-    [ -z "$n" ] && continue
-    [ "$mcp_count" -gt 0 ] && mcp_json="$mcp_json,"
-    mcp_json="$mcp_json\"$(json_escape "$n")\""
-    mcp_count=$((mcp_count+1))
-  done <<< "$(printf '%s' "$mcp_raw" | grep -Eo '"[^"]*"' | sed -e 's/^"//' -e 's/"$//')"
-  mcp_json="$mcp_json]"
+  # mcp_servers: external data-egress surface. Servers (with structural detail +
+  # auth_metadata) are read from config files, when python3 is available:
+  #   - GLOBAL  ~/.cursor/mcp.json                 (user scope)
+  #   - PROJECT <folder>/.cursor/mcp.json          (project scope) for every folder
+  #     Cursor has opened, enumerated from its own workspaceStorage/*/workspace.json
+  #     -> a bounded set of known roots, never a filesystem crawl.
+  # The DB's mcpService.knownServerIds is intentionally NOT used: it stores
+  # scope-mangled ids (user-<name>, project-<n>-<folder>-<name>) that can't be
+  # normalized back to the config key and would duplicate config-derived entries.
+  # Never emit config or secret env/header VALUES, only names/indicators.
+  local mcp_json mcp_count auth_meta_json ws_dir
+  ws_dir="$(dirname "$(dirname "$DB")")/workspaceStorage"
+  if [ -n "$PY" ]; then
+    local _mcp_out
+    _mcp_out="$("$PY" - "$home_dir" "$ws_dir" <<'PYEOF'
+import json,os,sys,glob,re
+from urllib.parse import urlparse, unquote
+home, ws_dir = sys.argv[1], sys.argv[2]
+# Servers are sourced from config files only (global + project). Cursor's DB
+# mcpService.knownServerIds is deliberately NOT unioned in: it stores scope-mangled
+# ids (user-<name>, project-<n>-<folder>-<name>) that can't be reliably normalized
+# back to the config key (server names contain dashes too) and would duplicate the
+# config-derived entries. Config files carry clean names + full enrichment.
+configs = {}   # server name -> config dict (first writer wins: global before project)
+def ingest(path):
+    try:
+        with open(path, encoding="utf-8", errors="replace") as f: j = json.load(f)
+    except Exception:
+        return
+    for k, v in (j.get("mcpServers") or {}).items():
+        if isinstance(v, dict): configs.setdefault(k, v)
+ingest(os.path.join(home, ".cursor", "mcp.json"))
+seen = set()
+for wj in glob.glob(os.path.join(ws_dir, "*", "workspace.json")):
+    try:
+        with open(wj, encoding="utf-8", errors="replace") as f: meta = json.load(f)
+    except Exception:
+        continue
+    folder = meta.get("folder") or ""
+    if folder.startswith("file://"): folder = unquote(folder[7:])
+    if folder and folder not in seen and os.path.isdir(folder):
+        seen.add(folder); ingest(os.path.join(folder, ".cursor", "mcp.json"))
+names = set(configs.keys())
+def _fs(a):
+    return False if "=" in a else bool(re.match(r'^(/|\./|\.\./|~|[A-Za-z]:\\|\\\\)', a))
+servers, auth = [], []
+for name in sorted(names):
+    cfg = configs.get(name) or {}
+    url = cfg.get("url") or cfg.get("baseUrl") or ""
+    tr = str(cfg.get("type") or cfg.get("transport") or "").lower()
+    if not tr: tr = "http" if url else ("stdio" if cfg.get("command") else "unknown")
+    e = {"name": name, "transport": tr}
+    if tr == "stdio":
+        e["command_present"] = bool(cfg.get("command")); e["arg_count"] = len(cfg.get("args") or [])
+    elif tr in ("http", "sse") and url:
+        h = urlparse(url).hostname
+        if h: e["url_host"] = h
+    servers.append(e)
+    en = sorted((cfg.get("env") or {}).keys()); hn = sorted((cfg.get("headers") or {}).keys())
+    args = [str(a) for a in (cfg.get("args") or [])]; cmd = str(cfg.get("command") or "")
+    fp = [a for a in args if not a.startswith("-") and "server-filesystem" not in a and _fs(a)] if "server-filesystem" in " ".join([cmd] + args) else []
+    a = {"name": name}
+    if en: a["env_var_names"] = en
+    if hn: a["header_key_names"] = hn
+    if fp: a["filesystem_scope_paths"] = fp
+    if len(a) > 1: auth.append(a)
+print(json.dumps(servers, separators=(",", ":")))
+print(len(servers))
+print(json.dumps(auth, separators=(",", ":")))
+PYEOF
+)"
+    mcp_json="$(printf '%s\n' "$_mcp_out" | sed -n '1p')"
+    mcp_count="$(printf '%s\n' "$_mcp_out" | sed -n '2p')"
+    auth_meta_json="$(printf '%s\n' "$_mcp_out" | sed -n '3p')"
+    [ -z "$mcp_json" ] && mcp_json="[]"
+    [ -z "$mcp_count" ] && mcp_count=0
+    [ -z "$auth_meta_json" ] && auth_meta_json="[]"
+  else
+    # python3 absent: config files can't be parsed, so MCP enumeration is skipped.
+    # (The DB knownServerIds holds only scope-mangled ids that would be misleading
+    # name-only entries, so we do not emit them.) Rare — RTR-root normally has python3.
+    mcp_json="[]"; auth_meta_json="[]"; mcp_count=0
+  fi
 
   # model: most-frequent non-"default" model across composer sessions (cursorDiskKV).
   # Cursor is multi-model/per-chat, so we surface the dominant explicitly-chosen model
@@ -254,6 +394,12 @@ PYEOF
 
   # No account identity on this DB -> nothing useful to report.
   [ -z "$email" ] && [ -z "$plan" ] && return 1
+
+  local secret_files=() sf
+  while IFS= read -r sf; do secret_files+=("$sf"); done < <(cursor_secret_targets "$home_dir")
+  # bash 3.2 (stock macOS) errors on "${arr[@]}" when the array is empty under
+  # `set -u`; the ${arr[@]+...} guard expands to nothing instead of aborting.
+  scan_secrets_paths ${secret_files[@]+"${secret_files[@]}"}
 
   # last-used: telemetry.currentSessionDate is the MOST recent app launch;
   # lastSessionDate is the launch BEFORE that (so it understates recency — don't
@@ -298,6 +444,10 @@ PYEOF
   json_str app_version "$APPVER"
   json_str db_path "$DB"
   json_str source "$SRC"
+  json_raw secrets_scan "{\"files_scanned\":${SECRETS_FILES_SCANNED},\"findings\":${SECRETS_JSON}}"
+  if [ "$auth_meta_json" != "[]" ]; then
+    json_raw auth_metadata "{\"mcp_servers\":$auth_meta_json}"
+  fi
   json_emit
   return 0
 }
@@ -337,7 +487,7 @@ for H in "${HOMES[@]}"; do
     rp="$(readlink -f "$DB" 2>/dev/null || printf '%s' "$DB")"
     already "$rp" && continue
     emitted+=("$rp"); found=1   # a DB exists here -> not "not installed", even if it has no account
-    process_db "$user" "$DB"
+    process_db "$user" "$DB" "$H"
   done < <(discover_dbs "$H")
 done
 
