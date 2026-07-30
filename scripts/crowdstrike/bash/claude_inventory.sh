@@ -3,7 +3,7 @@
 # 1. HEADER
 # ─────────────────────────────────────────────────────────────────────────────
 # claude_inventory.sh
-# SCRIPT_VERSION: 1.0.0
+# SCRIPT_VERSION: 1.2.0
 # Inventory Claude Code account + plan + security-relevant metadata. RTR (root).
 # macOS + Linux. Enumerates ALL user profiles (RTR runs as root/SYSTEM).
 #
@@ -65,6 +65,64 @@ enumerate_homes() {
   esac
   return 0
 }
+
+# --- Secret-pattern scan (skills / memory / rules files) --------------------
+# service<TAB>ERE-pattern. Flags credential-SHAPED strings by pattern only —
+# never captures or emits the matched substring, just which service it maps to
+# and where (file + line number). Extend this table to add new services.
+SECRET_PATTERNS='aws_access_key	AKIA[0-9A-Z]{16}
+github_token	gh[pousr]_[A-Za-z0-9]{20,}
+github_fine_grained	github_pat_[A-Za-z0-9_]{60,}
+slack_token	xox[baprs]-[A-Za-z0-9-]{10,}
+slack_webhook	hooks\.slack\.com/services/T[0-9A-Za-z]+/B[0-9A-Za-z]+/[0-9A-Za-z]+
+openai_key	sk-[A-Za-z0-9]{20,}
+anthropic_key	sk-ant-[A-Za-z0-9_-]{20,}
+google_api_key	AIza[0-9A-Za-z_-]{35}
+stripe_key	(sk|pk)_live_[0-9A-Za-z]{20,}
+sendgrid_key	SG\.[A-Za-z0-9_-]{15,}\.[A-Za-z0-9_-]{15,}
+npm_token	npm_[A-Za-z0-9]{30,}
+private_key_block	-----BEGIN[A-Z ]*PRIVATE KEY-----
+jwt	eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+
+generic_credential	(api[_-]?key|apikey|secret|token|password)[[:space:]]*[:=][[:space:]]*[A-Za-z0-9_-]{16,}'
+
+# scan_secrets_file PATH -> print "service<TAB>lineno" per match, one per line.
+# Never prints the matched text, only which pattern matched and where. Skips
+# unreadable files and anything over 512KB (skill/rule/memory files are prose,
+# not the kind of thing that's legitimately huge).
+scan_secrets_file() {
+  local f="$1" sz
+  [ -f "$f" ] && [ -r "$f" ] || return 0
+  sz="$(stat -f %z "$f" 2>/dev/null || stat -c %s "$f" 2>/dev/null || echo 0)"
+  [ "${sz:-0}" -gt 524288 ] && return 0
+  local svc pat
+  while IFS=$'\t' read -r svc pat; do
+    [ -z "$svc" ] && continue
+    grep -EnI -e "$pat" "$f" 2>/dev/null | cut -d: -f1 | while IFS= read -r ln; do
+      [ -n "$ln" ] && printf '%s\t%s\n' "$svc" "$ln"
+    done
+  done <<< "$SECRET_PATTERNS"
+}
+
+# scan_secrets_paths PATH... -> sets SECRETS_JSON (compact JSON array of
+# {"file","service","line"}) and SECRETS_FILES_SCANNED, capped at
+# MAX_SECRET_FINDINGS total findings so one noisy file can't blow up output.
+MAX_SECRET_FINDINGS=50
+scan_secrets_paths() {
+  SECRETS_JSON="[]"; SECRETS_FILES_SCANNED=0
+  local arr="" first=1 count=0 f svc ln
+  for f in "$@"; do
+    [ -f "$f" ] || continue
+    SECRETS_FILES_SCANNED=$((SECRETS_FILES_SCANNED+1))
+    while IFS=$'\t' read -r svc ln; do
+      [ -z "$svc" ] && continue
+      [ "$count" -ge "$MAX_SECRET_FINDINGS" ] && continue
+      [ "$first" -eq 0 ] && arr="${arr},"
+      arr="${arr}{\"file\":\"$(json_escape "$f")\",\"service\":\"$(json_escape "$svc")\",\"line\":$ln}"
+      first=0; count=$((count+1))
+    done < <(scan_secrets_file "$f")
+  done
+  SECRETS_JSON="[${arr}]"
+}
 # ===== END SHARED PRELUDE =====
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -91,6 +149,16 @@ find_cfg() {
     -type f -name '.claude.json' -print 2>/dev/null | head -1
 }
 
+# claude_secret_targets HOME CDIR -> candidate secret-scan file paths for one
+# profile: global CLAUDE.md + skills/memory files. Global scope only —
+# per-project CLAUDE.md/skills files are out of scope (no cheap way to bound
+# recursive scans across arbitrary repos from RTR).
+claude_secret_targets() {
+  local H="$1" cdir="$2" f
+  for f in "$H/CLAUDE.md" "$cdir/CLAUDE.md"; do [ -f "$f" ] && printf '%s\n' "$f"; done
+  find "$cdir/skills" "$cdir/memory" -maxdepth 4 -type f \( -name '*.md' -o -name '*.mdc' \) 2>/dev/null
+}
+
 # ─────────────────────────────────────────────────────────────────────────────
 # 4. COLLECT — pull identity/plan from the live CLI (best source for plan)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -102,18 +170,65 @@ jget() { printf '%s' "$2" | sed -n "s/.*\"$1\"[[:space:]]*:[[:space:]]*\"\([^\"]
 # 5. EMIT — two paths: python3 enrichment (full), or a grep fallback (core fields)
 # ─────────────────────────────────────────────────────────────────────────────
 
-# py_emit HOST USER CFG CDIR CLI_EMAIL CLI_PLAN CLI_ORG CLI_METHOD
+# py_emit HOST USER CFG CDIR CLI_EMAIL CLI_PLAN CLI_ORG CLI_METHOD SECRETS_JSON SECRETS_FILES_SCANNED
 # Reads the config + ~/.claude folder, merges in the CLI-derived values, and
 # prints the final JSON line. Nested fields (projects/mcpServers) need real JSON
 # parsing, which is why this path uses python3.
 py_emit() {
-  "$PY" - "$1" "$2" "$3" "$4" "$5" "$6" "$7" "$8" <<'PYEOF'
-import json,os,sys,glob
-host,os_user,cfg,cdir,cli_email,cli_plan,cli_org,cli_method = sys.argv[1:9]
+  "$PY" - "$1" "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9" "${10}" <<'PYEOF'
+import json,os,sys,glob,re
+host,os_user,cfg,cdir,cli_email,cli_plan,cli_org,cli_method,secrets_json,secrets_files_scanned = sys.argv[1:11]
 o={"product":"claude","host":host,"os_user":os_user}
 email=cli_email or ""; plan=cli_plan or ""; org=cli_org or ""; method=cli_method or ""
 orgid=""; acct=""; role=""; num_startups=""; install=""; version=""; user_id=""; first_start=""
-projects=[]; mcp=set(); model_counts={}
+projects=[]; mcp={}; model_counts={}
+
+def _classify_mcp_server(name, cfg):
+    """Structural shape only — never the command/args/url values themselves,
+    beyond a bare hostname for remote servers."""
+    cfg = cfg if isinstance(cfg, dict) else {}
+    url = cfg.get("url") or cfg.get("baseUrl") or ""
+    transport = str(cfg.get("type") or cfg.get("transport") or "").lower()
+    if not transport:
+        transport = "http" if url else ("stdio" if cfg.get("command") else "unknown")
+    entry = {"name": name, "transport": transport}
+    if transport == "stdio":
+        entry["command_present"] = bool(cfg.get("command"))
+        entry["arg_count"] = len(cfg.get("args") or [])
+    elif transport in ("http", "sse") and url:
+        try:
+            from urllib.parse import urlparse
+            host = urlparse(url).hostname
+            if host:
+                entry["url_host"] = host
+        except Exception:
+            pass
+    return entry
+
+def _looks_like_fs_path(a):
+    """True only if the arg looks like a filesystem path and NOT an env-assignment
+    token (e.g. "GITHUB_TOKEN=ghp_SECRET123") — those must never be emitted."""
+    if "=" in a:
+        return False
+    return bool(re.match(r'^(/|\./|\.\./|~|[A-Za-z]:\\|\\\\)', a))
+
+def _auth_meta_for_mcp_server(name, cfg):
+    """Names/indicators only: which env vars and header keys are configured, and
+    (heuristically, for the common @modelcontextprotocol/server-filesystem package)
+    which directory paths are exposed. Never the values."""
+    cfg = cfg if isinstance(cfg, dict) else {}
+    env_names = sorted((cfg.get("env") or {}).keys())
+    header_names = sorted((cfg.get("headers") or {}).keys())
+    fs_paths = []
+    args = [str(a) for a in (cfg.get("args") or [])]
+    cmd = str(cfg.get("command") or "")
+    if "server-filesystem" in " ".join([cmd] + args):
+        fs_paths = [a for a in args if not a.startswith("-") and "server-filesystem" not in a and _looks_like_fs_path(a)]
+    entry = {"name": name}
+    if env_names: entry["env_var_names"] = env_names
+    if header_names: entry["header_key_names"] = header_names
+    if fs_paths: entry["filesystem_scope_paths"] = fs_paths
+    return entry
 try:
     with open(cfg,encoding="utf-8",errors="replace") as f: j=json.load(f)
     oa=j.get("oauthAccount") or {}
@@ -135,11 +250,21 @@ try:
     pj=j.get("projects") or {}
     if isinstance(pj,dict):
         projects=list(pj.keys())
-        for v in pj.values():
+        for p,v in pj.items():
             if isinstance(v,dict):
-                for m in (v.get("mcpServers") or {}): mcp.add(m)
+                for m,mcfg in (v.get("mcpServers") or {}).items(): mcp[m]=mcfg   # local scope
                 for mu in (v.get("lastModelUsage") or {}): model_counts[mu]=model_counts.get(mu,0)+1
-    for m in (j.get("mcpServers") or {}): mcp.add(m)
+            # project scope: <projectRoot>/.mcp.json (committed, team-shared). The
+            # projects keys are absolute paths, so this is a bounded read of known
+            # roots, not a filesystem crawl. setdefault -> a local-scope server of the
+            # same name (higher precedence) is not clobbered.
+            try:
+                pmcp=os.path.join(p,".mcp.json")
+                if os.path.isfile(pmcp):
+                    with open(pmcp,encoding="utf-8",errors="replace") as pf: pj2=json.load(pf)
+                    for m,mcfg in (pj2.get("mcpServers") or {}).items(): mcp.setdefault(m,mcfg)
+            except Exception: pass
+    for m,mcfg in (j.get("mcpServers") or {}).items(): mcp[m]=mcfg   # user scope
 except Exception as e:
     o["config_error"]=str(e)[:80]
 
@@ -171,25 +296,43 @@ if not last_used and cfg and os.path.isfile(cfg):
 if not model and model_counts:
     model=max(model_counts, key=model_counts.get)
 
+mcp_names = sorted(mcp)
+mcp_servers_out = [_classify_mcp_server(n, mcp[n]) for n in mcp_names]
+auth_meta_servers = [_auth_meta_for_mcp_server(n, mcp[n]) for n in mcp_names]
+auth_meta_servers = [e for e in auth_meta_servers if len(e) > 1]  # drop entries with only "name"
+
+try:
+    secret_findings = json.loads(secrets_json) if secrets_json else []
+except Exception:
+    secret_findings = []
+try:
+    secret_files_scanned = int(secrets_files_scanned or 0)
+except ValueError:
+    secret_files_scanned = 0
+
 o.update({
   "email":email,"plan":plan or "unknown","org":org,"org_id":orgid,"account_uuid":acct,
   "org_role":role,"auth_method":method,"last_used":last_used,"num_startups":num_startups,
   "client_version":version,"install_method":install,"user_id":user_id,"first_start":first_start,
   "model":model,
   "projects_count":len(projects),"project_paths":projects[:50],"projects_truncated":len(projects)>50,
-  "mcp_servers":sorted(mcp),"mcp_count":len(mcp),
+  "mcp_servers":mcp_servers_out,"mcp_count":len(mcp_names),
   "credentials_on_disk":cred,"credentials_mtime":cred_mtime,"settings_present":settings,
+  "secrets_scan":{"files_scanned":secret_files_scanned,"findings":secret_findings},
   "source":"cli+config" if cli_email else "config"
 })
+if auth_meta_servers:
+    o["auth_metadata"] = {"mcp_servers": auth_meta_servers}
 print(json.dumps(o,separators=(",",":")))
 PYEOF
 }
 
-# emit_grep_fallback USER CFG CDIR CLI_EMAIL CLI_PLAN CLI_ORG -> core fields only.
-# Used when python3 is absent (stock macOS). last_used comes from the cfg mtime.
-# Returns 1 (emits nothing) if no identity could be recovered.
+# emit_grep_fallback USER CFG CDIR CLI_EMAIL CLI_PLAN CLI_ORG SECRETS_JSON SECRETS_FILES_SCANNED
+# -> core fields only. Used when python3 is absent (stock macOS). last_used
+# comes from the cfg mtime. Returns 1 (emits nothing) if no identity recovered.
 emit_grep_fallback() {
   local user="$1" cfg="$2" cdir="$3" email="$4" plan="$5" org="$6"
+  local secrets_json="$7" secrets_files_scanned="$8"
   local blob="" orgid cred lu_epoch lu
   [ -n "$cfg" ] && blob="$(cat "$cfg" 2>/dev/null)"
   [ -z "$email" ] && email="$(jget emailAddress "$blob")"
@@ -213,6 +356,7 @@ emit_grep_fallback() {
   json_str org_id "$orgid"
   json_str last_used "$lu"
   json_raw credentials_on_disk "$cred"
+  json_raw secrets_scan "{\"files_scanned\":${secrets_files_scanned:-0},\"findings\":${secrets_json:-[]}}"
   json_str source "config-grep"
   json_str note "python3_absent_limited_fields"
   json_emit
@@ -244,11 +388,17 @@ for H in "${HOMES[@]}"; do
     org="$(jget orgName "$out")"; method="$(jget authMethod "$out")"
   fi
 
+  secret_files=()
+  while IFS= read -r sf; do secret_files+=("$sf"); done < <(claude_secret_targets "$H" "$cdir")
+  # bash 3.2 (stock macOS) errors on "${arr[@]}" when the array is empty under
+  # `set -u`; the ${arr[@]+...} guard expands to nothing instead of aborting.
+  scan_secrets_paths ${secret_files[@]+"${secret_files[@]}"}
+
   if [ -n "$PY" ] && [ -n "$cfg" ]; then
-    py_emit "$HOST" "$user" "$cfg" "$cdir" "$email" "$plan" "$org" "$method"
+    py_emit "$HOST" "$user" "$cfg" "$cdir" "$email" "$plan" "$org" "$method" "$SECRETS_JSON" "$SECRETS_FILES_SCANNED"
     found=1
   else
-    emit_grep_fallback "$user" "$cfg" "$cdir" "$email" "$plan" "$org" && found=1
+    emit_grep_fallback "$user" "$cfg" "$cdir" "$email" "$plan" "$org" "$SECRETS_JSON" "$SECRETS_FILES_SCANNED" && found=1
   fi
 done
 

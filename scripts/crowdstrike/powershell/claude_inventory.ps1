@@ -2,7 +2,7 @@
 # 1. HEADER
 # ─────────────────────────────────────────────────────────────────────────────
 # claude_inventory.ps1
-# SCRIPT_VERSION: 1.0.0
+# SCRIPT_VERSION: 1.2.0
 # Inventory Claude Code account + plan + security metadata on Windows. RTR (SYSTEM).
 # ALL profiles under C:\Users. Default config -> alternates -> bounded search.
 #
@@ -40,6 +40,53 @@ function Emit-Results([string]$product,[string]$emptyStatus){
     $results | ForEach-Object { $_ | ConvertTo-Json -Compress -Depth 4 }
   }
 }
+
+# Secret-pattern table: service -> regex. Flags credential-SHAPED strings by
+# pattern only — never captures or emits the matched substring, just which
+# service it maps to and where (file + line number). Extend to add services.
+$SecretPatterns = [ordered]@{
+  aws_access_key      = 'AKIA[0-9A-Z]{16}'
+  github_token        = 'gh[pousr]_[A-Za-z0-9]{20,}'
+  github_fine_grained = 'github_pat_[A-Za-z0-9_]{60,}'
+  slack_token         = 'xox[baprs]-[A-Za-z0-9-]{10,}'
+  slack_webhook       = 'hooks\.slack\.com/services/T[0-9A-Za-z]+/B[0-9A-Za-z]+/[0-9A-Za-z]+'
+  openai_key          = 'sk-[A-Za-z0-9]{20,}'
+  anthropic_key       = 'sk-ant-[A-Za-z0-9_-]{20,}'
+  google_api_key      = 'AIza[0-9A-Za-z_-]{35}'
+  stripe_key          = '(sk|pk)_live_[0-9A-Za-z]{20,}'
+  sendgrid_key        = 'SG\.[A-Za-z0-9_-]{15,}\.[A-Za-z0-9_-]{15,}'
+  npm_token           = 'npm_[A-Za-z0-9]{30,}'
+  private_key_block   = '-----BEGIN[A-Z ]*PRIVATE KEY-----'
+  jwt                 = 'eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+'
+  generic_credential  = '(api[_-]?key|apikey|secret|token|password)\s*[:=]\s*[A-Za-z0-9_-]{16,}'
+}
+
+# Get-SecretFindings PATH[] -> [pscustomobject]@{files_scanned; findings=@(...)}.
+# Scans each given file (skips missing/unreadable/>512KB) against $SecretPatterns
+# line by line, recording only file+service+line — never the matched text.
+# Caps total findings at 50 so one noisy file can't blow up the output.
+function Get-SecretFindings([string[]]$paths){
+  $findings=New-Object System.Collections.Generic.List[object]
+  $scanned=0; $cap=50
+  foreach($f in $paths){
+    if($findings.Count -ge $cap){break}
+    if(-not(Test-Path -LiteralPath $f -PathType Leaf)){continue}
+    try{
+      $item=Get-Item -LiteralPath $f -Force -ErrorAction Stop
+      if($item.Length -gt 524288){continue}
+      $scanned++
+      $lines=@(Get-Content -LiteralPath $f -Force -ErrorAction Stop)
+      for($i=0;$i -lt $lines.Count -and $findings.Count -lt $cap;$i++){
+        foreach($svc in $SecretPatterns.Keys){
+          if([regex]::IsMatch($lines[$i],$SecretPatterns[$svc],[Text.RegularExpressions.RegexOptions]::IgnoreCase)){
+            $findings.Add([pscustomobject]@{file=$f; service=$svc; line=($i+1)})
+          }
+        }
+      }
+    }catch{}
+  }
+  return [pscustomobject]@{files_scanned=$scanned; findings=$findings.ToArray()}
+}
 # ===== END SHARED PRELUDE =====
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -60,6 +107,25 @@ function Find-ClaudeCfg([string]$p){
   return $null
 }
 
+# Get-ClaudeSecretTargets PROFILE CDIR -> candidate secret-scan file paths for
+# one profile: global CLAUDE.md + skills/memory files. Global scope only —
+# per-project CLAUDE.md/skills files are out of scope (no cheap way to bound
+# recursive scans across arbitrary repos from RTR).
+function Get-ClaudeSecretTargets([string]$profile,[string]$cdir){
+  $out=New-Object System.Collections.Generic.List[string]
+  foreach($f in @((Join-Path $profile 'CLAUDE.md'),(Join-Path $cdir 'CLAUDE.md'))){
+    if(Test-Path -LiteralPath $f -PathType Leaf){$out.Add($f)}
+  }
+  foreach($sub in 'skills','memory'){
+    $d=Join-Path $cdir $sub
+    if(Test-Path -LiteralPath $d){
+      Get-ChildItem -LiteralPath $d -Recurse -Depth 4 -File -ErrorAction SilentlyContinue |
+        Where-Object{$_.Extension -in '.md','.mdc'} | ForEach-Object{$out.Add($_.FullName)}
+    }
+  }
+  return $out
+}
+
 # ─────────────────────────────────────────────────────────────────────────────
 # 4. COLLECT — read last-used + build one profile object
 # ─────────────────────────────────────────────────────────────────────────────
@@ -74,13 +140,50 @@ function Newest-SessionUtc([string]$cdir){
   return ''
 }
 
-# Collect-ClaudeProfile USER CFG CDIR -> a profile object, or $null if no identity
-# (email/org) could be recovered. Parses .claude.json for identity/plan/projects/
-# mcpServers, then adds folder-derived last-used + credentials presence.
-function Collect-ClaudeProfile([string]$u,[string]$cfg,[string]$cdir){
+# Get-McpTransportInfo NAME CFG -> a pscustomobject describing structural shape
+# only (transport/command-presence/arg-count/url-host) — never command/args/url
+# values themselves beyond a bare hostname for remote servers.
+function Get-McpTransportInfo([string]$name,$cfg){
+  $url=''; if($cfg.url){$url=$cfg.url}elseif($cfg.baseUrl){$url=$cfg.baseUrl}
+  $transport=''
+  if($cfg.type){$transport=([string]$cfg.type).ToLower()}elseif($cfg.transport){$transport=([string]$cfg.transport).ToLower()}
+  if(-not $transport){ if($url){$transport='http'}elseif($cfg.command){$transport='stdio'}else{$transport='unknown'} }
+  $entry=[ordered]@{name=$name; transport=$transport}
+  if($transport -eq 'stdio'){
+    $entry.command_present=[bool]$cfg.command
+    $entry.arg_count=if($cfg.args){@($cfg.args).Count}else{0}
+  }elseif(($transport -eq 'http' -or $transport -eq 'sse') -and $url){
+    try{$h=([uri]$url).Host; if($h){$entry.url_host=$h}}catch{}
+  }
+  return [pscustomobject]$entry
+}
+
+# Get-McpAuthMeta NAME CFG -> a pscustomobject with env_var_names/header_key_names/
+# filesystem_scope_paths (names/indicators only — never values), or $null if none apply.
+function Get-McpAuthMeta([string]$name,$cfg){
+  $envNames=@(); if($cfg.env){$envNames=@($cfg.env.PSObject.Properties.Name|Sort-Object)}
+  $headerNames=@(); if($cfg.headers){$headerNames=@($cfg.headers.PSObject.Properties.Name|Sort-Object)}
+  $fsPaths=@()
+  $args=@(); if($cfg.args){$args=@($cfg.args|ForEach-Object{[string]$_})}
+  $cmd=if($cfg.command){[string]$cfg.command}else{''}
+  if(($cmd + ' ' + ($args -join ' ')) -match 'server-filesystem'){
+    $fsPaths=@($args|Where-Object{$_ -notmatch '^-' -and $_ -notmatch 'server-filesystem' -and $_ -notmatch '=' -and $_ -match '^(/|\./|\.\./|~|[A-Za-z]:\\|\\\\)'})
+  }
+  $entry=[ordered]@{name=$name}
+  if($envNames.Count -gt 0){$entry.env_var_names=$envNames}
+  if($headerNames.Count -gt 0){$entry.header_key_names=$headerNames}
+  if($fsPaths.Count -gt 0){$entry.filesystem_scope_paths=$fsPaths}
+  if($entry.Count -gt 1){return [pscustomobject]$entry}
+  return $null
+}
+
+# Collect-ClaudeProfile USER CFG CDIR PROFILE -> a profile object, or $null if no
+# identity (email/org) could be recovered. Parses .claude.json for identity/plan/
+# projects/mcpServers, then adds folder-derived last-used + credentials presence.
+function Collect-ClaudeProfile([string]$u,[string]$cfg,[string]$cdir,[string]$profile){
   $email='';$org='';$orgid='';$plan='';$acct='';$role='';$method=''
   $numStartups='';$version='';$install='';$userId='';$firstStart=''
-  $projects=@();$mcp=New-Object System.Collections.Generic.HashSet[string]
+  $projects=@();$mcp=[ordered]@{}
   $model='';$modelCounts=@{}
 
   if($cfg){
@@ -108,11 +211,22 @@ function Collect-ClaudeProfile([string]$u,[string]$cfg,[string]$cdir){
       if($j.projects){
         $projects=@($j.projects.PSObject.Properties.Name)
         foreach($pp in $j.projects.PSObject.Properties){
-          if($pp.Value.mcpServers){foreach($m in $pp.Value.mcpServers.PSObject.Properties.Name){[void]$mcp.Add($m)}}
+          if($pp.Value.mcpServers){foreach($mp in $pp.Value.mcpServers.PSObject.Properties){$mcp[$mp.Name]=$mp.Value}}  # local scope
           if($pp.Value.lastModelUsage){foreach($mu in $pp.Value.lastModelUsage.PSObject.Properties.Name){$modelCounts[$mu]=[int]$modelCounts[$mu]+1}}
+          # project scope: <projectRoot>\.mcp.json (committed, team-shared). Project keys
+          # are absolute paths (fwd- or back-slashed on Windows; Join-Path/Test-Path handle
+          # both) -> a bounded read of known roots, not a filesystem crawl. setdefault so a
+          # local-scope server of the same name (higher precedence) is not clobbered.
+          try{
+            $pmcp=Join-Path $pp.Name '.mcp.json'
+            if(Test-Path -LiteralPath $pmcp){
+              $ppj=Get-Content -LiteralPath $pmcp -Raw|ConvertFrom-Json
+              if($ppj.mcpServers){foreach($mp in $ppj.mcpServers.PSObject.Properties){if(-not $mcp.Contains($mp.Name)){$mcp[$mp.Name]=$mp.Value}}}
+            }
+          }catch{}
         }
       }
-      if($j.mcpServers){foreach($m in $j.mcpServers.PSObject.Properties.Name){[void]$mcp.Add($m)}}
+      if($j.mcpServers){foreach($mp in $j.mcpServers.PSObject.Properties){$mcp[$mp.Name]=$mp.Value}}  # user scope
       if(-not $email){
         $m=[regex]::Match($raw,'[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}')
         if($m.Success){$email=$m.Value}
@@ -133,17 +247,33 @@ function Collect-ClaudeProfile([string]$u,[string]$cfg,[string]$cdir){
   if(-not $model -and $modelCounts.Count -gt 0){$model=($modelCounts.GetEnumerator()|Sort-Object Value -Descending|Select-Object -First 1).Key}
   $projTrunc=$projects.Count -gt 50
 
-  # Field order here is the output contract — keep it stable.
-  return [pscustomobject]@{
+  $mcpServersOut=@(); $authMetaServers=@()
+  foreach($mn in $mcp.Keys){
+    $mcpServersOut += Get-McpTransportInfo $mn $mcp[$mn]
+    $am = Get-McpAuthMeta $mn $mcp[$mn]
+    if($am){$authMetaServers += $am}
+  }
+
+  $secretsScan = Get-SecretFindings (Get-ClaudeSecretTargets $profile $cdir)
+
+  # Field order here is the output contract — keep it stable. auth_metadata is
+  # added below only when non-empty, so the key is entirely ABSENT from the
+  # JSON otherwise (matching the bash collector's behavior) rather than
+  # present with a $null value — ConvertTo-Json would otherwise still emit
+  # "auth_metadata":null for a property whose value is $null.
+  $out=[ordered]@{
     product='claude'; host=$host_name; os_user=$u
     email=$email; plan=$plan; org=$org; org_id=$orgid; account_uuid=$acct; org_role=$role
     auth_method=$method; last_used=$lastUsed; num_startups=$numStartups; client_version=$version
     install_method=$install; user_id=$userId; first_start=$firstStart; model=$model
     projects_count=$projects.Count; project_paths=@($projects|Select-Object -First 50); projects_truncated=$projTrunc
-    mcp_servers=@($mcp); mcp_count=$mcp.Count
+    mcp_servers=$mcpServersOut; mcp_count=$mcp.Count
     credentials_on_disk=$cred; credentials_mtime=$credMtime; settings_present=$settings
+    secrets_scan=$secretsScan
     source='config'
   }
+  if($authMetaServers.Count -gt 0){$out.auth_metadata=[pscustomobject]@{mcp_servers=$authMetaServers}}
+  return [pscustomobject]$out
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -155,7 +285,7 @@ foreach($profileDir in Get-Profiles){
   $cfg=Find-ClaudeCfg $profile
   if(-not $cfg -and -not (Test-Path $cdir)){continue}          # no Claude footprint
   if($cfg -and -not $seen.Add($cfg.ToLower())){continue}       # already reported this config
-  $obj=Collect-ClaudeProfile $u $cfg $cdir
+  $obj=Collect-ClaudeProfile $u $cfg $cdir $profile
   if($obj){$results += $obj}
 }
 
