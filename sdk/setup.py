@@ -13,7 +13,7 @@ setup(
         "PyYAML==6.0.2",
         "gql[all]==3.5.0",
         "polling2==0.5.0",
-        "protobuf==4.24.3",
+        "protobuf==5.29.6",
         "requests==2.32.3",
         "requests_mock==1.12.1",
         "google-api-core==2.21.0",
