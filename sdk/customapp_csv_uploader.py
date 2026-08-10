@@ -30,10 +30,15 @@ class CustomAppTransformerUploader:
     Handles authentication, file upload, and custom app updates.
     """
 
-    def __init__(self, as_api_endpoint: str, as_gql_endpoint: str):
+    def __init__(self, as_api_endpoint: str, as_gql_endpoint: str,
+                 api_session: Optional[requests.Session] = None):
         self.api_endpoint = as_api_endpoint
         self.api_utils = APIUtils(as_api_endpoint)
-        self.api_session: Optional[requests.Session] = self._create_session()
+        # Reuse a caller-provided authenticated session when given (e.g. the e2e
+        # conftest's api_session, authenticated via the AWS access-key flow);
+        # otherwise fall back to AS_API_TOKEN / AS_SESSION_COOKIE from the env.
+        self.api_session: Optional[requests.Session] = (
+            api_session if api_session is not None else self._create_session())
         output_dir = "/tmp/andromeda-inventory" \
             if platform.system() != "Windows" else "C:\\tmp\\andromeda-inventory"
         self.as_inventory = AndromedaInventory(
@@ -119,13 +124,19 @@ class CustomAppTransformerUploader:
                     provider_id, updated_config, status_code)
         return True
 
-    def upload_and_update(self, app_name: str, file_name: str) -> None:
+    def upload_and_update(self, app_name: str, file_name: str,
+                          file_type: str = "CUSTOM_TYPE1_INVENTORY_CSV") -> None:
         """
         Main method to upload file and update custom apps.
 
         Args:
             app_name: Name of the app to filter by
             file_name: Path to the file to upload
+            file_type: Inventory file type. Defaults to CUSTOM_TYPE1_INVENTORY_CSV
+                (the CSV-translator flow). Pass ANDROMEDA_INVENTORY_JSON when the
+                uploaded file is already a canonical inventory JSON (e.g. the drift
+                fixtures with top-level users/nhis) so the ingester reads it directly
+                instead of routing it through the CSV translator (which drops NHIs).
         """
         if not app_name:
             raise ValueError("app_name is required")
@@ -138,7 +149,6 @@ class CustomAppTransformerUploader:
         }
         # Get the provider id for the app.
         app_obj = next(self.as_inventory.app_provider_itr(provider_filter))
-        file_type = "CUSTOM_TYPE1_INVENTORY_CSV"
         file_ref = self._upload_file(file_name, app_obj['id'], app_obj['name'], file_type)
         self.update_custom_app_config(app_obj['id'], app_obj['name'], file_ref, file_type)
 

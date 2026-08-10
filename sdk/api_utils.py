@@ -246,7 +246,7 @@ class APIUtils:
         """
         This function creates or updates the cloud specific settings for a provider
         """
-        config_url = f"{andromeda_base_url}/integrations/{provider_obj['id']}/workday"
+        config_url = f"{andromeda_base_url}/providers/{provider_obj['id']}/workday/config"
 
         # Base data always includes name
         data = {

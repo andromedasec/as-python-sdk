@@ -88,10 +88,32 @@ class RoleType(Enum):
     """Represents a role type in the custom application inventory."""
     CUSTOM_APP_ROLE = "CUSTOM_APP_ROLE"
     CUSTOM_APP_USER_ROLE = "CUSTOM_APP_USER_ROLE"
+    APP_BUILT_IN_ROLE = "APP_BUILT_IN_ROLE"
 
 class PermissionAccessLevel(Enum):
-    """Represents a permission access level in the custom application inventory."""
+    """Represents a permission access level in the custom application inventory.
+
+    Values are the config.AccessLevel proto enum names (protojson decodes them
+    directly). 12-label taxonomy, config.AccessLevel enum values 20-31.
+    """
     UNSPECIFIED = "ACCESS_LEVEL_UNSPECIFIED"
+    AUTH_MANAGEMENT = "ACCESS_LEVEL_AUTH_MANAGEMENT"
+    DATA_CREATE = "ACCESS_LEVEL_DATA_CREATE"
+    DATA_READ = "ACCESS_LEVEL_DATA_READ"
+    DATA_UPDATE = "ACCESS_LEVEL_DATA_UPDATE"
+    DATA_DELETE = "ACCESS_LEVEL_DATA_DELETE"
+    METADATA_CREATE = "ACCESS_LEVEL_METADATA_CREATE"
+    METADATA_READ = "ACCESS_LEVEL_METADATA_READ"
+    METADATA_UPDATE = "ACCESS_LEVEL_METADATA_UPDATE"
+    METADATA_DELETE = "ACCESS_LEVEL_METADATA_DELETE"
+    EXECUTE = "ACCESS_LEVEL_EXECUTE"
+    SYSTEM_OPERATIONS = "ACCESS_LEVEL_SYSTEM_OPERATIONS"
+    MISCELLANEOUS = "ACCESS_LEVEL_MISCELLANEOUS"
+
+    # Deprecated — kept so callers migrating from the pre-2026 config.AccessLevel
+    # values (1-11) can still reference them symbolically. Any inventory carrying
+    # these values gets normalized to the 12-label taxonomy by
+    # normalize_deprecated_access_levels before validation.
     LIST = "ACCESS_LEVEL_LIST"
     WRITE_TAG = "ACCESS_LEVEL_WRITE_TAG"
     DELETE_TAG = "ACCESS_LEVEL_DELETE_TAG"
@@ -146,6 +168,19 @@ class AgentEndUserAuthType(Enum):
     OAUTH_PER_USER = "OAUTH_PER_USER"
 
 
+class CollectionStatus(Enum):
+    """Mirrors CustomAppCollectionStatusMessage.CollectionStatus in customapp_resource.proto.
+
+    Distinguishes a resource that answered and reported nothing from one the collector
+    could not reach: only the former is evidence that its children are gone. Leave unset
+    (equivalent to REPORTED) unless the collector can actually tell the two apart.
+    """
+    COLLECTION_STATUS_UNSPECIFIED = "COLLECTION_STATUS_UNSPECIFIED"
+    REPORTED = "REPORTED"
+    UNREACHABLE = "UNREACHABLE"
+    GONE = "GONE"
+
+
 class LicenseTier(Enum):
     """Mirrors CustomAppLicenseTier.LicenseTier in customapp_agent.proto."""
     LICENSE_TIER_UNSPECIFIED = "LICENSE_TIER_UNSPECIFIED"
@@ -160,6 +195,16 @@ class AgentType(Enum):
     AGENT_TYPE_UNSPECIFIED = "AGENT_TYPE_UNSPECIFIED"
     CURSOR_DESKTOP = "CURSOR_DESKTOP"
     CLAUDE_DESKTOP = "CLAUDE_DESKTOP"
+    GITHUB_COPILOT = "GITHUB_COPILOT"
+    CODEX_DESKTOP = "CODEX_DESKTOP"
+
+
+class McpTransport(Enum):
+    """Mirrors CustomAppMcpTransportMessage.Transport in customapp_agent.proto."""
+    TRANSPORT_UNSPECIFIED = "TRANSPORT_UNSPECIFIED"
+    STDIO = "STDIO"
+    HTTP = "HTTP"
+    SSE = "SSE"
 
 
 class HrType(str, Enum):
@@ -241,7 +286,7 @@ class CustomAppNhiV2:
     username: str
     name: str
     id: str
-    type: Optional[str] = NhiType.CUSTOM_APP_NHI.name
+    # type: Optional[str] = NhiType.CUSTOM_APP_NHI.name
     is_external_client: Optional[bool] = False
     owner_id: Optional[str] = None
     custodian_id: Optional[str] = None
@@ -423,6 +468,12 @@ class CustomAppResource:
     # Granular classification set on the graph Resource node's `type` field
     # (ResourceTypeMessage.ResourceType, e.g. DEVICE). Matches customapp_resource.proto#9.
     type: Optional[str] = None
+    # Whether the collector reached this resource this run (CollectionStatus name).
+    # Unset == REPORTED. Matches customapp_resource.proto#10.
+    collection_status: Optional[str] = None
+    # Per-product collection failures on a resource that did answer, e.g. ["claude"].
+    # Matches customapp_resource.proto#11.
+    unreported_products: List[str] = field(default_factory=list)
 
 
 @dataclass
@@ -444,6 +495,30 @@ class CustomAppAgentLicenseProfile:
 
 
 @dataclass
+class CustomAppMcpServer:
+    """One MCP server configured on an agent install, structural shape only.
+
+    Names, transports, and auth-surface indicators — never command lines,
+    full URLs, or secret values. Matches customapp_agent.proto CustomAppMcpServer.
+    """
+    name: str
+    transport: str = McpTransport.TRANSPORT_UNSPECIFIED.value
+    # Hostname only for HTTP/SSE servers; never the full URL (paths and query
+    # strings can embed credentials).
+    url_host: Optional[str] = None
+    command_present: Optional[bool] = None
+    arg_count: Optional[int] = None
+    # Names of configured env vars / header keys — names only, never values.
+    env_var_names: List[str] = field(default_factory=list)
+    header_key_names: List[str] = field(default_factory=list)
+    filesystem_scope_paths: List[str] = field(default_factory=list)
+    # True when the MCP config explicitly declares OAuth (e.g. Codex `auth = "oauth"`).
+    # Only set by collectors whose config format carries an explicit OAuth indicator.
+    # Matches customapp_agent.proto CustomAppMcpServer#9.
+    uses_oauth: Optional[bool] = None
+
+
+@dataclass
 class CustomAppAgent:
     """Represents an AI agent in the custom application inventory."""
     id: str
@@ -456,6 +531,13 @@ class CustomAppAgent:
     # AgentTypeMessage.AgentType (CLAUDE_DESKTOP / CURSOR_DESKTOP). The ingester derives
     # the resource/external types from this. Matches customapp_agent.proto#8.
     agent_type: Optional[str] = None
+    # Per-MCP-server auth-surface indicators (env var names, header key names,
+    # filesystem scope paths), keyed by server name. Names/indicators only — never
+    # secret values. Matches customapp_agent.proto#9.
+    auth_metadata: Optional[Dict] = field(default_factory=dict)
+    # MCP servers configured on this install, structural shape only. The ingester
+    # models each entry as an AgentConnection. Matches customapp_agent.proto#10.
+    mcp_servers: List[CustomAppMcpServer] = field(default_factory=list)
 
 
 @dataclass
@@ -469,6 +551,10 @@ class CustomAppRole:
     has_agent_permissions: Optional[bool] = None
     # Whether this role grants admin privileges. Matches customapp_role.proto#6.
     has_admin_privilege: Optional[bool] = None
+    # Scope levels where this role may be assigned. Matches customapp_role.proto#7.
+    assignable_scopes: List[str] = field(default_factory=list)
+    # Scope levels this role grants access to. Matches customapp_role.proto#8.
+    has_access_to_scopes: List[str] = field(default_factory=list)
 
 @dataclass
 class CustomAppRoleAssignmentV2:
@@ -725,6 +811,11 @@ def load_inventory_from_json(data: dict) -> CustomAppInventory:
                     CustomAppAgentLicenseProfile(**p) if isinstance(p, dict) else p
                     for p in agent_data['license_profiles']
                 ]
+            if 'mcp_servers' in agent_data and isinstance(agent_data['mcp_servers'], list):
+                agent_data['mcp_servers'] = [
+                    CustomAppMcpServer(**s) if isinstance(s, dict) else s
+                    for s in agent_data['mcp_servers']
+                ]
             inventory.agents[agent_id] = CustomAppAgent(**agent_data)
 
     return inventory
@@ -866,6 +957,10 @@ def _check_agent_references(inventory: CustomAppInventory, strict_enums: bool) -
             for i, profile in enumerate(agent.license_profiles):
                 if profile.tier and profile.tier not in valid_tiers:
                     errors.append(f"Agent '{agent_id}' license_profiles[{i}] has invalid tier: '{profile.tier}'")
+            valid_transports = [e.value for e in McpTransport]
+            for i, server in enumerate(agent.mcp_servers):
+                if server.transport and server.transport not in valid_transports:
+                    errors.append(f"Agent '{agent_id}' mcp_servers[{i}] has invalid transport: '{server.transport}'")
         if agent.device_id and agent.device_id not in inventory.resources:
             errors.append(f"Agent '{agent_id}' device_id '{agent.device_id}' not found in resources")
         if agent.user_id and agent.user_id not in inventory.users:
@@ -907,6 +1002,41 @@ def _check_assignment_references(inventory: CustomAppInventory, strict_enums: bo
     return ("Assignment Reference Validation", errors)
 
 
+def normalize_deprecated_access_levels(inventory: CustomAppInventory) -> None:
+    """Remap old-taxonomy permission access levels to the 12-label taxonomy in place.
+
+    Customer inventories (JSON/CSV/download transformers, e.g. Preply django or
+    fsastore) may still carry old-taxonomy labels; the inventory must transform
+    them rather than fail. Accepts both proto-name ("ACCESS_LEVEL_WRITE_DATA")
+    and bare ("WRITE_DATA") forms. New-taxonomy values pass through unchanged.
+    """
+    for perm in inventory.permissions.values():
+        if not perm.access_level:
+            continue
+        key = perm.access_level
+        if not key.startswith("ACCESS_LEVEL_"):
+            key = "ACCESS_LEVEL_" + key
+        mapped = _DEPRECATED_ACCESS_LEVEL_MAP.get(key)
+        if mapped is not None:
+            perm.access_level = mapped.value
+
+
+# Old-taxonomy label (config.AccessLevel proto name) -> new PermissionAccessLevel.
+_DEPRECATED_ACCESS_LEVEL_MAP = {
+    "ACCESS_LEVEL_LIST": PermissionAccessLevel.METADATA_READ,
+    "ACCESS_LEVEL_WRITE_TAG": PermissionAccessLevel.METADATA_CREATE,
+    "ACCESS_LEVEL_DELETE_TAG": PermissionAccessLevel.METADATA_DELETE,
+    "ACCESS_LEVEL_READ_METADATA": PermissionAccessLevel.METADATA_READ,
+    "ACCESS_LEVEL_READ_DATA": PermissionAccessLevel.DATA_READ,
+    "ACCESS_LEVEL_WRITE_METADATA": PermissionAccessLevel.METADATA_UPDATE,
+    "ACCESS_LEVEL_CREATE": PermissionAccessLevel.DATA_CREATE,
+    "ACCESS_LEVEL_WRITE_DATA": PermissionAccessLevel.DATA_UPDATE,
+    "ACCESS_LEVEL_DELETE_DATA": PermissionAccessLevel.DATA_DELETE,
+    "ACCESS_LEVEL_DELETE": PermissionAccessLevel.DATA_DELETE,
+    "ACCESS_LEVEL_PERMISSIONS_MANAGEMENT": PermissionAccessLevel.AUTH_MANAGEMENT,
+}
+
+
 def validate_inventory_consistency(
     inventory: CustomAppInventory,
     strict_enums: bool = True
@@ -920,6 +1050,10 @@ def validate_inventory_consistency(
     Returns:
         List of validation error messages (empty if valid)
     """
+    # Backward compatibility: transform old-taxonomy access levels to the new
+    # taxonomy before enum checks so legacy inventories keep working.
+    normalize_deprecated_access_levels(inventory)
+
     # Define all validation checks
     validation_checks = [
         _check_user_enums,

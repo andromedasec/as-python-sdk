@@ -91,6 +91,7 @@ Type of role in the application.
 class RoleType(Enum):
     CUSTOM_APP_ROLE = "CUSTOM_APP_ROLE"              # Standard application role
     CUSTOM_APP_USER_ROLE = "CUSTOM_APP_USER_ROLE"   # User-specific role
+    APP_BUILT_IN_ROLE = "APP_BUILT_IN_ROLE"          # Provider-native built-in role
 ```
 
 #### HrType

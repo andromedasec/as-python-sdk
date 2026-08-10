@@ -1749,3 +1749,157 @@ class TestValidateInventoryConsistencyNegative:
         errors = validate_inventory_consistency(inventory, strict_enums=True)
 
         assert len(errors) == 0
+
+
+class TestNormalizeDeprecatedAccessLevels:
+    """Test legacy access-level remapping before enum validation."""
+
+    @pytest.mark.parametrize(
+        "old_level,expected",
+        [
+            ("ACCESS_LEVEL_LIST", "ACCESS_LEVEL_METADATA_READ"),
+            ("LIST", "ACCESS_LEVEL_METADATA_READ"),
+            ("ACCESS_LEVEL_WRITE_TAG", "ACCESS_LEVEL_METADATA_CREATE"),
+            ("WRITE_TAG", "ACCESS_LEVEL_METADATA_CREATE"),
+            ("ACCESS_LEVEL_DELETE_TAG", "ACCESS_LEVEL_METADATA_DELETE"),
+            ("DELETE_TAG", "ACCESS_LEVEL_METADATA_DELETE"),
+            ("ACCESS_LEVEL_READ_METADATA", "ACCESS_LEVEL_METADATA_READ"),
+            ("READ_METADATA", "ACCESS_LEVEL_METADATA_READ"),
+            ("ACCESS_LEVEL_READ_DATA", "ACCESS_LEVEL_DATA_READ"),
+            ("READ_DATA", "ACCESS_LEVEL_DATA_READ"),
+            ("ACCESS_LEVEL_WRITE_METADATA", "ACCESS_LEVEL_METADATA_UPDATE"),
+            ("WRITE_METADATA", "ACCESS_LEVEL_METADATA_UPDATE"),
+            ("ACCESS_LEVEL_CREATE", "ACCESS_LEVEL_DATA_CREATE"),
+            ("CREATE", "ACCESS_LEVEL_DATA_CREATE"),
+            ("ACCESS_LEVEL_WRITE_DATA", "ACCESS_LEVEL_DATA_UPDATE"),
+            ("WRITE_DATA", "ACCESS_LEVEL_DATA_UPDATE"),
+            ("ACCESS_LEVEL_DELETE_DATA", "ACCESS_LEVEL_DATA_DELETE"),
+            ("DELETE_DATA", "ACCESS_LEVEL_DATA_DELETE"),
+            ("ACCESS_LEVEL_DELETE", "ACCESS_LEVEL_DATA_DELETE"),
+            ("DELETE", "ACCESS_LEVEL_DATA_DELETE"),
+            ("ACCESS_LEVEL_PERMISSIONS_MANAGEMENT", "ACCESS_LEVEL_AUTH_MANAGEMENT"),
+            ("PERMISSIONS_MANAGEMENT", "ACCESS_LEVEL_AUTH_MANAGEMENT"),
+        ],
+    )
+    def test_normalize_deprecated_access_levels(self, old_level, expected):
+        from sdk.customapp.custom_app_models import (
+            CustomAppInventory,
+            CustomAppPermission,
+            normalize_deprecated_access_levels,
+        )
+
+        inventory = CustomAppInventory()
+        inventory.permissions["pLegacy"] = CustomAppPermission(
+            name="pLegacy",
+            access_level=old_level,
+        )
+
+        normalize_deprecated_access_levels(inventory)
+
+        assert inventory.permissions["pLegacy"].access_level == expected
+
+    def test_new_taxonomy_unchanged(self):
+        from sdk.customapp.custom_app_models import (
+            CustomAppInventory,
+            CustomAppPermission,
+            normalize_deprecated_access_levels,
+        )
+
+        inventory = CustomAppInventory()
+        inventory.permissions["pRead"] = CustomAppPermission(
+            name="pRead",
+            access_level="ACCESS_LEVEL_DATA_READ",
+        )
+
+        normalize_deprecated_access_levels(inventory)
+
+        assert inventory.permissions["pRead"].access_level == "ACCESS_LEVEL_DATA_READ"
+
+    def test_validate_accepts_legacy_levels_and_mutates_in_place(self):
+        from sdk.customapp.custom_app_models import (
+            CustomAppInventory,
+            CustomAppPermission,
+            validate_inventory_consistency,
+        )
+
+        inventory = CustomAppInventory()
+        inventory.permissions["pWrite"] = CustomAppPermission(
+            name="pWrite",
+            access_level="ACCESS_LEVEL_WRITE_DATA",
+        )
+
+        errors = validate_inventory_consistency(inventory, strict_enums=True)
+
+        assert errors == []
+        assert inventory.permissions["pWrite"].access_level == "ACCESS_LEVEL_DATA_UPDATE"
+
+    def test_validate_inventory_from_json_legacy_access_level(self):
+        from sdk.customapp.custom_app_models import validate_inventory_from_json
+
+        data = {
+            "permissions": {
+                "pWrite": {
+                    "name": "pWrite",
+                    "accessLevel": "WRITE_DATA",
+                }
+            }
+        }
+
+        inventory = validate_inventory_from_json(data, strict_enums=True)
+
+        assert inventory.permissions["pWrite"].access_level == "ACCESS_LEVEL_DATA_UPDATE"
+
+
+def test_agent_auth_metadata_defaults_and_roundtrip():
+    from sdk.customapp.custom_app_models import CustomAppAgent
+
+    agent = CustomAppAgent(id="a1", name="Test Agent")
+    assert agent.auth_metadata == {}   # default: empty dict, same convention as license_data
+
+    agent2 = CustomAppAgent(
+        id="a2",
+        name="Test Agent 2",
+        auth_metadata={"mcp_servers": [{"name": "brave-search", "env_var_names": ["BRAVE_API_KEY"]}]},
+    )
+    assert agent2.auth_metadata["mcp_servers"][0]["name"] == "brave-search"
+
+
+def test_agent_mcp_servers_roundtrip_and_validation():
+    from sdk.customapp.custom_app_models import (
+        CustomAppAgent,
+        CustomAppMcpServer,
+        validate_inventory_from_json,
+    )
+
+    agent = CustomAppAgent(id="a1", name="Test Agent")
+    assert agent.mcp_servers == []  # default: empty list, same convention as license_profiles
+
+    # JSON loading rehydrates mcp_servers dicts into dataclasses.
+    data = {
+        "agents": {
+            "a2": {
+                "id": "a2",
+                "name": "Agent With MCP",
+                "mcp_servers": [
+                    {"name": "brave-search", "transport": "STDIO", "command_present": True,
+                     "env_var_names": ["BRAVE_API_KEY"]},
+                    {"name": "github-remote", "transport": "HTTP", "url_host": "api.githubcopilot.com"},
+                ],
+            }
+        }
+    }
+    inventory = validate_inventory_from_json(data, strict_enums=True)
+    servers = inventory.agents["a2"].mcp_servers
+    assert isinstance(servers[0], CustomAppMcpServer)
+    assert servers[0].env_var_names == ["BRAVE_API_KEY"]
+    assert servers[1].url_host == "api.githubcopilot.com"
+
+    # strict_enums rejects transports outside the McpTransport enum.
+    data["agents"]["a2"]["mcp_servers"] = [{"name": "x", "transport": "carrier-pigeon"}]
+    try:
+        validate_inventory_from_json(data, strict_enums=True)
+        raised = False
+    except ValueError as e:
+        raised = True
+        assert "invalid transport" in str(e)
+    assert raised

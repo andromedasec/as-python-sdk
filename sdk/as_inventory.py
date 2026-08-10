@@ -165,6 +165,7 @@ class AndromedaInventory(dict):
                     ds.AccountsConnection.edges.select(
                         ds.AccountEdge.node.select(
                             *gql_snippets.list_trivial_fields_Account(ds),
+                            ds.Account.tags,
                             ds.Account.identities.select(
                                 ds.AccountIdentitiesConnection.pageInfo.select(
                                     *gql_snippets.list_trivial_fields_PageInfo(ds),
@@ -2367,6 +2368,7 @@ class AndromedaInventory(dict):
                                 ),
                                 ds.AccessAssignmentData.account.select(
                                     *gql_snippets.list_trivial_fields_Account(ds),
+                                    ds.Account.tags,
                                 ),
                                 ds.AccessAssignmentData.provider.select(
                                     *gql_snippets.list_trivial_fields_Provider(ds),
@@ -4345,6 +4347,197 @@ class AndromedaInventory(dict):
         page_size = page_size if page_size else self.default_page_size
         logger.debug("Fetching scopes filters=%s", filters)
         partial_fn_itr = functools.partial(self.as_scopes_base_fn, filters)
+        for item in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
+            yield item
+
+    def as_agents_base_fn(self, filters: dict | None,
+            page_size: int = 100, skip: int = 0) -> list:
+        ds = DSLSchema(self.gql_client.schema)
+        query = dsl_gql(DSLQuery(
+            ds.Query.Agents(
+                pageArgs={"pageSize": page_size, "skip": skip},
+                filters=filters
+            ).select(
+                ds.AgentsConnection.edges.select(
+                    ds.AgentEdge.node.select(
+                        *gql_snippets.list_trivial_fields_Agent(ds),
+                    ),
+                ),
+                ds.AgentsConnection.pageInfo.select(
+                    *gql_snippets.list_trivial_fields_PageInfo(ds),
+                )
+            )
+        ))
+        response = self.gql_client.execute(query, get_execution_result=True).formatted
+        agent_edges = response["data"]["Agents"]["edges"]
+        agents = [edge["node"] for edge in agent_edges]
+        logger.debug("filters=%s num agents returned %s", filters, len(agents))
+        return agents
+
+    def as_agents_itr(self, filters: dict | None = None,
+            page_size: int = None) -> Generator[dict, None, None]:
+        """Get all AI agents from the inventory."""
+        page_size = page_size if page_size else self.default_page_size
+        logger.debug("Fetching agents filters=%s", filters)
+        partial_fn_itr = functools.partial(self.as_agents_base_fn, filters)
+        for item in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
+            yield item
+
+    def fetch_agents_summary(self, filters: dict | None = None) -> dict:
+        """
+        Summary of all the AI agents in the tenant, broken down across posture
+        dimensions (type, status, risk, activity, ops insights, credential
+        posture, model, etc). ``filters`` (AgentsSummaryFilters shape) is applied
+        to every breakdown.
+        """
+        ds = DSLSchema(self.gql_client.schema)
+        query = dsl_gql(DSLQuery(
+            ds.Query.AgentsSummary(
+            ).select(
+                ds.AgentsSummary.groupedByType(filters=filters).select(
+                    *gql_snippets.list_trivial_fields_AgentsGroupedByType(ds),
+                ),
+                ds.AgentsSummary.groupedByStatus(filters=filters).select(
+                    *gql_snippets.list_trivial_fields_AgentsGroupedByStatus(ds),
+                ),
+                ds.AgentsSummary.groupedByRiskLevel(filters=filters).select(
+                    *gql_snippets.list_trivial_fields_AgentsGroupedByRiskLevel(ds),
+                ),
+                ds.AgentsSummary.groupedByBlastRiskLevel(filters=filters).select(
+                    *gql_snippets.list_trivial_fields_AgentsGroupedByBlastRiskLevel(ds),
+                ),
+                ds.AgentsSummary.groupedByActivityBucket(filters=filters).select(
+                    *gql_snippets.list_trivial_fields_AgentsGroupedByActivityBucket(ds),
+                ),
+                ds.AgentsSummary.groupedByActivityStatus(filters=filters).select(
+                    *gql_snippets.list_trivial_fields_AgentsGroupedByActivityStatus(ds),
+                ),
+                ds.AgentsSummary.groupedByOpsInsight(filters=filters).select(
+                    *gql_snippets.list_trivial_fields_AgentGroupedByOpsInsight(ds),
+                ),
+                ds.AgentsSummary.groupedByEndUserAuthType(filters=filters).select(
+                    *gql_snippets.list_trivial_fields_AgentsGroupedByEndUserAuthType(ds),
+                ),
+                ds.AgentsSummary.groupedByCredentialMode(filters=filters).select(
+                    *gql_snippets.list_trivial_fields_AgentsGroupedByCredentialMode(ds),
+                ),
+                ds.AgentsSummary.groupedBySharedCredential(filters=filters).select(
+                    *gql_snippets.list_trivial_fields_AgentsGroupedBySharedCredential(ds),
+                ),
+                ds.AgentsSummary.groupedByConnectionAuthType(filters=filters).select(
+                    *gql_snippets.list_trivial_fields_AgentsGroupedByConnectionAuthType(ds),
+                ),
+                ds.AgentsSummary.groupedByConnectionStatus(filters=filters).select(
+                    *gql_snippets.list_trivial_fields_AgentsGroupedByConnectionStatus(ds),
+                ),
+                ds.AgentsSummary.groupedByOutboundIdentity(filters=filters).select(
+                    *gql_snippets.list_trivial_fields_AgentsGroupedByOutboundIdentity(ds),
+                ),
+                ds.AgentsSummary.groupedByInvocationType(filters=filters).select(
+                    *gql_snippets.list_trivial_fields_AgentsGroupedByInvocationType(ds),
+                ),
+                ds.AgentsSummary.groupedByModelKind(filters=filters).select(
+                    *gql_snippets.list_trivial_fields_AgentsGroupedByModelKind(ds),
+                ),
+                ds.AgentsSummary.groupedByAgentClass(filters=filters).select(
+                    *gql_snippets.list_trivial_fields_AgentsGroupedByClass(ds),
+                ),
+                ds.AgentsSummary.usersWithAccessCount(filters=filters).select(
+                    *gql_snippets.list_trivial_fields_AgentsUsersWithAccessCount(ds),
+                ),
+                ds.AgentsSummary.groupedByUsersWithAccess(filters=filters).select(
+                    *gql_snippets.list_trivial_fields_Distribution(ds),
+                ),
+                ds.AgentsSummary.groupedByApplications(filters=filters).select(
+                    *gql_snippets.list_trivial_fields_Distribution(ds),
+                ),
+            )
+        ))
+        response = self.gql_client.execute(query, get_execution_result=True).formatted
+        data = response["data"]["AgentsSummary"]
+        logger.debug("Agents Summary %s", data)
+        return data
+
+    def as_nhi_owners_base_fn(self, identity_id: str,
+            page_size: int = 100, skip: int = 0) -> list:
+        ds = DSLSchema(self.gql_client.schema)
+        query = dsl_gql(DSLQuery(
+            ds.Query.ServiceIdentity(
+                id=identity_id
+            ).select(
+                ds.ServiceIdentity.id(),
+                ds.ServiceIdentity.username(),
+                ds.ServiceIdentity.ownersData(
+                    pageArgs={"pageSize": page_size, "skip": skip},
+                ).select(
+                    ds.OwnersConnection.edges.select(
+                        ds.OwnersEdge.node.select(
+                            *gql_snippets.list_trivial_fields_Owners(ds),
+                            ds.Owners.identity.select(
+                                *gql_snippets.list_trivial_fields_Identity(ds),
+                            ),
+                        ),
+                    ),
+                    ds.OwnersConnection.pageInfo.select(
+                        *gql_snippets.list_trivial_fields_PageInfo(ds),
+                    )
+                )
+            )
+        ))
+        response = self.gql_client.execute(query, get_execution_result=True).formatted
+        service_identity = response["data"]["ServiceIdentity"] or {}
+        owner_edges = (service_identity.get("ownersData") or {}).get("edges", [])
+        owners = [edge["node"] for edge in owner_edges]
+        logger.debug("identity_id=%s num nhi owners returned %s", identity_id, len(owners))
+        return owners
+
+    def as_nhi_owners_itr(self, identity_id: str,
+            page_size: int = None) -> Generator[dict, None, None]:
+        """Get the human owners of a non-human identity (NHI / service account)."""
+        page_size = page_size if page_size else self.default_page_size
+        partial_fn_itr = functools.partial(self.as_nhi_owners_base_fn, identity_id)
+        for item in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
+            yield item
+
+    def as_human_membership_groups_base_fn(self, identity_id: str, filters: dict | None,
+            page_size: int = 100, skip: int = 0) -> list:
+        ds = DSLSchema(self.gql_client.schema)
+        query = dsl_gql(DSLQuery(
+            ds.Query.Identity(
+                id=identity_id
+            ).select(
+                ds.Identity.id(),
+                ds.Identity.name(),
+                ds.Identity.membershipGroups(
+                    pageArgs={"pageSize": page_size, "skip": skip},
+                    filters=filters,
+                ).select(
+                    ds.IdentityGroupMembershipConnection.edges.select(
+                        ds.IdentityGroupMembershipEdge.node.select(
+                            *gql_snippets.list_trivial_fields_Group(ds),
+                            ds.Group.provider.select(
+                                *gql_snippets.list_trivial_fields_Provider(ds),
+                            ),
+                        ),
+                    ),
+                    ds.IdentityGroupMembershipConnection.pageInfo.select(
+                        *gql_snippets.list_trivial_fields_PageInfo(ds),
+                    )
+                )
+            )
+        ))
+        response = self.gql_client.execute(query, get_execution_result=True).formatted
+        identity = response["data"]["Identity"] or {}
+        group_edges = (identity.get("membershipGroups") or {}).get("edges", [])
+        groups = [edge["node"] for edge in group_edges]
+        logger.debug("identity_id=%s num membership groups returned %s", identity_id, len(groups))
+        return groups
+
+    def as_human_membership_groups_itr(self, identity_id: str, filters: dict | None = None,
+            page_size: int = None) -> Generator[dict, None, None]:
+        """Get the groups (typically IDP groups) that a human identity is a member of."""
+        page_size = page_size if page_size else self.default_page_size
+        partial_fn_itr = functools.partial(self.as_human_membership_groups_base_fn, identity_id, filters)
         for item in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
             yield item
 
