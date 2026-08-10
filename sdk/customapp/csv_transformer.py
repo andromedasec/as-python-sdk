@@ -56,7 +56,9 @@ from pathlib import Path
 from sdk.customapp.custom_app_models import (
     CustomAppInventory, validate_inventory_consistency
 )
-from sdk.customapp.custom_app_utils import convert_to_andromeda_dict
+from sdk.customapp.custom_app_utils import (
+    convert_to_andromeda_dict, normalize_csv_fieldnames
+)
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -91,8 +93,17 @@ class CustomAppCsvTransformer:
 
     def csv_batch_reader(self, csv_file: str, batch_size: int=100) -> Generator[list, None, None]:
         """ Read CSV file in batches """
-        with open(csv_file, 'r', encoding="utf-8", newline='', errors='ignore') as f:
+        with open(csv_file, 'r', encoding="utf-8-sig", newline='', errors='ignore') as f:
             csv_reader = csv.DictReader(f)
+            # Reading .fieldnames consumes the header row; normalize it before any
+            # data row is mapped so a stray BOM or space cannot make a column
+            # permanently unreachable to row.get().
+            original_fieldnames = csv_reader.fieldnames
+            normalized_fieldnames = normalize_csv_fieldnames(original_fieldnames)
+            if normalized_fieldnames is not None and normalized_fieldnames != original_fieldnames:
+                logger.warning("Normalized CSV header names in %s: %s -> %s",
+                               csv_file, original_fieldnames, normalized_fieldnames)
+                csv_reader.fieldnames = normalized_fieldnames
             batch = []
             for row in csv_reader:
                 batch.append(row)
@@ -106,18 +117,20 @@ class CustomAppCsvTransformer:
             self, csv_file: str, field_names: List[str],
             batch_size: int=100) -> Generator[list, None, None]:
         """ Read CSV file in batches """
-        with open(csv_file, 'r', encoding="utf-8", newline='', errors='ignore') as f:
+        with open(csv_file, 'r', encoding="utf-8-sig", newline='', errors='ignore') as f:
             csv_reader = csv.reader(f)
             batch = []
+            is_first_row = True
             for row in csv_reader:
                 if not row:
                     # skip empty rows
                     continue
                 if len(row) != len(field_names):
-                    logger.info("Row %s has %d columns, expected %d",
-                                row, len(row), len(field_names))
+                    logger.info("Row has %d columns, expected %d",
+                                len(row), len(field_names))
                 # skip the first row
-                if row[0] == 'Sr No':
+                if is_first_row:
+                    is_first_row = False
                     continue
                 # convert the row to a dictionary with the field names
                 row_dict = dict(zip(field_names, row))

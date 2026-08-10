@@ -1,6 +1,6 @@
 # Utility Class for CustomApp
 
-from typing import Any
+from typing import Any, List, Optional
 import argparse
 
 
@@ -21,6 +21,32 @@ def convert_to_andromeda_dict(obj: Any) -> Any:
     if isinstance(obj, list):
         return [convert_to_andromeda_dict(item) for item in obj if item]
     return obj
+
+
+def normalize_csv_fieldnames(fieldnames: Optional[List[str]]) -> Optional[List[str]]:
+    """
+    Strip the UTF-8 BOM and surrounding whitespace from CSV header names.
+
+    Exports frequently carry a BOM on the first column and stray spaces after the
+    delimiter, so a header line like `Name, Username` parses its second column as
+    ' Username'. Lookups such as row.get('Username') then return None for every
+    row rather than raising, and the empty value travels downstream as a missing
+    id. Normalizing the header names keeps those lookups resolving.
+
+    Raises:
+        ValueError: if two or more headers normalize to the same name --
+            csv.DictReader would silently keep only the last matching column's
+            value for every row, dropping the others.
+    """
+    if fieldnames is None:
+        return None
+    normalized = [(name or '').replace('\ufeff', '').strip() for name in fieldnames]
+    seen = set()
+    duplicates = sorted({name for name in normalized if name in seen or seen.add(name)})
+    if duplicates:
+        raise ValueError(
+            f"CSV contains duplicate header names after normalization: {duplicates}")
+    return normalized
 
 
 def parse_arguments() -> argparse.Namespace:

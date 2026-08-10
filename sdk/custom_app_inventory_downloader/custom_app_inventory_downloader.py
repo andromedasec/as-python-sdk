@@ -31,267 +31,267 @@ mock_data = {
  "permissions": {
    "enabedBillbaseUI": {
      "name": "enabedBillbaseUI",
-     "access_level": "ACCESS_LEVEL_READ_METADATA",
+     "access_level": "ACCESS_LEVEL_METADATA_READ",
      "service_name": "Application"
    },
    "enabledNewSuperOrgPage": {
      "name": "enabledNewSuperOrgPage",
-     "access_level": "ACCESS_LEVEL_READ_METADATA",
+     "access_level": "ACCESS_LEVEL_METADATA_READ",
      "service_name": "Application"
    },
    "pAccessHIPAAOrgs": {
      "name": "pAccessHIPAAOrgs",
-     "access_level": "ACCESS_LEVEL_READ_DATA",
+     "access_level": "ACCESS_LEVEL_DATA_READ",
      "service_name": "Application"
    },
    "pAccessToHighSecurityPartnersData": {
      "name": "pAccessToHighSecurityPartnersData",
-     "access_level": "ACCESS_LEVEL_READ_DATA",
+     "access_level": "ACCESS_LEVEL_DATA_READ",
      "service_name": "Application"
    },
    "pAccessToTinEin": {
      "name": "pAccessToTinEin",
-     "access_level": "ACCESS_LEVEL_READ_DATA",
+     "access_level": "ACCESS_LEVEL_DATA_READ",
      "service_name": "Application"
    },
    "pARApproval": {
      "name": "pARApproval",
-     "access_level": "ACCESS_LEVEL_WRITE_DATA",
+     "access_level": "ACCESS_LEVEL_DATA_UPDATE",
      "service_name": "Billing"
    },
    "pDataEntry": {
      "name": "pDataEntry",
-     "access_level": "ACCESS_LEVEL_WRITE_DATA",
+     "access_level": "ACCESS_LEVEL_DATA_UPDATE",
      "service_name": "Application"
    },
    "pDoCsEmulation": {
      "name": "pDoCsEmulation",
-     "access_level": "ACCESS_LEVEL_WRITE_DATA",
+     "access_level": "ACCESS_LEVEL_DATA_UPDATE",
      "service_name": "Application"
    },
    "pEditComplianceFields": {
      "name": "pEditComplianceFields",
-     "access_level": "ACCESS_LEVEL_WRITE_METADATA",
+     "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
      "service_name": "Application"
    },
    "pEditFraudControl": {
      "name": "pEditFraudControl",
-     "access_level": "ACCESS_LEVEL_WRITE_METADATA",
+     "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
      "service_name": "Application"
    },
    "pEditPaymentStatus": {
      "name": "pEditPaymentStatus",
-     "access_level": "ACCESS_LEVEL_WRITE_DATA",
+     "access_level": "ACCESS_LEVEL_DATA_UPDATE",
      "service_name": "Billing"
    },
    "pEditTaxExempt": {
      "name": "pEditTaxExempt",
-     "access_level": "ACCESS_LEVEL_WRITE_METADATA",
+     "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
      "service_name": "Billing"
    },
    "pEnterVoidChecks": {
      "name": "pEnterVoidChecks",
-     "access_level": "ACCESS_LEVEL_WRITE_DATA",
+     "access_level": "ACCESS_LEVEL_DATA_UPDATE",
      "service_name": "Billing"
    },
    "pImpersonation": {
      "name": "pImpersonation",
-     "access_level": "ACCESS_LEVEL_WRITE_DATA",
+     "access_level": "ACCESS_LEVEL_DATA_UPDATE",
      "service_name": "PermissionsManagement"
    },
    "pManageBillingDiscounts": {
      "name": "pManageBillingDiscounts",
-     "access_level": "ACCESS_LEVEL_WRITE_METADATA",
+     "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
      "service_name": "Billing"
    },
    "pManageFederatedDomains": {
      "name": "pManageFederatedDomains",
-     "access_level": "ACCESS_LEVEL_WRITE_METADATA",
+     "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
      "service_name": "Infrastructure"
    },
    "pManageIntlPayments": {
      "name": "pManageIntlPayments",
-     "access_level": "ACCESS_LEVEL_WRITE_METADATA",
+     "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
      "service_name": "Billing"
    },
    "pManageStripeAccount": {
      "name": "pManageStripeAccount",
-     "access_level": "ACCESS_LEVEL_WRITE_METADATA",
+     "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
      "service_name": "Billing"
    },
    "pManageUsers": {
      "name": "pManageUsers",
-     "access_level": "ACCESS_LEVEL_PERMISSIONS_MANAGEMENT",
+     "access_level": "ACCESS_LEVEL_AUTH_MANAGEMENT",
      "service_name": "PermissionsManagement"
    },
    "pManageVendorsAdvanced": {
      "name": "pManageVendorsAdvanced",
-     "access_level": "ACCESS_LEVEL_WRITE_METADATA",
+     "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
      "service_name": "Application"
    },
    "pManageWalletBalance": {
      "name": "pManageWalletBalance",
-     "access_level": "ACCESS_LEVEL_WRITE_DATA",
+     "access_level": "ACCESS_LEVEL_DATA_UPDATE",
      "service_name": "Billing"
    },
    "pManualCharges": {
      "name": "pManualCharges",
-     "access_level": "ACCESS_LEVEL_CREATE",
+     "access_level": "ACCESS_LEVEL_DATA_CREATE",
      "service_name": "Billing"
    },
    "pManualRefunds": {
      "name": "pManualRefunds",
-     "access_level": "ACCESS_LEVEL_CREATE",
+     "access_level": "ACCESS_LEVEL_DATA_CREATE",
      "service_name": "Billing"
    },
    "pMergeRecords": {
      "name": "pMergeRecords",
-     "access_level": "ACCESS_LEVEL_WRITE_DATA",
+     "access_level": "ACCESS_LEVEL_DATA_UPDATE",
      "service_name": "Application"
    },
    "pModifyBank": {
      "name": "pModifyBank",
-     "access_level": "ACCESS_LEVEL_WRITE_METADATA",
+     "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
      "service_name": "Billing"
    },
    "pModifyBilling": {
      "name": "pModifyBilling",
-     "access_level": "ACCESS_LEVEL_WRITE_METADATA",
+     "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
      "service_name": "Billing"
    },
    "pModifyCheckImage": {
      "name": "pModifyCheckImage",
-     "access_level": "ACCESS_LEVEL_WRITE_DATA",
+     "access_level": "ACCESS_LEVEL_DATA_UPDATE",
      "service_name": "Billing"
    },
    "pModifyData": {
      "name": "pModifyData",
-     "access_level": "ACCESS_LEVEL_WRITE_DATA",
+     "access_level": "ACCESS_LEVEL_DATA_UPDATE",
      "service_name": "Application"
    },
    "pModifyEmail": {
      "name": "pModifyEmail",
-     "access_level": "ACCESS_LEVEL_WRITE_METADATA",
+     "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
      "service_name": "Application"
    },
    "pModifyFundingBank": {
      "name": "pModifyFundingBank",
-     "access_level": "ACCESS_LEVEL_WRITE_METADATA",
+     "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
      "service_name": "Billing"
    },
    "pModifyPayment": {
      "name": "pModifyPayment",
-     "access_level": "ACCESS_LEVEL_WRITE_DATA",
+     "access_level": "ACCESS_LEVEL_DATA_UPDATE",
      "service_name": "Billing"
    },
    "pModifyVerify": {
      "name": "pModifyVerify",
-     "access_level": "ACCESS_LEVEL_WRITE_METADATA",
+     "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
      "service_name": "Application"
    },
    "pPhotoIDVerification": {
      "name": "pPhotoIDVerification",
-     "access_level": "ACCESS_LEVEL_WRITE_DATA",
+     "access_level": "ACCESS_LEVEL_DATA_UPDATE",
      "service_name": "Application"
    },
    "pPrintChecks": {
      "name": "pPrintChecks",
-     "access_level": "ACCESS_LEVEL_READ_DATA",
+     "access_level": "ACCESS_LEVEL_DATA_READ",
      "service_name": "Billing"
    },
    "pSyncConfig": {
      "name": "pSyncConfig",
-     "access_level": "ACCESS_LEVEL_WRITE_METADATA",
+     "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
      "service_name": "Infrastructure"
    },
    "pSyncTools": {
      "name": "pSyncTools",
-     "access_level": "ACCESS_LEVEL_WRITE_DATA",
+     "access_level": "ACCESS_LEVEL_DATA_UPDATE",
      "service_name": "Infrastructure"
    },
    "pUpdateOrgBilling": {
      "name": "pUpdateOrgBilling",
-     "access_level": "ACCESS_LEVEL_WRITE_METADATA",
+     "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
      "service_name": "Billing"
    },
    "pViewACH": {
      "name": "pViewACH",
-     "access_level": "ACCESS_LEVEL_READ_DATA",
+     "access_level": "ACCESS_LEVEL_DATA_READ",
      "service_name": "Billing"
    },
    "pViewBank": {
      "name": "pViewBank",
-     "access_level": "ACCESS_LEVEL_READ_DATA",
+     "access_level": "ACCESS_LEVEL_DATA_READ",
      "service_name": "Billing"
    },
    "pViewBilling": {
      "name": "pViewBilling",
-     "access_level": "ACCESS_LEVEL_READ_DATA",
+     "access_level": "ACCESS_LEVEL_DATA_READ",
      "service_name": "Billing"
    },
    "pViewCheckFiles": {
      "name": "pViewCheckFiles",
-     "access_level": "ACCESS_LEVEL_READ_DATA",
+     "access_level": "ACCESS_LEVEL_DATA_READ",
      "service_name": "Billing"
    },
    "pViewCheckImage": {
      "name": "pViewCheckImage",
-     "access_level": "ACCESS_LEVEL_READ_DATA",
+     "access_level": "ACCESS_LEVEL_DATA_READ",
      "service_name": "Billing"
    },
    "pViewCheckInfo": {
      "name": "pViewCheckInfo",
-     "access_level": "ACCESS_LEVEL_READ_METADATA",
+     "access_level": "ACCESS_LEVEL_METADATA_READ",
      "service_name": "Billing"
    },
    "pViewCheckReports": {
      "name": "pViewCheckReports",
-     "access_level": "ACCESS_LEVEL_READ_DATA",
+     "access_level": "ACCESS_LEVEL_DATA_READ",
      "service_name": "Billing"
    },
    "pViewChecks": {
      "name": "pViewChecks",
-     "access_level": "ACCESS_LEVEL_LIST",
+     "access_level": "ACCESS_LEVEL_METADATA_READ",
      "service_name": "Billing"
    },
    "pViewComplianceFields": {
      "name": "pViewComplianceFields",
-     "access_level": "ACCESS_LEVEL_READ_METADATA",
+     "access_level": "ACCESS_LEVEL_METADATA_READ",
      "service_name": "Application"
    },
    "pViewOrg": {
      "name": "pViewOrg",
-     "access_level": "ACCESS_LEVEL_READ_METADATA",
+     "access_level": "ACCESS_LEVEL_METADATA_READ",
      "service_name": "Application"
    },
    "pViewPositivePay": {
      "name": "pViewPositivePay",
-     "access_level": "ACCESS_LEVEL_READ_DATA",
+     "access_level": "ACCESS_LEVEL_DATA_READ",
      "service_name": "Billing"
    },
    "pViewRiskProfile": {
      "name": "pViewRiskProfile",
-     "access_level": "ACCESS_LEVEL_READ_DATA",
+     "access_level": "ACCESS_LEVEL_DATA_READ",
      "service_name": "Application"
    },
    "pViewTaxIdReports": {
      "name": "pViewTaxIdReports",
-     "access_level": "ACCESS_LEVEL_READ_DATA",
+     "access_level": "ACCESS_LEVEL_DATA_READ",
      "service_name": "Billing"
    },
    "pViewTxnReports": {
      "name": "pViewTxnReports",
-     "access_level": "ACCESS_LEVEL_READ_DATA",
+     "access_level": "ACCESS_LEVEL_DATA_READ",
      "service_name": "Billing"
    },
    "pViewVerify": {
      "name": "pViewVerify",
-     "access_level": "ACCESS_LEVEL_READ_DATA",
+     "access_level": "ACCESS_LEVEL_DATA_READ",
      "service_name": "Application"
    },
    "pVirtualCardPFY": {
      "name": "pVirtualCardPFY",
-     "access_level": "ACCESS_LEVEL_CREATE",
+     "access_level": "ACCESS_LEVEL_DATA_CREATE",
      "service_name": "Billing"
    }
  },

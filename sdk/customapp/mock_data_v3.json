@@ -421,7 +421,7 @@
       "username": "mike.richard@beatles.ai",
       "hris_attributes": {
         "email": "mike.richard@beatles.ai",
-        "org_name": "Human Resources",
+        "org_name": "Engineering",
         "business_title": "Sr. HR Administrator",
         "manager_id": "ashley.porter@beatles.ai",
         "manager_name": "Ashley, Porter",
@@ -776,6 +776,18 @@
     "marcus.smith@beatles.ai_processing_l1": {
       "id": "marcus.smith@beatles.ai_processing_l1",
       "principal_id": "marcus.smith@beatles.ai",
+      "principal_type": "HUMAN",
+      "role_id": "processing_l1"
+    },
+    "mike.richard@beatles.ai_processing_l1": {
+      "id": "mike.richard@beatles.ai_processing_l1",
+      "principal_id": "mike.richard@beatles.ai",
+      "principal_type": "HUMAN",
+      "role_id": "processing_l1"
+    },
+    "matt.james@beatles.ai_processing_l1": {
+      "id": "matt.james@beatles.ai_processing_l1",
+      "principal_id": "matt.james@beatles.ai",
       "principal_type": "HUMAN",
       "role_id": "processing_l1"
     },
