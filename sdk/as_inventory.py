@@ -5,12 +5,14 @@ import os
 import logging
 from typing import Generator, Optional
 import functools
+import hashlib
 import json
 import csv
+import threading
 import time
 import traceback
 import warnings
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 import requests
 from gql import Client, gql
 from graphql import build_client_schema, get_introspection_query
@@ -24,6 +26,14 @@ logger = logging.getLogger(__name__)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 DEFAULT_PAGE_SIZE = 100
+# Nested connections (a user's providers, a provider's resolved assignments) are fetched
+# in a single page rather than paged independently — see _warn_on_nested_page_cap.
+NESTED_PAGE_SIZE = 100
+
+# The schema cache is keyed per credential, so a long-lived process serving many
+# principals (the ai-agent pod) would otherwise retain one full introspected schema per
+# distinct token for the life of the process. See _get_cached_schema.
+MAX_SCHEMA_CACHE_ENTRIES = int(os.getenv("AS_MAX_SCHEMA_CACHE_ENTRIES", "32"))
 
 class AndromedaProvider(dict):
     def __init__(self):
@@ -49,9 +59,15 @@ class AndromedaInventory(dict):
     AndromedaInventory is a class that fetches the inventory from the Andromeda API.
     It is a subclass of dict and can be used as a dictionary.
     """
+    # Schema per GraphQL endpoint+credential, shared by every instance, LRU-bounded to
+    # MAX_SCHEMA_CACHE_ENTRIES — see _get_cached_schema.
+    _schema_cache: OrderedDict = OrderedDict()
+    _schema_cache_lock = threading.Lock()
+
     def __init__(self, gql_client: Client, api_session: requests.Session, output_dir: str = ".",
                  pacer_duration_s: int = 2, default_page_size: int = DEFAULT_PAGE_SIZE, as_endpoint: str= "http://localhost:8080",
-                 gql_endpoint: str = "http://localhost:8088/graphql"):
+                 gql_endpoint: str = "http://localhost:8088/graphql",
+                 credential_key: str = None):
         super().__init__()
         self.gql_client = gql_client
         self.api_session = api_session
@@ -60,6 +76,10 @@ class AndromedaInventory(dict):
         self['provider_map'] = {}
         self.default_page_size = default_page_size
         self.as_endpoint = as_endpoint
+        # Opaque, stable identity for the credentials behind api_session — see
+        # _schema_cache_key. Callers that build a fresh session per request pass this so
+        # the schema cache can still tell one principal from another.
+        self.credential_key = credential_key
         if not self.gql_client:
             self.gql_client = self.get_gql_client(api_session, gql_endpoint)
         self.tenant_id = self.get_tenant_id(api_session, as_endpoint)
@@ -75,6 +95,18 @@ class AndromedaInventory(dict):
         """
         Get the tenant ID from the API session
         """
+        # The tenant is a property of the session's credentials, so a re-used session
+        # never needs to ask twice — this runs on every construction otherwise.
+        cached = getattr(api_session, "_as_tenant_id_cache", {}).get(as_endpoint)
+        if cached:
+            return cached
+        tenant_id = self._fetch_tenant_id(api_session, as_endpoint)
+        if not hasattr(api_session, "_as_tenant_id_cache"):
+            api_session._as_tenant_id_cache = {}
+        api_session._as_tenant_id_cache[as_endpoint] = tenant_id
+        return tenant_id
+
+    def _fetch_tenant_id(self, api_session: requests.Session, as_endpoint: str):
         try:
             # get the tenant_id and name from the identity-details
             response = api_session.get(f"{as_endpoint}/identity-details")
@@ -91,14 +123,82 @@ class AndromedaInventory(dict):
     def get_gql_client(self, api_session: requests.Session, graphql_url: str):
         """ Create GraphQL client and schema from the API session """
         logger.debug("Creating GraphQL client %s", graphql_url)
+        # 240s was four times longer than an interactive caller survives: apiserver gives
+        # the AI agent 120s and the load balancer in front of it cuts the browser at 60s,
+        # so a single slow page could outlast the whole request several times over and
+        # still be waiting. GQL_TIMEOUT_SECONDS lets a bulk job raise it again.
+        timeout_s = int(os.getenv("GQL_TIMEOUT_SECONDS", "45"))
         transport = RequestsHTTPTransport(url=graphql_url,
                                     headers=api_session.headers,
                                     cookies=api_session.cookies,
-                                    timeout=240)
+                                    timeout=timeout_s)
         client = Client(transport=transport)
-        introspection_result = client.execute(gql(get_introspection_query()))
-        client.schema = build_client_schema(introspection_result, assume_valid=True)
+        client.schema = self._get_cached_schema(
+            client, graphql_url, api_session,
+            credential_key=getattr(self, "credential_key", None),
+        )
         return client
+
+    @staticmethod
+    def _schema_cache_key(graphql_url: str, api_session: requests.Session,
+                          credential_key: str = None) -> tuple:
+        """Endpoint plus a digest of the caller's credentials.
+
+        Keying on the endpoint alone would share one introspection result between
+        principals. Introspection is authenticated, so a schema is only safe to reuse
+        for the identity that fetched it — the digest keeps the cache per credential
+        without holding the credential itself.
+
+        `credential_key` (from the constructor) takes precedence when given, because a
+        session is not always a stable stand-in for its credentials: an access-token
+        login mints a new session cookie every time, so two sessions for the same
+        principal would hash differently and never hit the cache.
+        """
+        material = credential_key if credential_key else "|".join([
+            api_session.headers.get("Authorization", "") or "",
+            api_session.headers.get("Cookie", "") or "",
+            ";".join(sorted(f"{c.name}={c.value}" for c in api_session.cookies)),
+        ])
+        return graphql_url, hashlib.sha256(material.encode()).hexdigest()
+
+    @classmethod
+    def _get_cached_schema(cls, client: Client, graphql_url: str, api_session: requests.Session,
+                          credential_key: str = None):
+        """Introspected schema for `graphql_url`, fetched once per endpoint+credential.
+
+        Introspection is a large query and the schema is the shape of the API, not
+        tenant data. Fetching it on every AndromedaInventory construction put a full
+        extra round trip in front of every query, which dominates short-lived callers
+        like the agent's tools.
+
+        Bounded LRU rather than an unbounded dict: the key includes a digest of the
+        caller's credentials, so a service handling many principals adds a new entry per
+        token and never drops one. Schemas are large, so that grows without limit in a
+        process that never restarts.
+        """
+        key = cls._schema_cache_key(graphql_url, api_session, credential_key)
+        with cls._schema_cache_lock:
+            cached = cls._schema_cache.get(key)
+            if cached is not None:
+                cls._schema_cache.move_to_end(key)
+        if cached is not None:
+            return cached
+        introspection_result = client.execute(gql(get_introspection_query()))
+        schema = build_client_schema(introspection_result, assume_valid=True)
+        with cls._schema_cache_lock:
+            cls._schema_cache[key] = schema
+            cls._schema_cache.move_to_end(key)
+            while len(cls._schema_cache) > MAX_SCHEMA_CACHE_ENTRIES:
+                evicted, _ = cls._schema_cache.popitem(last=False)
+                logger.debug("evicting cached schema for %s (cache bound %d reached)",
+                             evicted[0], MAX_SCHEMA_CACHE_ENTRIES)
+        return schema
+
+    @classmethod
+    def clear_schema_cache(cls) -> None:
+        """Drop cached schemas — for tests, and after a server-side schema change."""
+        with cls._schema_cache_lock:
+            cls._schema_cache.clear()
 
     def as_gql_generic_itr(self, base_fn: functools.partial, *args, **kwargs) -> Generator[dict, None, None]:
         """"
@@ -123,6 +223,8 @@ class AndromedaInventory(dict):
         rate_limit = kwargs.get('rate_limit', 1)
         for pop_arg in ['page_size', 'skip']:
             kwargs.pop(pop_arg, None)
+        total: int | None = None
+        fetched = 0
         for skip in range(0, max_items, page_size):
             try:
                 #logger.debug("Fetching items: page_size %s skip %s", page_size, skip)
@@ -130,18 +232,28 @@ class AndromedaInventory(dict):
             except AssertionError:
                 raise
             except Exception as e:
-                logger.error("base_fn %s Skipping iteration as failed to get the items: page_size %s skip %s with error %s",
+                # NB: says "Skipping" but re-raises — the message predates the raise.
+                logger.error("base_fn %s failed to get the items: page_size %s skip %s with error %s",
                             base_fn.func.__func__, page_size, skip, e)
                 logger.error(traceback.format_exc())
                 raise
+            # A base_fn may return (items, total_count) — the total comes from the query's
+            # own pageInfo.count, which several queries already select and then discard.
+            # Knowing the total lets us stop exactly, instead of always spending one extra
+            # round trip (plus its pacing sleep) to discover the end by getting a short
+            # page. Plain lists stay supported: 63 call sites use this.
+            if isinstance(items, tuple) and len(items) == 2:
+                items, total = items
             if not items:
-                # breaking the loop as we are guessing the make number of entries in the iteration
-                # instead of knowing exactly how many entries are there. If result is empty, we can break.
+                # No total available, so the end is discovered by an empty page.
                 break
             for item in items:
                 yield item
+            fetched += len(items)
             if len(items) < page_size:
                 # Fewer items returned than the page_size indicates this is the last batch
+                break
+            if total is not None and fetched >= total:
                 break
             if rate_limit:
                 time.sleep(rate_limit)
@@ -2678,6 +2790,7 @@ class AndromedaInventory(dict):
         service_identity_fragment.on(ds.ServiceIdentity)
         query = dsl_gql(DSLQuery(
             ds.Query.AccessKeys(
+                pageArgs={"pageSize": page_size, "skip": skip},
                 filters=filters
             ).select(
                 ds.ProviderAccessKeysConnection.edges.select(
@@ -2763,7 +2876,9 @@ class AndromedaInventory(dict):
                 ds.Identity.id(),
                 ds.Identity.name(),
                 ds.Identity.providersData(
-                    filters={'providerId': {'equals': provider_id}}
+                    # IdentityProviderFilters exposes `id`, not `providerId` — same
+                    # silently-ignored-key defect as in the User-scoped queries.
+                    filters={'id': {'equals': provider_id}}
                 ).select(
                     ds.IdentityProvidersDataConnection.edges.select(
                         ds.IdentityProviderDataEdge.node.select(
@@ -2839,6 +2954,111 @@ class AndromedaInventory(dict):
         for assignment in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
             yield assignment
 
+    # The union whose members carry a grant's scope, and the fields worth selecting from
+    # each. Members are read from the live introspected schema rather than listed here —
+    # see _scope_union_member_names.
+    _SCOPE_UNION_NAME = "ScopeUnion"
+    _SCOPE_FIELDS = ("id", "name", "type", "isInherited")
+
+    # Fallback for when the union is absent from the schema (an older server, or a
+    # hand-built client schema in tests). Kept in sync with the server's union by hand;
+    # the schema-derived path above is what normally runs.
+    _SCOPE_UNION_TYPES = (
+        "AccountScopeData", "AgentConnectionScopeData", "FolderScopeData",
+        "GroupScopeData", "IdpApplicationScopeData", "PopulationScopeData",
+        "ProviderScopeData", "ResourceGroupScopeData", "ResourceScopeData",
+    )
+
+    def _scope_union_member_names(self) -> tuple:
+        """Member type names of ScopeUnion, taken from the introspected schema.
+
+        Hardcoding the list is how this drifted: it held six names copied from the UI's
+        generated schema while the server's union had nine, so an assignment scoped to a
+        Population, AgentConnection or IdpApplication matched no inline fragment and came
+        back with no scope fields at all — indistinguishable from an unscoped grant. The
+        client already holds the introspection result, so the server is the source of
+        truth and a member added later is picked up with no code change.
+        """
+        try:
+            union = self.gql_client.schema.type_map.get(self._SCOPE_UNION_NAME)
+            names = tuple(member.name for member in union.types)
+        except (AttributeError, TypeError):
+            names = ()
+        if not names:
+            logger.debug("%s not found in the schema; falling back to the static member list",
+                         self._SCOPE_UNION_NAME)
+            return self._SCOPE_UNION_TYPES
+        return names
+
+    def _scope_selection(self, ds: DSLSchema) -> list:
+        """Inline fragments selecting id/name/type for every ScopeUnion member.
+
+        Scope is what distinguishes two assignments that are otherwise identical: the
+        same role, granted by the same policy, can be held on a single resource and on
+        the whole resource group above it. Without it those rows are indistinguishable,
+        and collapsing them loses the broader — riskier — grant.
+
+        Only the fields a member actually declares are selected, so a future union member
+        that omits one of them cannot turn this into an invalid query.
+        """
+        schema_types = getattr(self.gql_client.schema, "type_map", {}) or {}
+        fragments = []
+        for type_name in self._scope_union_member_names():
+            try:
+                scope_type = getattr(ds, type_name)
+            except AttributeError:
+                logger.debug("scope type %s is not in the DSL schema; skipping", type_name)
+                continue
+            declared = getattr(schema_types.get(type_name), "fields", None)
+            fields = [getattr(scope_type, f) for f in self._SCOPE_FIELDS
+                      if declared is None or f in declared]
+            if not fields:
+                continue
+            fragment = DSLInlineFragment()
+            fragment.on(scope_type)
+            fragment.select(*fields)
+            fragments.append(fragment)
+        return fragments
+
+    @staticmethod
+    def _flatten_user_provider_assignments(user_edges: list) -> list:
+        """Flatten Users -> userProviderData -> userResolvedAssignments into a flat list.
+
+        Every level is iterated. A person's access lives on their per-provider accounts,
+        so a Users query can legitimately match several incarnations, and one incarnation
+        can carry several providers. Reading edges[0] at either level silently drops the
+        rest, which reads downstream as "no such access" rather than as a truncation.
+
+        Each assignment is tagged with the provider it came from (setdefault, so a
+        providerName already on the assignment wins).
+        """
+        assignments = []
+        for user_edge in user_edges or []:
+            provider_data = (user_edge.get('node') or {}).get('userProviderData') or {}
+            for provider_edge in provider_data.get('edges') or []:
+                provider = provider_edge.get('node') or {}
+                resolved = ((provider_edge.get('userProviderData') or {})
+                            .get('userResolvedAssignments') or {})
+                for assignment_edge in resolved.get('edges') or []:
+                    assignment = assignment_edge.get('node')
+                    if not assignment:
+                        continue
+                    if provider.get('id'):
+                        assignment.setdefault('providerId', provider['id'])
+                    if provider.get('name'):
+                        assignment.setdefault('providerName', provider['name'])
+                    scope = assignment.pop('scope', None) or {}
+                    # Flattened rather than nested: consumers render these as columns,
+                    # and a nested object costs tokens in the agent's tool responses.
+                    if scope.get('name'):
+                        assignment['scopeName'] = scope['name']
+                    if scope.get('type'):
+                        assignment['scopeType'] = scope['type']
+                    if scope.get('isInherited') is not None:
+                        assignment['scopeIsInherited'] = scope['isInherited']
+                    assignments.append(assignment)
+        return assignments
+
     def as_user_provider_resolved_assignments_base_fn(
             self, user_id: str, provider_id: str, assignment_filters: dict,
             page_size: int, skip: int) -> Generator[list, None, None]:
@@ -2848,17 +3068,6 @@ class AndromedaInventory(dict):
         logger.debug("Fetching identity active assignments filters %s page_size %s skip %s",
                     assignment_filters, page_size, skip)
         ds = DSLSchema(self.gql_client.schema)
-        scope_rg_fragment = DSLInlineFragment()
-        scope_rg_fragment.on(ds.ResourceGroupScopeData)
-        scope_account_fragment = DSLInlineFragment()
-        scope_account_fragment.on(ds.AccountScopeData)
-        scope_folder_fragment = DSLInlineFragment()
-        scope_folder_fragment.on(ds.FolderScopeData)
-        scope_provider_fragment = DSLInlineFragment()
-        scope_provider_fragment.on(ds.ProviderScopeData)
-        scope_population_fragment = DSLInlineFragment()
-        scope_population_fragment.on(ds.PopulationScopeData)
-
         user_filters = {}
         if user_id:
             user_filters['id'] = {'equals': user_id}
@@ -2874,8 +3083,13 @@ class AndromedaInventory(dict):
                             *gql_snippets.list_trivial_fields_IdentityOriginData(ds),
                         ),
                         ds.User.userProviderData(
-                            pageArgs={"pageSize": 100},
-                            filters={'providerId': {'equals': provider_id}}
+                            # UserProviderDataFilters exposes `id`, not `providerId`.
+                            # The server ignores an unknown filter key rather than
+                            # rejecting it, so the old key silently filtered nothing and
+                            # this returned assignments from whatever providers the user
+                            # had — a wrong-provider answer that looked like a right one.
+                            pageArgs={"pageSize": NESTED_PAGE_SIZE},
+                            filters={'id': {'equals': provider_id}}
                         ).select(
                             ds.UserProviderDataConnection.edges.select(
                                 ds.UserProviderDataEdge.node.select(
@@ -2890,6 +3104,9 @@ class AndromedaInventory(dict):
                                         ds.AccountPolicyUserResolvedAssignmentsConnection.edges.select(
                                             ds.AccountPolicyUserResolvedAssignmentEdge.node.select(
                                                 *gql_snippets.list_trivial_fields_AccountPolicyUserResolvedAssignment(ds),
+                                                ds.AccountPolicyUserResolvedAssignment.scope.select(
+                                                    *self._scope_selection(ds),
+                                                ),
                                             ),
                                         ),
                                     )
@@ -2907,12 +3124,8 @@ class AndromedaInventory(dict):
             )
         ))
         response = self.gql_client.execute(query, get_execution_result=True).formatted
-        try:
-            assignments = response["data"]['Users']['edges'][0]['node']['userProviderData']['edges'][0]['userProviderData']['userResolvedAssignments']['edges']
-        except IndexError:
-            # If there are no assignments, return an empty list
-            assignments = []
-        assignments = [node['node'] for node in assignments]
+        user_edges = ((response.get("data") or {}).get('Users') or {}).get('edges') or []
+        assignments = self._flatten_user_provider_assignments(user_edges)
         logger.debug("num assignments returned user %s provider %s num %s",
                      user_id, provider_id, len(assignments))
         return assignments
@@ -2929,6 +3142,102 @@ class AndromedaInventory(dict):
             user_id, provider_id, assignment_filters)
         for assignment in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
             yield assignment
+
+    def as_identity_resolved_assignments_base_fn(
+            self, identity_id: str, assignment_filters: dict,
+            page_size: int, skip: int) -> list:
+        """
+        Fetch one page of the User edges for an identity, with every provider and every
+        resolved assignment under each of them. Returns the raw User edges so the caller
+        pages on the Users dimension (one edge per incarnation); the nested provider and
+        assignment connections are fetched whole.
+        """
+        logger.debug("Fetching identity resolved assignments identity %s filters %s page_size %s skip %s",
+                     identity_id, assignment_filters, page_size, skip)
+        ds = DSLSchema(self.gql_client.schema)
+        query = dsl_gql(DSLQuery(
+            ds.Query.Users(
+                pageArgs={"pageSize": page_size, "skip": skip},
+                filters={'identityId': {'equals': identity_id}},
+            ).select(
+                ds.UserConnection.edges.select(
+                    ds.UserEdge.node.select(
+                        *gql_snippets.list_trivial_fields_User(ds),
+                        ds.User.userData.select(
+                            *gql_snippets.list_trivial_fields_IdentityOriginData(ds),
+                        ),
+                        ds.User.userProviderData(
+                            pageArgs={"pageSize": NESTED_PAGE_SIZE},
+                        ).select(
+                            ds.UserProviderDataConnection.edges.select(
+                                ds.UserProviderDataEdge.node.select(
+                                    *gql_snippets.list_trivial_fields_Provider(ds),
+                                ),
+                                ds.UserProviderDataEdge.userProviderData.select(
+                                    *gql_snippets.list_trivial_fields_UserProviderData(ds),
+                                    ds.UserProviderData.userResolvedAssignments(
+                                        pageArgs={"pageSize": NESTED_PAGE_SIZE},
+                                        filters=assignment_filters,
+                                    ).select(
+                                        ds.AccountPolicyUserResolvedAssignmentsConnection.edges.select(
+                                            ds.AccountPolicyUserResolvedAssignmentEdge.node.select(
+                                                *gql_snippets.list_trivial_fields_AccountPolicyUserResolvedAssignment(ds),
+                                                ds.AccountPolicyUserResolvedAssignment.scope.select(
+                                                    *self._scope_selection(ds),
+                                                ),
+                                            ),
+                                        ),
+                                    )
+                                )
+                            ),
+                            ds.UserProviderDataConnection.pageInfo.select(
+                                *gql_snippets.list_trivial_fields_PageInfo(ds),
+                            ),
+                        )
+                    ),
+                ),
+                ds.UserConnection.pageInfo.select(
+                    *gql_snippets.list_trivial_fields_PageInfo(ds),
+                ),
+            )
+        ))
+        response = self.gql_client.execute(query, get_execution_result=True).formatted
+        user_edges = ((response.get("data") or {}).get('Users') or {}).get('edges') or []
+        self._warn_on_nested_page_cap(identity_id, user_edges)
+        return user_edges
+
+    @staticmethod
+    def _warn_on_nested_page_cap(identity_id: str, user_edges: list) -> None:
+        """The nested connections are fetched in one page — say so if one filled up,
+        so a truncated answer is never mistaken for a complete one."""
+        for user_edge in user_edges or []:
+            provider_edges = (((user_edge.get('node') or {}).get('userProviderData') or {})
+                              .get('edges') or [])
+            if len(provider_edges) >= NESTED_PAGE_SIZE:
+                logger.warning("identity %s has >= %d providers on one incarnation —"
+                               " provider list may be truncated", identity_id, NESTED_PAGE_SIZE)
+            for provider_edge in provider_edges:
+                resolved = ((provider_edge.get('userProviderData') or {})
+                            .get('userResolvedAssignments') or {})
+                if len(resolved.get('edges') or []) >= NESTED_PAGE_SIZE:
+                    logger.warning("identity %s has >= %d assignments in provider %s —"
+                                   " assignment list may be truncated", identity_id,
+                                   NESTED_PAGE_SIZE, (provider_edge.get('node') or {}).get('name'))
+
+    def as_identity_resolved_assignments_itr(
+            self, identity_id: str, assignment_filters: dict = None,
+            page_size: int = None) -> Generator[dict, None, None]:
+        """
+        Iterate over every resolved assignment an identity has, across every provider
+        account ("incarnation") bound to it — one query instead of one per provider.
+        Each assignment carries providerId/providerName.
+        """
+        page_size = page_size if page_size else self.default_page_size
+        partial_fn_itr = functools.partial(
+            self.as_identity_resolved_assignments_base_fn, identity_id, assignment_filters)
+        for user_edge in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
+            for assignment in self._flatten_user_provider_assignments([user_edge]):
+                yield assignment
 
     def as_user_providers_with_assignments_base_fn(
             self, user_id: str, username: str, filters: dict,
@@ -2964,6 +3273,20 @@ class AndromedaInventory(dict):
                                 ds.UserProviderDataEdge.node.select(
                                     *gql_snippets.list_trivial_fields_Provider(ds)
                                 ),
+                                # Having an account in a provider is not the same as
+                                # holding an assignment there. Without this count the
+                                # caller gets every provider the person has an account
+                                # in, and then burns a query per provider discovering
+                                # that most of them are empty.
+                                ds.UserProviderDataEdge.userProviderData.select(
+                                    ds.UserProviderData.userResolvedAssignments(
+                                        pageArgs={"pageSize": 1},
+                                    ).select(
+                                        ds.AccountPolicyUserResolvedAssignmentsConnection.pageInfo.select(
+                                            *gql_snippets.list_trivial_fields_PageInfo(ds),
+                                        ),
+                                    ),
+                                ),
                             ),
                             ds.UserProviderDataConnection.pageInfo.select(
                                 *gql_snippets.list_trivial_fields_PageInfo(ds),
@@ -2977,15 +3300,34 @@ class AndromedaInventory(dict):
             )
         ))
         response = self.gql_client.execute(query, get_execution_result=True).formatted
-        try:
-            providers = response["data"]['Users']['edges'][0]['node']['userProviderData']['edges']
-        except IndexError:
-            # If there are no assignments, return an empty list
-            providers = []
-        providers = [node['node'] for node in providers]
-        logger.debug("num assignments returned user %s num %s",
-                     user_id, len(providers))
-        return providers
+        user_edges = ((response.get("data") or {}).get('Users') or {}).get('edges') or []
+        rows = self._providers_with_assignment_counts(user_edges)
+        logger.debug("num provider rows fetched for user %s: %s", user_id, len(rows))
+        return rows
+
+    @staticmethod
+    def _providers_with_assignment_counts(user_edges: list) -> list:
+        """(provider, assignment_count) for every provider row in a Users response.
+
+        Deliberately unfiltered and undeduped: as_gql_generic_itr decides it has reached
+        the last page when a base_fn returns fewer rows than page_size, so dropping rows
+        here makes a full page look like a short one and truncates the iteration. Having
+        an account in a provider is not the same as holding an assignment there, so the
+        count travels alongside each provider and as_user_providers_with_assignments_itr
+        applies the filter while yielding.
+        """
+        rows = []
+        for user_edge in user_edges or []:
+            provider_data = (user_edge.get('node') or {}).get('userProviderData') or {}
+            for provider_edge in provider_data.get('edges') or []:
+                provider = provider_edge.get('node')
+                if not provider:
+                    continue
+                resolved = ((provider_edge.get('userProviderData') or {})
+                            .get('userResolvedAssignments') or {})
+                count = (resolved.get('pageInfo') or {}).get('count') or 0
+                rows.append((provider, count))
+        return rows
 
     def as_users_base_fn(
             self, filters: dict,
@@ -3050,13 +3392,25 @@ class AndromedaInventory(dict):
             self, user_id: str, username: str = "", filters: dict = None,
             page_size: int = None) -> Generator[dict, None, None]:
         """
-        Iterate over the resolved assignments for a user in a provider
+        Iterate over the providers where a user actually holds a resolved assignment.
+
+        The count filter and the dedup both live here rather than in the base function:
+        the base function has to return one row per fetched provider for pagination to
+        terminate correctly, and a provider can appear under more than one of the user's
+        incarnations, so `seen` has to span pages instead of resetting on each one.
         """
         page_size = page_size if page_size else self.default_page_size
         partial_fn_itr = functools.partial(
             self.as_user_providers_with_assignments_base_fn,
             user_id, username, filters)
-        for provider in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
+        seen = set()
+        for provider, assignment_count in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
+            if not assignment_count:
+                continue
+            key = provider.get('id') or str(provider)
+            if key in seen:
+                continue
+            seen.add(key)
             yield provider
 
     def _fetch_account_policies(self, provider_id: str, account_id: str, account_data: dict) -> dict:
@@ -3275,8 +3629,56 @@ class AndromedaInventory(dict):
         logger.debug("response data %s", data)
         return data
 
-    def as_identity_eligibility_details_base_fn(self, identity_id: str, filters: Optional[dict]=None, page_size: Optional[int]=None, skip: Optional[int]=None) -> Generator[dict, None, None]:
-        """Base function to iterate through identity eligibility."""
+    def fetch_groups_summary(self) -> dict:
+        """
+        Summary of all the groups in the tenant
+        """
+        ds = DSLSchema(self.gql_client.schema)
+        query = dsl_gql(DSLQuery(
+            ds.Query.GroupsSummary(
+            ).select(
+                *gql_snippets.list_trivial_fields_GroupSummary(ds),
+                ds.GroupSummary.syncSummary.select(
+                    *gql_snippets.list_trivial_fields_GroupSyncSummary(ds),
+                ),
+                ds.GroupSummary.nestingSummary.select(
+                    *gql_snippets.list_trivial_fields_GroupNestingSummary(ds),
+                    ds.GroupNestingSummary.membershipSummary.select(
+                        *gql_snippets.list_trivial_fields_GroupMembershipSummary(ds),
+                        ds.GroupMembershipSummary.memberTypes.select(
+                            *gql_snippets.list_trivial_fields_GroupMembershipType(ds),
+                        ),
+                    ),
+                ),
+                ds.GroupSummary.ownershipSummary.select(
+                    *gql_snippets.list_trivial_fields_GroupOwnershipSummary(ds),
+                ),
+                ds.GroupSummary.significanceSummary.select(
+                    *gql_snippets.list_trivial_fields_GroupsGroupedBySignificance(ds),
+                ),
+                ds.GroupSummary.groupedByType.select(
+                    *gql_snippets.list_trivial_fields_GroupsGroupedByType(ds),
+                ),
+            )
+        ))
+        response = self.gql_client.execute(query, get_execution_result=True).formatted
+        data = response["data"]["GroupsSummary"]
+        logger.debug("Groups Summary %s", data)
+        return data
+
+    def as_identity_eligibility_details_base_fn(self, identity_id: str, filters: Optional[dict]=None, page_size: Optional[int]=None, skip: Optional[int]=None, summary: bool=False) -> Generator[dict, None, None]:
+        """Base function to iterate through identity eligibility.
+
+        summary=True selects a slim projection: the identity, plus each eligibility's
+        name/type/scope/account. The full projection resolves ELEVEN inline fragments per
+        row (six scope types, five eligibility-data types), each a polymorphic lookup in
+        the graph — which is why the expensive server-side operation shows up in apiserver
+        logs as "counting identity eligibility details rows". Broad questions ("what am I
+        eligible for?") only need the slim shape; the full one is for drilling into a
+        specific eligibility.
+
+        Returns (items, total_count); total_count comes from the query's own pageInfo.
+        """
         filters = filters if filters else {}
         page_size = page_size if page_size else self.default_page_size
         skip = skip if skip else 0
@@ -3308,6 +3710,34 @@ class AndromedaInventory(dict):
         scope_agent_fragment = DSLInlineFragment()
         scope_agent_fragment.on(ds.AgentConnectionScopeData)
 
+        # The summary projection keeps only what identifies an eligibility — its name and
+        # risk — and drops the rest. Group alone goes from 11 fields to 2. The scope
+        # fragments are already minimal (id/name/type), so they are unchanged.
+        if summary:
+            role_fields = (
+                ds.IdentityProviderEligibilityPolicyData.policyId,
+                ds.IdentityProviderEligibilityPolicyData.policyName,
+                ds.IdentityProviderEligibilityPolicyData.blastRiskLevel,
+            )
+            resource_set_fields = (ds.ResourceSetEligibilityData.name,)
+            group_fields = (ds.Group.id, ds.Group.name)
+            bundle_fields = (ds.AccessBundleData.id, ds.AccessBundleData.name)
+        else:
+            role_fields = gql_snippets.list_trivial_user_fields_IdentityProviderEligibilityPolicyData(ds)
+            resource_set_fields = gql_snippets.list_trivial_user_fields_ResourceSetEligibilityData(ds)
+            group_fields = gql_snippets.list_trivial_user_fields_Group(ds)
+            bundle_fields = gql_snippets.list_trivial_user_fields_AccessBundleData(ds)
+
+        # eligibleUser is the caller's own origin identity — never needed to answer "what
+        # am I eligible for?", and it costs an extra IdentityOriginData resolution per row.
+        node_extra = () if summary else (
+            ds.IdentityProviderEligibilityData.eligibleUser.select(
+                ds.IdentityOriginData.originUserId(),
+                ds.IdentityOriginData.originUserName(),
+                ds.IdentityOriginData.originUserUsername(),
+            ),
+        )
+
         query = dsl_gql(DSLQuery(
             ds.Query.Identity(
                 id=identity_id
@@ -3325,11 +3755,7 @@ class AndromedaInventory(dict):
                     ds.IdentityProviderEligibilityDataConnection.edges.select(
                         ds.IdentityProviderEligibilityDataEdge.node.select(
                             *gql_snippets.list_trivial_user_fields_IdentityProviderEligibilityData(ds),
-                            ds.IdentityProviderEligibilityData.eligibleUser.select(
-                                ds.IdentityOriginData.originUserId(),
-                                ds.IdentityOriginData.originUserName(),
-                                ds.IdentityOriginData.originUserUsername(),
-                            ),
+                            *node_extra,
                             ds.IdentityProviderEligibilityData.accountData.select(
                                 *gql_snippets.list_trivial_user_fields_IdentityProviderEligibilityAccountData(ds)
                             ),
@@ -3361,19 +3787,19 @@ class AndromedaInventory(dict):
                             ),
                             ds.IdentityProviderEligibilityData.eligibilityData.select(
                                 role_eligibility_fragment.select(
-                                    *gql_snippets.list_trivial_user_fields_IdentityProviderEligibilityPolicyData(ds),
+                                    *role_fields,
                                     DSLMetaField("__typename"),
                                 ),
                                 resource_set_eligibility_fragment.select(
-                                    *gql_snippets.list_trivial_user_fields_ResourceSetEligibilityData(ds),
+                                    *resource_set_fields,
                                     DSLMetaField("__typename"),
                                 ),
                                 group_eligibility_fragment.select(
-                                    *gql_snippets.list_trivial_user_fields_Group(ds),
+                                    *group_fields,
                                     DSLMetaField("__typename"),
                                 ),
                                 bundle_eligibility_fragment.select(
-                                    *gql_snippets.list_trivial_user_fields_AccessBundleData(ds),
+                                    *bundle_fields,
                                     DSLMetaField("__typename"),
                                 ),
                                 resource_eligibility_fragment.select(
@@ -3389,23 +3815,69 @@ class AndromedaInventory(dict):
             )
         ))
         response = self.gql_client.execute(query, get_execution_result=True).formatted
-        eligibilityDataNodes = response["data"]["Identity"]["eligibilityDetails"]["edges"]
-        eligibility = [node["node"] for node in eligibilityDataNodes]
-        logger.debug("num providers returned %s", len(eligibility))
-        return eligibility
+        details = response["data"]["Identity"]["eligibilityDetails"]
+        eligibility = [node["node"] for node in details["edges"]]
+        # pageInfo.count was already selected by this query and then thrown away, so the
+        # iterator had to discover the end by fetching one page past it. Returning it lets
+        # the iterator stop exactly, and lets callers say "showing 25 of 340".
+        total = (details.get("pageInfo") or {}).get("count")
+        logger.debug("eligibility page: %s of %s (skip=%s summary=%s)",
+                     len(eligibility), total, skip, summary)
+        return eligibility, total
 
-    def as_identity_eligibility_details_itr(self, identity_id: str, filters: Optional[dict]=None, page_size: Optional[int]=None, skip: Optional[int]=None) -> Generator[dict, None, None]:
-        """Iterate through identity eligibility."""
+    def as_identity_eligibility_details_bounded(self, identity_id: str, filters: Optional[dict]=None,
+                                                page_size: Optional[int]=None, summary: bool=False,
+                                                max_total: int=500) -> tuple:
+        """Fetch eligibilities, refusing to enumerate a result set bigger than max_total.
+
+        Returns (items, total, too_large).
+
+        The first page carries pageInfo.count, so discovering "this query is too broad"
+        costs exactly ONE round trip rather than paging to the end to find out. When it is
+        too large the caller gets that first page and the true total, and should ask for a
+        narrower query instead of enumerating: a question needing 500+ rows is nearly
+        always a question that should have been filtered.
+        """
+        page_size = page_size if page_size else self.default_page_size
+        items, total = self.as_identity_eligibility_details_base_fn(
+            identity_id, filters, page_size=page_size, skip=0, summary=summary)
+        if total is not None and total > max_total:
+            logger.info("eligibility result too large: total=%s max_total=%s — not enumerating",
+                        total, max_total)
+            return items, total, True
+        out = list(items)
+        # total is authoritative, so page to it directly rather than probing for the end.
+        if total:
+            for skip in range(page_size, total, page_size):
+                page, _ = self.as_identity_eligibility_details_base_fn(
+                    identity_id, filters, page_size=page_size, skip=skip, summary=summary)
+                if not page:
+                    break
+                out.extend(page)
+        return out, total, False
+
+    def as_identity_eligibility_details_itr(self, identity_id: str, filters: Optional[dict]=None, page_size: Optional[int]=None, skip: Optional[int]=None, summary: bool=False, max_count: Optional[int]=None) -> Generator[dict, None, None]:
+        """Iterate through identity eligibility.
+
+        max_count bounds the total fetched. Interactive callers should set it: the default
+        of 10000 is a batch-job bound, and every row past what the caller will actually use
+        costs a graph query it then discards.
+        """
         page_size = page_size if page_size else self.default_page_size
         partial_fn_itr = functools.partial(
             self.as_identity_eligibility_details_base_fn,
-            identity_id, filters)
-        for eligibility in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
+            identity_id, filters, summary=summary)
+        itr_kwargs = {"page_size": page_size}
+        if max_count is not None:
+            itr_kwargs["max_count"] = max_count
+        for eligibility in self.as_gql_generic_itr(partial_fn_itr, **itr_kwargs):
             yield eligibility
 
     def as_identity_eligible_providers_base_fn(self, identity_id: str, filters: Optional[dict]=None, page_size: Optional[int]=None, skip: Optional[int]=None) -> Generator[dict, None, None]:
         """Base function to iterate through identity eligible providers."""
         filters = filters if filters else {}
+        page_size = page_size if page_size else self.default_page_size
+        skip = skip if skip else 0
         assert self.gql_client.schema is not None, "GQL client schema is not set"
         ds = DSLSchema(self.gql_client.schema)
         query = dsl_gql(DSLQuery(
@@ -3417,7 +3889,10 @@ class AndromedaInventory(dict):
                 ds.Identity.email(),
                 ds.Identity.state(),
                 ds.Identity.type(),
-                ds.Identity.eligibleProviders.select(
+                ds.Identity.eligibleProviders(
+                    pageArgs={"pageSize": page_size, "skip": skip},
+                    filters=filters,
+                ).select(
                     ds.IdentityEligibleProvidersConnection.edges.select(
                         ds.IdentityEligibleProvidersEdge.node.select(
                             *gql_snippets.list_trivial_user_fields_Provider(ds),
@@ -3813,7 +4288,7 @@ class AndromedaInventory(dict):
         for request in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
             yield request
 
-    def as_favorites_base_fn(self, page_size: int, skip: int) -> list:
+    def as_favorites_base_fn(self, filters: Optional[dict], page_size: int, skip: int) -> list:
         """Fetch one page of favorite access request templates."""
         from gql.dsl import DSLQuery, dsl_gql, DSLSchema
         ds = DSLSchema(self.gql_client.schema)
@@ -3821,7 +4296,7 @@ class AndromedaInventory(dict):
             ds.Query.Favorites.select(
                 ds.Favorites.favoriteAccessRequestTemplates(
                     pageArgs={"pageSize": page_size, "skip": skip},
-                    filters={}
+                    filters=filters or {}
                 ).select(
                     ds.FavoriteAccessRequestTemplateConnection.edges.select(
                         ds.FavoriteAccessRequestTemplateEdge.node.select(
@@ -3846,10 +4321,10 @@ class AndromedaInventory(dict):
         logger.debug("num favorites returned %s", len(favs))
         return favs
 
-    def as_favorites_itr(self, page_size: int = None) -> Generator[dict, None, None]:
-        """Iterate through all favorite access request templates."""
+    def as_favorites_itr(self, page_size: Optional[int] = None, filters: Optional[dict] = None) -> Generator[dict, None, None]:
+        """Iterate through favorite access request templates, optionally filtered."""
         page_size = page_size if page_size else self.default_page_size
-        partial_fn_itr = functools.partial(self.as_favorites_base_fn)
+        partial_fn_itr = functools.partial(self.as_favorites_base_fn, filters)
         for fav in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
             yield fav
 
@@ -4235,6 +4710,16 @@ class AndromedaInventory(dict):
     def as_user_attributes_base_fn(self, filters: dict | None,
             page_size: int, skip: int) -> list:
         ds = DSLSchema(self.gql_client.schema)
+        # Query.UserAttributes accepts filters.value but its resolver ignores it —
+        # a value search there returns every key unnarrowed. The nested values
+        # connection *does* honour it, so push the value predicate down there.
+        # Keys with no matching value come back with values: [] and are dropped in
+        # as_user_attributes_itr, NOT here: as_gql_generic_itr ends pagination on
+        # len(items) < page_size, so this function must return one item per key.
+        value_filter = {"value": filters["value"]} if filters and "value" in filters else None
+        values_args = {"pageArgs": {"pageSize": 10}}
+        if value_filter:
+            values_args["filters"] = value_filter
         query = dsl_gql(DSLQuery(
             ds.Query.UserAttributes(
                 filters=filters,
@@ -4244,7 +4729,7 @@ class AndromedaInventory(dict):
                     ds.UserAttributeKeyEdge.node.select(
                         ds.UserAttributeKeyEntry.key,
                         ds.UserAttributeKeyEntry.values(
-                            pageArgs={"pageSize": 10},
+                            **values_args,
                         ).select(
                             ds.UserAttributeKeyValuesConnection.edges.select(
                                 ds.UserAttributeKeyValueEdge.node.select(
@@ -4276,10 +4761,19 @@ class AndromedaInventory(dict):
 
     def as_user_attributes_itr(self, filters: dict | None = None,
             page_size: int = None) -> Generator[dict, None, None]:
+        """Iterate user attribute keys and their values.
+
+        With filters={"value": {...}} only keys having at least one matching value
+        are yielded, and each yielded item's "values" holds just the matches. The
+        drop happens here rather than in the base fn so paging stays correct.
+        """
         page_size = page_size if page_size else self.default_page_size
         logger.debug("Fetching user attributes filters=%s", filters)
+        value_filtered = bool(filters and "value" in filters)
         partial_fn_itr = functools.partial(self.as_user_attributes_base_fn, filters)
         for item in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
+            if value_filtered and not item["values"]:
+                continue
             yield item
 
     def as_scopes_base_fn(self, filters: dict | None,
@@ -4383,6 +4877,47 @@ class AndromedaInventory(dict):
         for item in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
             yield item
 
+    def as_resources_base_fn(self, filters: dict | None,
+            page_size: int = 100, skip: int = 0) -> list:
+        """Read resources through the same Resources query the Resources explorer view uses.
+
+        Requests only id, name, type and the owning provider. The explorer view's grid reads
+        more fields, and no caller here needs them.
+        """
+        ds = DSLSchema(self.gql_client.schema)
+        query = dsl_gql(DSLQuery(
+            ds.Query.Resources(
+                pageArgs={"pageSize": page_size, "skip": skip},
+                filters=filters
+            ).select(
+                ds.ResourceConnection.edges.select(
+                    ds.ResourceEdge.node.select(
+                        ds.Resource.id,
+                        ds.Resource.name,
+                        ds.Resource.type,
+                        ds.Resource.providerId,
+                        ds.Resource.providerName,
+                    ),
+                ),
+                ds.ResourceConnection.pageInfo.select(
+                    *gql_snippets.list_trivial_fields_PageInfo(ds),
+                )
+            )
+        ))
+        response = self.gql_client.execute(query, get_execution_result=True).formatted
+        resource_edges = response["data"]["Resources"]["edges"]
+        resources = [edge["node"] for edge in resource_edges]
+        logger.debug("filters=%s num resources returned %s", filters, len(resources))
+        return resources
+
+    def as_resources_itr(self, filters: dict | None = None,
+            page_size: int = None) -> Generator[dict, None, None]:
+        page_size = page_size if page_size else self.default_page_size
+        logger.debug("Fetching resources filters=%s", filters)
+        partial_fn_itr = functools.partial(self.as_resources_base_fn, filters)
+        for item in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
+            yield item
+
     def fetch_agents_summary(self, filters: dict | None = None) -> dict:
         """
         Summary of all the AI agents in the tenant, broken down across posture
@@ -4456,6 +4991,78 @@ class AndromedaInventory(dict):
         response = self.gql_client.execute(query, get_execution_result=True).formatted
         data = response["data"]["AgentsSummary"]
         logger.debug("Agents Summary %s", data)
+        return data
+
+    def fetch_agent_identities_summary(self, filters: dict | None = None) -> dict:
+        """
+        Summary of agent identities in the tenant (the credentials/identities used
+        by AI agents), broken down by risk level, type, and state. ``filters``
+        (AgentIdentitiesSummaryFilters shape) is applied to every breakdown.
+        """
+        ds = DSLSchema(self.gql_client.schema)
+        query = dsl_gql(DSLQuery(
+            ds.Query.AgentIdentitiesSummary(
+            ).select(
+                ds.AgentIdentitiesSummary.groupedByRiskLevel(filters=filters).select(
+                    *gql_snippets.list_trivial_fields_AgentIdentitiesGroupedByRiskLevel(ds),
+                ),
+                ds.AgentIdentitiesSummary.groupedByType(filters=filters).select(
+                    *gql_snippets.list_trivial_fields_AgentIdentitiesGroupedByType(ds),
+                ),
+                ds.AgentIdentitiesSummary.groupedByState(filters=filters).select(
+                    *gql_snippets.list_trivial_fields_AgentIdentitiesGroupedByState(ds),
+                ),
+            )
+        ))
+        response = self.gql_client.execute(query, get_execution_result=True).formatted
+        data = response["data"]["AgentIdentitiesSummary"]
+        logger.debug("Agent Identities Summary %s", data)
+        return data
+
+    def fetch_desktop_agents_summary(self) -> dict:
+        """
+        Summary of desktop-installed AI agents in the tenant (e.g. Cursor Desktop,
+        Claude Desktop), broken down by agent type, registration status, and
+        license tier.
+        """
+        ds = DSLSchema(self.gql_client.schema)
+        query = dsl_gql(DSLQuery(
+            ds.Query.DesktopAgentsSummary(
+            ).select(
+                *gql_snippets.list_trivial_fields_DesktopAgentsSummary(ds),
+                ds.DesktopAgentsSummary.groupedByType.select(
+                    *gql_snippets.list_trivial_fields_AgentsGroupedByType(ds),
+                ),
+                ds.DesktopAgentsSummary.groupedByRegistration.select(
+                    *gql_snippets.list_trivial_fields_DesktopAgentsGroupedByRegistration(ds),
+                ),
+                ds.DesktopAgentsSummary.groupedByLicenseType.select(
+                    *gql_snippets.list_trivial_fields_AgentsGroupedByLicenseType(ds),
+                ),
+            )
+        ))
+        response = self.gql_client.execute(query, get_execution_result=True).formatted
+        data = response["data"]["DesktopAgentsSummary"]
+        logger.debug("Desktop Agents Summary %s", data)
+        return data
+
+    def fetch_agent_groups_summary(self) -> dict:
+        """
+        Summary of Andromeda agent groups in the tenant (groups of AI agents used
+        for policy binding), i.e. total group and membership counts. Distinct from
+        the provider/IdP groups covered by fetch_groups_summary.
+        """
+        ds = DSLSchema(self.gql_client.schema)
+        query = dsl_gql(DSLQuery(
+            ds.Query.AgentGroupsSummary(
+            ).select(
+                ds.AgentGroupsSummary.totalGroups(),
+                ds.AgentGroupsSummary.totalMemberships(),
+            )
+        ))
+        response = self.gql_client.execute(query, get_execution_result=True).formatted
+        data = response["data"]["AgentGroupsSummary"]
+        logger.debug("Agent Groups Summary %s", data)
         return data
 
     def as_nhi_owners_base_fn(self, identity_id: str,
