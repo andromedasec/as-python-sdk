@@ -1,1025 +1,1133 @@
 {
  "permissions": {
-   "enabedBillbaseUI": {
-     "name": "enabedBillbaseUI",
-     "access_level": "ACCESS_LEVEL_METADATA_READ",
-     "service_name": "Application"
-   },
-   "enabledNewSuperOrgPage": {
-     "name": "enabledNewSuperOrgPage",
-     "access_level": "ACCESS_LEVEL_METADATA_READ",
-     "service_name": "Application"
-   },
-   "pAccessHIPAAOrgs": {
-     "name": "pAccessHIPAAOrgs",
-     "access_level": "ACCESS_LEVEL_DATA_READ",
-     "service_name": "Application"
-   },
-   "pAccessToHighSecurityPartnersData": {
-     "name": "pAccessToHighSecurityPartnersData",
-     "access_level": "ACCESS_LEVEL_DATA_READ",
-     "service_name": "Application"
-   },
-   "pAccessToTinEin": {
-     "name": "pAccessToTinEin",
-     "access_level": "ACCESS_LEVEL_DATA_READ",
-     "service_name": "Application"
-   },
-   "pARApproval": {
-     "name": "pARApproval",
-     "access_level": "ACCESS_LEVEL_DATA_UPDATE",
-     "service_name": "Billing"
-   },
-   "pDataEntry": {
-     "name": "pDataEntry",
-     "access_level": "ACCESS_LEVEL_DATA_UPDATE",
-     "service_name": "Application"
-   },
-   "pDoCsEmulation": {
-     "name": "pDoCsEmulation",
-     "access_level": "ACCESS_LEVEL_DATA_UPDATE",
-     "service_name": "Application"
-   },
-   "pEditComplianceFields": {
-     "name": "pEditComplianceFields",
-     "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
-     "service_name": "Application"
-   },
-   "pEditFraudControl": {
-     "name": "pEditFraudControl",
-     "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
-     "service_name": "Application"
-   },
-   "pEditPaymentStatus": {
-     "name": "pEditPaymentStatus",
-     "access_level": "ACCESS_LEVEL_DATA_UPDATE",
-     "service_name": "Billing"
-   },
-   "pEditTaxExempt": {
-     "name": "pEditTaxExempt",
-     "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
-     "service_name": "Billing"
-   },
-   "pEnterVoidChecks": {
-     "name": "pEnterVoidChecks",
-     "access_level": "ACCESS_LEVEL_DATA_UPDATE",
-     "service_name": "Billing"
-   },
-   "pImpersonation": {
-     "name": "pImpersonation",
-     "access_level": "ACCESS_LEVEL_DATA_UPDATE",
-     "service_name": "PermissionsManagement"
-   },
-   "pManageBillingDiscounts": {
-     "name": "pManageBillingDiscounts",
-     "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
-     "service_name": "Billing"
-   },
-   "pManageFederatedDomains": {
-     "name": "pManageFederatedDomains",
-     "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
-     "service_name": "Infrastructure"
-   },
-   "pManageIntlPayments": {
-     "name": "pManageIntlPayments",
-     "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
-     "service_name": "Billing"
-   },
-   "pManageStripeAccount": {
-     "name": "pManageStripeAccount",
-     "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
-     "service_name": "Billing"
-   },
-   "pManageUsers": {
-     "name": "pManageUsers",
-     "access_level": "ACCESS_LEVEL_AUTH_MANAGEMENT",
-     "service_name": "PermissionsManagement"
-   },
-   "pManageVendorsAdvanced": {
-     "name": "pManageVendorsAdvanced",
-     "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
-     "service_name": "Application"
-   },
-   "pManageWalletBalance": {
-     "name": "pManageWalletBalance",
-     "access_level": "ACCESS_LEVEL_DATA_UPDATE",
-     "service_name": "Billing"
-   },
-   "pManualCharges": {
-     "name": "pManualCharges",
-     "access_level": "ACCESS_LEVEL_DATA_CREATE",
-     "service_name": "Billing"
-   },
-   "pManualRefunds": {
-     "name": "pManualRefunds",
-     "access_level": "ACCESS_LEVEL_DATA_CREATE",
-     "service_name": "Billing"
-   },
-   "pMergeRecords": {
-     "name": "pMergeRecords",
-     "access_level": "ACCESS_LEVEL_DATA_UPDATE",
-     "service_name": "Application"
-   },
-   "pModifyBank": {
-     "name": "pModifyBank",
-     "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
-     "service_name": "Billing"
-   },
-   "pModifyBilling": {
-     "name": "pModifyBilling",
-     "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
-     "service_name": "Billing"
-   },
-   "pModifyCheckImage": {
-     "name": "pModifyCheckImage",
-     "access_level": "ACCESS_LEVEL_DATA_UPDATE",
-     "service_name": "Billing"
-   },
-   "pModifyData": {
-     "name": "pModifyData",
-     "access_level": "ACCESS_LEVEL_DATA_UPDATE",
-     "service_name": "Application"
-   },
-   "pModifyEmail": {
-     "name": "pModifyEmail",
-     "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
-     "service_name": "Application"
-   },
-   "pModifyFundingBank": {
-     "name": "pModifyFundingBank",
-     "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
-     "service_name": "Billing"
-   },
-   "pModifyPayment": {
-     "name": "pModifyPayment",
-     "access_level": "ACCESS_LEVEL_DATA_UPDATE",
-     "service_name": "Billing"
-   },
-   "pModifyVerify": {
-     "name": "pModifyVerify",
-     "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
-     "service_name": "Application"
-   },
-   "pPhotoIDVerification": {
-     "name": "pPhotoIDVerification",
-     "access_level": "ACCESS_LEVEL_DATA_UPDATE",
-     "service_name": "Application"
-   },
-   "pPrintChecks": {
-     "name": "pPrintChecks",
-     "access_level": "ACCESS_LEVEL_DATA_READ",
-     "service_name": "Billing"
-   },
-   "pSyncConfig": {
-     "name": "pSyncConfig",
-     "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
-     "service_name": "Infrastructure"
-   },
-   "pSyncTools": {
-     "name": "pSyncTools",
-     "access_level": "ACCESS_LEVEL_DATA_UPDATE",
-     "service_name": "Infrastructure"
-   },
-   "pUpdateOrgBilling": {
-     "name": "pUpdateOrgBilling",
-     "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
-     "service_name": "Billing"
-   },
-   "pViewACH": {
-     "name": "pViewACH",
-     "access_level": "ACCESS_LEVEL_DATA_READ",
-     "service_name": "Billing"
-   },
-   "pViewBank": {
-     "name": "pViewBank",
-     "access_level": "ACCESS_LEVEL_DATA_READ",
-     "service_name": "Billing"
-   },
-   "pViewBilling": {
-     "name": "pViewBilling",
-     "access_level": "ACCESS_LEVEL_DATA_READ",
-     "service_name": "Billing"
-   },
-   "pViewCheckFiles": {
-     "name": "pViewCheckFiles",
-     "access_level": "ACCESS_LEVEL_DATA_READ",
-     "service_name": "Billing"
-   },
-   "pViewCheckImage": {
-     "name": "pViewCheckImage",
-     "access_level": "ACCESS_LEVEL_DATA_READ",
-     "service_name": "Billing"
-   },
-   "pViewCheckInfo": {
-     "name": "pViewCheckInfo",
-     "access_level": "ACCESS_LEVEL_METADATA_READ",
-     "service_name": "Billing"
-   },
-   "pViewCheckReports": {
-     "name": "pViewCheckReports",
-     "access_level": "ACCESS_LEVEL_DATA_READ",
-     "service_name": "Billing"
-   },
-   "pViewChecks": {
-     "name": "pViewChecks",
-     "access_level": "ACCESS_LEVEL_METADATA_READ",
-     "service_name": "Billing"
-   },
-   "pViewComplianceFields": {
-     "name": "pViewComplianceFields",
-     "access_level": "ACCESS_LEVEL_METADATA_READ",
-     "service_name": "Application"
-   },
-   "pViewOrg": {
-     "name": "pViewOrg",
-     "access_level": "ACCESS_LEVEL_METADATA_READ",
-     "service_name": "Application"
-   },
-   "pViewPositivePay": {
-     "name": "pViewPositivePay",
-     "access_level": "ACCESS_LEVEL_DATA_READ",
-     "service_name": "Billing"
-   },
-   "pViewRiskProfile": {
-     "name": "pViewRiskProfile",
-     "access_level": "ACCESS_LEVEL_DATA_READ",
-     "service_name": "Application"
-   },
-   "pViewTaxIdReports": {
-     "name": "pViewTaxIdReports",
-     "access_level": "ACCESS_LEVEL_DATA_READ",
-     "service_name": "Billing"
-   },
-   "pViewTxnReports": {
-     "name": "pViewTxnReports",
-     "access_level": "ACCESS_LEVEL_DATA_READ",
-     "service_name": "Billing"
-   },
-   "pViewVerify": {
-     "name": "pViewVerify",
-     "access_level": "ACCESS_LEVEL_DATA_READ",
-     "service_name": "Application"
-   },
-   "pVirtualCardPFY": {
-     "name": "pVirtualCardPFY",
-     "access_level": "ACCESS_LEVEL_DATA_CREATE",
-     "service_name": "Billing"
-   },
-   "Modify": {
-     "name": "Modify",
-     "access_level": "ACCESS_LEVEL_DATA_UPDATE",
-     "service_name": "Schema"
-   },
-   "Modify-S": {
-     "name": "Modify-S",
-     "access_level": "ACCESS_LEVEL_DATA_UPDATE",
-     "service_name": "Schema"
-   },
-   "Read": {
-     "name": "Read",
-     "access_level": "ACCESS_LEVEL_DATA_READ",
-     "service_name": "Schema"
-   }
+  "enabedBillbaseUI": {
+   "name": "enabedBillbaseUI",
+   "access_level": "ACCESS_LEVEL_METADATA_READ",
+   "service_name": "Application"
+  },
+  "enabledNewSuperOrgPage": {
+   "name": "enabledNewSuperOrgPage",
+   "access_level": "ACCESS_LEVEL_METADATA_READ",
+   "service_name": "Application"
+  },
+  "pAccessHIPAAOrgs": {
+   "name": "pAccessHIPAAOrgs",
+   "access_level": "ACCESS_LEVEL_DATA_READ",
+   "service_name": "Application"
+  },
+  "pAccessToHighSecurityPartnersData": {
+   "name": "pAccessToHighSecurityPartnersData",
+   "access_level": "ACCESS_LEVEL_DATA_READ",
+   "service_name": "Application"
+  },
+  "pAccessToTinEin": {
+   "name": "pAccessToTinEin",
+   "access_level": "ACCESS_LEVEL_DATA_READ",
+   "service_name": "Application"
+  },
+  "pARApproval": {
+   "name": "pARApproval",
+   "access_level": "ACCESS_LEVEL_DATA_UPDATE",
+   "service_name": "Billing"
+  },
+  "pDataEntry": {
+   "name": "pDataEntry",
+   "access_level": "ACCESS_LEVEL_DATA_UPDATE",
+   "service_name": "Application"
+  },
+  "pDoCsEmulation": {
+   "name": "pDoCsEmulation",
+   "access_level": "ACCESS_LEVEL_DATA_UPDATE",
+   "service_name": "Application"
+  },
+  "pEditComplianceFields": {
+   "name": "pEditComplianceFields",
+   "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
+   "service_name": "Application"
+  },
+  "pEditFraudControl": {
+   "name": "pEditFraudControl",
+   "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
+   "service_name": "Application"
+  },
+  "pEditPaymentStatus": {
+   "name": "pEditPaymentStatus",
+   "access_level": "ACCESS_LEVEL_DATA_UPDATE",
+   "service_name": "Billing"
+  },
+  "pEditTaxExempt": {
+   "name": "pEditTaxExempt",
+   "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
+   "service_name": "Billing"
+  },
+  "pEnterVoidChecks": {
+   "name": "pEnterVoidChecks",
+   "access_level": "ACCESS_LEVEL_DATA_UPDATE",
+   "service_name": "Billing"
+  },
+  "pImpersonation": {
+   "name": "pImpersonation",
+   "access_level": "ACCESS_LEVEL_DATA_UPDATE",
+   "service_name": "PermissionsManagement"
+  },
+  "pManageBillingDiscounts": {
+   "name": "pManageBillingDiscounts",
+   "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
+   "service_name": "Billing"
+  },
+  "pManageFederatedDomains": {
+   "name": "pManageFederatedDomains",
+   "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
+   "service_name": "Infrastructure"
+  },
+  "pManageIntlPayments": {
+   "name": "pManageIntlPayments",
+   "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
+   "service_name": "Billing"
+  },
+  "pManageStripeAccount": {
+   "name": "pManageStripeAccount",
+   "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
+   "service_name": "Billing"
+  },
+  "pManageUsers": {
+   "name": "pManageUsers",
+   "access_level": "ACCESS_LEVEL_AUTH_MANAGEMENT",
+   "service_name": "PermissionsManagement"
+  },
+  "pManageVendorsAdvanced": {
+   "name": "pManageVendorsAdvanced",
+   "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
+   "service_name": "Application"
+  },
+  "pManageWalletBalance": {
+   "name": "pManageWalletBalance",
+   "access_level": "ACCESS_LEVEL_DATA_UPDATE",
+   "service_name": "Billing"
+  },
+  "pManualCharges": {
+   "name": "pManualCharges",
+   "access_level": "ACCESS_LEVEL_DATA_CREATE",
+   "service_name": "Billing"
+  },
+  "pManualRefunds": {
+   "name": "pManualRefunds",
+   "access_level": "ACCESS_LEVEL_DATA_CREATE",
+   "service_name": "Billing"
+  },
+  "pMergeRecords": {
+   "name": "pMergeRecords",
+   "access_level": "ACCESS_LEVEL_DATA_UPDATE",
+   "service_name": "Application"
+  },
+  "pModifyBank": {
+   "name": "pModifyBank",
+   "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
+   "service_name": "Billing"
+  },
+  "pModifyBilling": {
+   "name": "pModifyBilling",
+   "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
+   "service_name": "Billing"
+  },
+  "pModifyCheckImage": {
+   "name": "pModifyCheckImage",
+   "access_level": "ACCESS_LEVEL_DATA_UPDATE",
+   "service_name": "Billing"
+  },
+  "pModifyData": {
+   "name": "pModifyData",
+   "access_level": "ACCESS_LEVEL_DATA_UPDATE",
+   "service_name": "Application"
+  },
+  "pModifyEmail": {
+   "name": "pModifyEmail",
+   "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
+   "service_name": "Application"
+  },
+  "pModifyFundingBank": {
+   "name": "pModifyFundingBank",
+   "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
+   "service_name": "Billing"
+  },
+  "pModifyPayment": {
+   "name": "pModifyPayment",
+   "access_level": "ACCESS_LEVEL_DATA_UPDATE",
+   "service_name": "Billing"
+  },
+  "pModifyVerify": {
+   "name": "pModifyVerify",
+   "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
+   "service_name": "Application"
+  },
+  "pPhotoIDVerification": {
+   "name": "pPhotoIDVerification",
+   "access_level": "ACCESS_LEVEL_DATA_UPDATE",
+   "service_name": "Application"
+  },
+  "pPrintChecks": {
+   "name": "pPrintChecks",
+   "access_level": "ACCESS_LEVEL_DATA_READ",
+   "service_name": "Billing"
+  },
+  "pSyncConfig": {
+   "name": "pSyncConfig",
+   "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
+   "service_name": "Infrastructure"
+  },
+  "pSyncTools": {
+   "name": "pSyncTools",
+   "access_level": "ACCESS_LEVEL_DATA_UPDATE",
+   "service_name": "Infrastructure"
+  },
+  "pUpdateOrgBilling": {
+   "name": "pUpdateOrgBilling",
+   "access_level": "ACCESS_LEVEL_METADATA_UPDATE",
+   "service_name": "Billing"
+  },
+  "pViewACH": {
+   "name": "pViewACH",
+   "access_level": "ACCESS_LEVEL_DATA_READ",
+   "service_name": "Billing"
+  },
+  "pViewBank": {
+   "name": "pViewBank",
+   "access_level": "ACCESS_LEVEL_DATA_READ",
+   "service_name": "Billing"
+  },
+  "pViewBilling": {
+   "name": "pViewBilling",
+   "access_level": "ACCESS_LEVEL_DATA_READ",
+   "service_name": "Billing"
+  },
+  "pViewCheckFiles": {
+   "name": "pViewCheckFiles",
+   "access_level": "ACCESS_LEVEL_DATA_READ",
+   "service_name": "Billing"
+  },
+  "pViewCheckImage": {
+   "name": "pViewCheckImage",
+   "access_level": "ACCESS_LEVEL_DATA_READ",
+   "service_name": "Billing"
+  },
+  "pViewCheckInfo": {
+   "name": "pViewCheckInfo",
+   "access_level": "ACCESS_LEVEL_METADATA_READ",
+   "service_name": "Billing"
+  },
+  "pViewCheckReports": {
+   "name": "pViewCheckReports",
+   "access_level": "ACCESS_LEVEL_DATA_READ",
+   "service_name": "Billing"
+  },
+  "pViewChecks": {
+   "name": "pViewChecks",
+   "access_level": "ACCESS_LEVEL_METADATA_READ",
+   "service_name": "Billing"
+  },
+  "pViewComplianceFields": {
+   "name": "pViewComplianceFields",
+   "access_level": "ACCESS_LEVEL_METADATA_READ",
+   "service_name": "Application"
+  },
+  "pViewOrg": {
+   "name": "pViewOrg",
+   "access_level": "ACCESS_LEVEL_METADATA_READ",
+   "service_name": "Application"
+  },
+  "pViewPositivePay": {
+   "name": "pViewPositivePay",
+   "access_level": "ACCESS_LEVEL_DATA_READ",
+   "service_name": "Billing"
+  },
+  "pViewRiskProfile": {
+   "name": "pViewRiskProfile",
+   "access_level": "ACCESS_LEVEL_DATA_READ",
+   "service_name": "Application"
+  },
+  "pViewTaxIdReports": {
+   "name": "pViewTaxIdReports",
+   "access_level": "ACCESS_LEVEL_DATA_READ",
+   "service_name": "Billing"
+  },
+  "pViewTxnReports": {
+   "name": "pViewTxnReports",
+   "access_level": "ACCESS_LEVEL_DATA_READ",
+   "service_name": "Billing"
+  },
+  "pViewVerify": {
+   "name": "pViewVerify",
+   "access_level": "ACCESS_LEVEL_DATA_READ",
+   "service_name": "Application"
+  },
+  "pVirtualCardPFY": {
+   "name": "pVirtualCardPFY",
+   "access_level": "ACCESS_LEVEL_DATA_CREATE",
+   "service_name": "Billing"
+  },
+  "Modify": {
+   "name": "Modify",
+   "access_level": "ACCESS_LEVEL_DATA_UPDATE",
+   "service_name": "Schema"
+  },
+  "Modify-S": {
+   "name": "Modify-S",
+   "access_level": "ACCESS_LEVEL_DATA_UPDATE",
+   "service_name": "Schema"
+  },
+  "Read": {
+   "name": "Read",
+   "access_level": "ACCESS_LEVEL_DATA_READ",
+   "service_name": "Schema"
+  }
  },
  "groups": {
-    "Group A": {
-      "id": "Group A",
-      "member_user_ids": [
-        "chip.brown@beatles.ai",
-        "kieran.juarez@beatles.ai",
-        "devin.chapman@beatles.ai"
-      ],
-      "name": "Group A"
-    },
-    "Group B": {
-      "id": "Group B",
-      "member_user_ids": [
-        "bobbie.laundry@beatles.ai"
-      ],
-      "name": "Group B"
-    },
-    "Group C": {
-      "id": "Group C",
-      "member_user_ids": [
-        "abby.palmer@beatles.ai"
-      ],
-      "name": "Group C"
-    },
-    "Group D": {
-      "id": "Group D",
-      "member_user_ids": [
-        "john.smith@beatles.ai",
-        "jane.doe@beatles.ai"
-      ],
-      "name": "Group D"
-    },
-    "Group E": {
-      "id": "Group E",
-      "member_user_ids": [
-        "mike.richard@beatles.ai"
-      ],
-      "name": "Group E"
-    }
+  "Group A": {
+   "id": "Group A",
+   "member_user_ids": [
+    "chip.brown@beatles.ai",
+    "kieran.juarez@beatles.ai",
+    "devin.chapman@beatles.ai"
+   ],
+   "name": "Group A"
   },
-  "users": {
-    "matt.james@beatles.ai": {
-      "id": "matt.james@beatles.ai",
-      "username": "matt.james@beatles.ai",
-      "name": "Matt James",
-      "status": "ENABLED"
-    },
-    "marcus.smith@beatles.ai": {
-      "id": "marcus.smith@beatles.ai",
-      "username": "marcus.smith@beatles.ai",
-      "name": "Marcus Smith",
-      "status": "ENABLED"
-    },
-    "matt.cooper@beatles.ai": {
-      "id": "matt.cooper@beatles.ai",
-      "username": "matt.cooper@beatles.ai",
-      "name": "Matt Cooper",
-      "status": "ENABLED"
-    },
-    "fred.marsh@beatles.ai": {
-      "id": "id-fred.marsh@beatles.ai",
-      "username": "fred.marsh@beatles.ai",
-      "name": "Fred Marsh",
-      "status": "ENABLED"
-    },
-    "richar.Mike@beatles.ai": {
-      "id": "richar.Mike@beatles.ai",
-      "username": "richar.Mike@beatles.ai",
-      "name": "Richard Mike",
-      "status": "ENABLED"
-    },
-    "samy.joseph@beatles.ai": {
-      "id": "samy.joseph@beatles.ai",
-      "username": "samy.joseph@beatles.ai",
-      "name": "Samy Joseph",
-      "status": "ENABLED"
-    },
-    "hail.mary@beatles.ai": {
-      "id": "hail.mary@beatles.ai",
-      "username": "hail.mary@beatles.ai",
-      "name": "Hail Mary",
-      "status": "ENABLED"
-    },
-    "abby.palmer@beatles.ai": {
-      "hr_type": "EMPLOYEE",
-      "id": "abby.palmer@beatles.ai",
-      "name": "Abby Palmer",
-      "status": "ENABLED",
-      "username": "abby.palmer@beatles.ai"
-    },
-    "bobbie.laundry@beatles.ai": {
-      "hr_type": "CONTINGENT_WORKER",
-      "id": "bobbie.laundry@beatles.ai",
-      "name": "Bobbie Laundry",
-      "status": "ENABLED",
-      "username": "bobbie.laundry@beatles.ai"
-    },
-    "chip.brown@beatles.ai": {
-      "hr_type": "EMPLOYEE",
-      "id": "chip.brown@beatles.ai",
-      "name": "Brown Chip",
-      "status": "ENABLED",
-      "username": "chip.brown@beatles.ai"
-    },
-    "devin.chapman@beatles.ai": {
-      "hr_type": "EMPLOYEE",
-      "id": "devin.chapman@beatles.ai",
-      "name": "Devin Chapman",
-      "status": "ENABLED",
-      "username": "devin.chapman@beatles.ai"
-    },
-    "jane.doe@beatles.ai": {
-      "hr_type": "EMPLOYEE",
-      "id": "jane.doe@beatles.ai",
-      "name": "Jane Doe",
-      "status": "ENABLED",
-      "username": "jane.doe@beatles.ai"
-    },
-    "john.smith@beatles.ai": {
-      "hr_type": "EMPLOYEE",
-      "id": "john.smith@beatles.ai",
-      "name": "John Smith",
-      "status": "ENABLED",
-      "username": "john.smith@beatles.ai"
-    },
-    "kieran.juarez@beatles.ai": {
-      "hr_type": "EMPLOYEE",
-      "id": "kieran.juarez@beatles.ai",
-      "name": "Kieran Juarez",
-      "status": "ENABLED",
-      "username": "kieran.juarez@beatles.ai"
-    },
-    "mike.richard@beatles.ai": {
-      "hr_type": "EMPLOYEE",
-      "id": "mike.richard@beatles.ai",
-      "name": "Mike Richard",
-      "status": "ENABLED",
-      "username": "mike.richard@beatles.ai",
-      "hris_attributes": {
-        "email": "mike.richard@beatles.ai",
-        "org_name": "Engineering",
-        "business_title": "Sr. HR Administrator",
-        "manager_id": "ashley.porter@beatles.ai",
-        "manager_name": "Ashley, Porter",
-        "position_title": "Sr. HR Administrator",
-        "division": "North America",
-        "city": "Lindon",
-        "state": "Utah",
-        "country": "United States",
-        "hire_date": "2025-01-06T00:00:00Z",
-        "termination_date": "2030-02-06T00:00:00Z"
-      },
-      "idp_attributes_map": {
-        "cost_center": "4242",
-        "security_clearance": "Top Secret"
-      }
-    },
-    "ashley.porter@beatles.ai": {
-      "hr_type": "EMPLOYEE",
-      "id": "ashley.porter@beatles.ai",
-      "name": "Ashley Porter",
-      "status": "ENABLED",
-      "username": "ashley.porter@beatles.ai"
-    }
+  "Group B": {
+   "id": "Group B",
+   "member_user_ids": [
+    "bobbie.laundry@beatles.ai"
+   ],
+   "name": "Group B"
   },
-
-  "nhis": {
-    "application-1": {
-      "id": "app-uuid-00001",
-      "username": "application-1",
-      "name": "Application 1 Service Identity",
-      "owner_id": "matt.james@beatles.ai",
-      "custodian_id": "marcus.smith@beatles.ai",
-      "status": "ENABLED"
-    },
-    "application-2": {
-      "id": "app-uuid-00002",
-      "username": "application-2",
-      "name": "Application 2 Service Identity",
-      "owner_id": "matt.james@beatles.ai",
-      "custodian_id": "marcus.smith@beatles.ai",
-      "status": "ENABLED"
-    },
-    "application-3": {
-      "id": "app-uuid-00003",
-      "username": "application-3",
-      "name": "Application 3 Service Identity",
-      "owner_id": "matt.cooper@beatles.ai",
-      "custodian_id": "matt.james@beatles.ai",
-      "status": "ENABLED"
-    },
-    "application-4": {
-      "id": "app-uuid-00004",
-      "username": "application-4",
-      "name": "Application 4 Service Identity",
-      "owner_id": "matt.cooper@beatles.ai",
-      "custodian_id": "marcus.smith@beatles.ai",
-      "status": "DISABLED"
-    },
-    "application-5": {
-      "id": "app-uuid-00005",
-      "username": "application-5",
-      "name": "Application 5 Service Identity",
-      "owner_id": "marcus.smith@beatles.ai",
-      "custodian_id": "matt.cooper@beatles.ai",
-      "status": "ENABLED"
-    }
+  "Group C": {
+   "id": "Group C",
+   "member_user_ids": [
+    "abby.palmer@beatles.ai"
+   ],
+   "name": "Group C"
   },
-  "scopes": {
-    "Server A": {
-      "id": "Server A",
-      "name": "Server A",
-      "type": "FOLDER"
-    },
-    "Server A/Drive:\\location\\finance\\Reports": {
-      "id": "Server A/Drive:\\location\\finance\\Reports",
-      "name": "Drive:\\location\\finance\\Reports",
-      "parent_scope_id": "Server A",
-      "type": "ACCOUNT"
-    },
-    "Server A/Drive:\\location\\general\\Team Folder": {
-      "id": "Server A/Drive:\\location\\general\\Team Folder",
-      "name": "Drive:\\location\\general\\Team Folder",
-      "parent_scope_id": "Server A",
-      "type": "ACCOUNT"
-    },
-    "Server B": {
-      "id": "Server B",
-      "name": "Server B",
-      "type": "FOLDER"
-    },
-    "Server B/Drive:\\projects\\Engineering": {
-      "id": "Server B/Drive:\\projects\\Engineering",
-      "name": "Drive:\\projects\\Engineering",
-      "parent_scope_id": "Server B",
-      "type": "ACCOUNT"
-    }
+  "Group D": {
+   "id": "Group D",
+   "member_user_ids": [
+    "john.smith@beatles.ai",
+    "jane.doe@beatles.ai"
+   ],
+   "name": "Group D"
   },
-  "roles": {
-    "beatles-matt-cooper-role": {
-      "id": "beatles-matt-cooper-role",
-      "name": "beatles-matt-cooper-role",
-      "type": "CUSTOM_APP_USER_ROLE",
-      "permissions": [
-        "pManageUsers",
-        "pModifyBank",
-        "pModifyBilling",
-        "pViewOrg",
-        "pViewBank",
-        "pViewBilling",
-        "pViewCheckInfo",
-        "pViewCheckImage",
-        "pDataEntry",
-        "pViewCheckReports",
-        "pViewTxnReports",
-        "pMergeRecords",
-        "pImpersonation",
-        "pDoCsEmulation",
-        "pManualCharges",
-        "pAccessToHighSecurityPartnersData",
-        "pAccessHIPAAOrgs",
-        "pViewRiskProfile",
-        "pVirtualCardPFY",
-        "pViewChecks",
-        "pManageVendorsAdvanced",
-        "enabedBillbaseUI",
-        "enabledNewSuperOrgPage"
-      ]
-    },
-    "riskops_manager": {
-      "id": "riskops_manager",
-      "name": "riskops_manager",
-      "type": "CUSTOM_APP_ROLE",
-      "permissions": [
-        "pModifyData",
-        "pModifyBank",
-        "pModifyVerify",
-        "pModifyBilling",
-        "pPrintChecks",
-        "pViewOrg",
-        "pViewACH",
-        "pViewBank",
-        "pViewPositivePay",
-        "pViewBilling",
-        "pViewVerify",
-        "pViewCheckInfo",
-        "pEnterVoidChecks",
-        "pViewCheckImage",
-        "pModifyCheckImage",
-        "pDataEntry",
-        "pViewCheckFiles",
-        "pViewCheckReports",
-        "pViewTxnReports",
-        "pEditFraudControl",
-        "pModifyFundingBank",
-        "pMergeRecords",
-        "pModifyEmail",
-        "pImpersonation",
-        "pDoCsEmulation",
-        "pARApproval",
-        "pViewTaxIdReports",
-        "pUpdateOrgBilling",
-        "pManualCharges",
-        "pManualRefunds",
-        "pAccessToHighSecurityPartnersData",
-        "pManageIntlPayments",
-        "pModifyPayment",
-        "pAccessToTinEin",
-        "pPhotoIDVerification",
-        "pAccessHIPAAOrgs",
-        "pManageWalletBalance",
-        "pViewRiskProfile",
-        "pViewComplianceFields",
-        "pEditComplianceFields",
-        "pVirtualCardPFY",
-        "pViewChecks"
-      ]
-    },
-    "processing_l1": {
-      "id": "processing_l1",
-      "name": "processing_l1",
-      "type": "CUSTOM_APP_ROLE",
-      "permissions": [
-        "pModifyData",
-        "pModifyBank",
-        "pModifyBilling",
-        "pViewOrg",
-        "pViewBank",
-        "pViewBilling",
-        "pViewCheckInfo",
-        "pViewCheckImage",
-        "pDataEntry",
-        "pViewTxnReports",
-        "pMergeRecords",
-        "pModifyEmail",
-        "pImpersonation",
-        "pDoCsEmulation",
-        "pUpdateOrgBilling",
-        "pManualCharges",
-        "pManualRefunds",
-        "pPhotoIDVerification",
-        "pEditTaxExempt",
-        "pAccessHIPAAOrgs",
-        "pEditPaymentStatus",
-        "pManageBillingDiscounts",
-        "pViewChecks",
-        "pManageVendorsAdvanced",
-        "enabedBillbaseUI",
-        "enabledNewSuperOrgPage"
-      ]
-    },
-    "partner_support_l1": {
-      "id": "partner_support_l1",
-      "name": "partner_support_l1",
-      "type": "CUSTOM_APP_ROLE",
-      "permissions": [
-        "pModifyData",
-        "pModifyBank",
-        "pModifyBilling",
-        "pViewOrg",
-        "pViewBank",
-        "pViewBilling",
-        "pViewCheckInfo",
-        "pViewCheckImage",
-        "pDataEntry",
-        "pViewCheckReports",
-        "pViewTxnReports",
-        "pMergeRecords",
-        "pImpersonation",
-        "pDoCsEmulation",
-        "pManualCharges",
-        "pAccessToHighSecurityPartnersData",
-        "pAccessHIPAAOrgs",
-        "pViewRiskProfile",
-        "pVirtualCardPFY",
-        "pViewChecks",
-        "pManageVendorsAdvanced",
-        "enabedBillbaseUI",
-        "enabledNewSuperOrgPage"
-      ]
-    },
-    "internal_support_l1": {
-      "id": "internal_support_l1",
-      "name": "internal_support_l1",
-      "type": "CUSTOM_APP_ROLE",
-      "permissions": [
-        "pModifyData",
-        "pModifyBank",
-        "pModifyBilling",
-        "pViewOrg",
-        "pViewACH",
-        "pViewBilling",
-        "pViewCheckInfo",
-        "pViewCheckImage",
-        "pModifyCheckImage",
-        "pDataEntry",
-        "pViewCheckReports",
-        "pViewTxnReports",
-        "pMergeRecords",
-        "pModifyEmail",
-        "pImpersonation",
-        "pDoCsEmulation",
-        "pSyncTools",
-        "pUpdateOrgBilling",
-        "pSyncConfig",
-        "pAccessHIPAAOrgs",
-        "pViewRiskProfile",
-        "pViewChecks",
-        "pManageVendorsAdvanced",
-        "enabedBillbaseUI"
-      ]
-    },
-    "tech_support_l1": {
-      "id": "tech_support_l1",
-      "name": "tech_support_l1",
-      "type": "CUSTOM_APP_ROLE",
-      "permissions": [
-        "pModifyData",
-        "pModifyBank",
-        "pModifyBilling",
-        "pViewOrg",
-        "pViewACH",
-        "pViewBank",
-        "pViewBilling",
-        "pViewCheckInfo",
-        "pViewCheckImage",
-        "pModifyCheckImage",
-        "pDataEntry",
-        "pViewCheckReports",
-        "pViewTxnReports",
-        "pMergeRecords",
-        "pModifyEmail",
-        "pImpersonation",
-        "pDoCsEmulation",
-        "pSyncTools",
-        "pUpdateOrgBilling",
-        "pSyncConfig",
-        "pAccessToHighSecurityPartnersData",
-        "pManageFederatedDomains",
-        "pAccessHIPAAOrgs",
-        "pViewRiskProfile",
-        "pViewChecks",
-        "pManageVendorsAdvanced",
-        "pManageStripeAccount",
-        "enabedBillbaseUI",
-        "enabledNewSuperOrgPage"
-      ]
-    },
-    "Modify": {
-      "id": "Modify",
-      "name": "Modify",
-      "type": "CUSTOM_APP_ROLE",
-      "permissions": [
-        "Modify"
-      ]
-    },
-    "Modify-S": {
-      "id": "Modify-S",
-      "name": "Modify-S",
-      "type": "CUSTOM_APP_ROLE",
-      "permissions": [
-        "Modify-S"
-      ]
-    },
-    "Read": {
-      "id": "Read",
-      "name": "Read",
-      "type": "CUSTOM_APP_ROLE",
-      "permissions": [
-        "Read"
-      ]
-    }
-  },
-  "assignments": {
-    "fred.marsh@beatles.ai_partner_support_l1": {
-      "id": "fred.marsh@beatles.ai_partner_support_l1",
-      "principal_id": "fred.marsh@beatles.ai",
-      "principal_type": "HUMAN",
-      "role_id": "partner_support_l1"
-    },
-    "matt.cooper@beatles.ai_beatles-matt-cooper-role": {
-      "id": "matt.cooper@beatles.ai_beatles-matt-cooper-role",
-      "principal_id": "matt.cooper@beatles.ai",
-      "principal_type": "HUMAN",
-      "role_id": "beatles-matt-cooper-role"
-    },
-    "richar.Mike@beatles.ai_tech_support_l1": {
-      "id": "richar.Mike@beatles.ai_tech_support_l1",
-      "principal_id": "richar.Mike@beatles.ai",
-      "principal_type": "HUMAN",
-      "role_id": "tech_support_l1"
-    },
-    "marcus.smith@beatles.ai_processing_l1": {
-      "id": "marcus.smith@beatles.ai_processing_l1",
-      "principal_id": "marcus.smith@beatles.ai",
-      "principal_type": "HUMAN",
-      "role_id": "processing_l1"
-    },
-    "mike.richard@beatles.ai_processing_l1": {
-      "id": "mike.richard@beatles.ai_processing_l1",
-      "principal_id": "mike.richard@beatles.ai",
-      "principal_type": "HUMAN",
-      "role_id": "processing_l1"
-    },
-    "matt.james@beatles.ai_processing_l1": {
-      "id": "matt.james@beatles.ai_processing_l1",
-      "principal_id": "matt.james@beatles.ai",
-      "principal_type": "HUMAN",
-      "role_id": "processing_l1"
-    },
-    "matt.james@beatles.ai_tech_support_l1": {
-      "id": "matt.james@beatles.ai_tech_support_l1",
-      "principal_id": "matt.james@beatles.ai",
-      "principal_type": "HUMAN",
-      "role_id": "tech_support_l1"
-    },
-    "matt.james@beatles.ai_riskops_manager": {
-      "id": "matt.james@beatles.ai_riskops_manager",
-      "principal_id": "matt.james@beatles.ai",
-      "principal_type": "HUMAN",
-      "role_id": "riskops_manager"
-    },
-    "samy.joseph@beatles.ai_internal_support_l1": {
-      "id": "samy.joseph@beatles.ai_internal_support_l1",
-      "principal_id": "samy.joseph@beatles.ai",
-      "principal_type": "HUMAN",
-      "role_id": "internal_support_l1",
-      "scope_id": "Server A/Drive:\\location\\general\\Team Folder"
-    },
-    "netapp_beatles|Group A|Modify|Server A/Drive:\\location\\general\\Team Folder": {
-      "id": "netapp_beatles|Group A|Modify|Server A/Drive:\\location\\general\\Team Folder",
-      "principal_id": "Group A",
-      "principal_type": "GROUP",
-      "role_id": "Modify",
-      "scope_id": "Server A/Drive:\\location\\general\\Team Folder"
-    },
-    "netapp_beatles|Group B|Modify-S|Server A/Drive:\\location\\finance\\Reports": {
-      "id": "netapp_beatles|Group B|Modify-S|Server A/Drive:\\location\\finance\\Reports",
-      "principal_id": "Group B",
-      "principal_type": "GROUP",
-      "role_id": "Modify-S",
-      "scope_id": "Server A/Drive:\\location\\finance\\Reports"
-    },
-    "netapp_beatles|Group C|Read|Server A/Drive:\\location\\finance\\Reports": {
-      "id": "netapp_beatles|Group C|Read|Server A/Drive:\\location\\finance\\Reports",
-      "principal_id": "Group C",
-      "principal_type": "GROUP",
-      "role_id": "Read",
-      "scope_id": "Server A/Drive:\\location\\finance\\Reports"
-    },
-    "netapp_beatles|Group D|Modify|Server B/Drive:\\projects\\Engineering": {
-      "id": "netapp_beatles|Group D|Modify|Server B/Drive:\\projects\\Engineering",
-      "principal_id": "Group D",
-      "principal_type": "GROUP",
-      "role_id": "Modify",
-      "scope_id": "Server B/Drive:\\projects\\Engineering"
-    },
-    "netapp_beatles|Group D|Read|Server B/Drive:\\projects\\Engineering": {
-      "id": "netapp_beatles|Group D|Read|Server B/Drive:\\projects\\Engineering",
-      "principal_id": "Group D",
-      "principal_type": "GROUP",
-      "role_id": "Read",
-      "scope_id": "Server B/Drive:\\projects\\Engineering"
-    },
-    "netapp_beatles|Group E|Read|Server A/Drive:\\location\\general\\Team Folder": {
-      "id": "netapp_beatles|Group E|Read|Server A/Drive:\\location\\general\\Team Folder",
-      "principal_id": "Group E",
-      "principal_type": "GROUP",
-      "role_id": "Read",
-      "scope_id": "Server A/Drive:\\location\\general\\Team Folder"
-    }
-  },
-  "resources": {
-    "resource-finance-reports-db": {
-      "id": "resource-finance-reports-db",
-      "name": "Finance Reports Database",
-      "parent_scope_id": "Server A/Drive:\\location\\finance\\Reports",
-      "parent_scope_type": "ACCOUNT",
-      "resource_properties": {
-        "type": "database",
-        "engine": "postgres",
-        "region": "us-east-1"
-      },
-      "is_enabled": true,
-      "owners": ["matt.james@beatles.ai", "marcus.smith@beatles.ai"],
-      "tags": [
-        {"key": "env", "value": "production"},
-        {"key": "team", "value": "finance"}
-      ]
-    },
-    "resource-team-folder-docs": {
-      "id": "resource-team-folder-docs",
-      "name": "Team Shared Documents",
-      "parent_scope_id": "Server A/Drive:\\location\\general\\Team Folder",
-      "parent_scope_type": "ACCOUNT",
-      "resource_properties": {
-        "type": "storage",
-        "path": "Drive:\\location\\general\\Team Folder\\docs",
-        "size_mb": 2048
-      },
-      "is_enabled": true,
-      "owners": ["chip.brown@beatles.ai"],
-      "tags": [
-        {"key": "env", "value": "production"},
-        {"key": "classification", "value": "internal"}
-      ]
-    },
-    "resource-laptop-mike.richard": {
-      "id": "resource-laptop-mike.richard",
-      "name": "Mike Richard's Laptop",
-      "parent_scope_id": "Server A/Drive:\\location\\general\\Team Folder",
-      "parent_scope_type": "ACCOUNT",
-      "resource_properties": {
-        "type": "device",
-        "device_type": "laptop",
-        "os": "macOS",
-        "serial_number": "C02XR1XMJGH5"
-      },
-      "is_enabled": true,
-      "owners": ["mike.richard@beatles.ai"],
-      "tags": [
-        {"key": "owner", "value": "mike.richard@beatles.ai"},
-        {"key": "device_type", "value": "laptop"}
-      ]
-    },
-    "resource-laptop-bobbie.laundry": {
-      "id": "resource-laptop-bobbie.laundry",
-      "name": "Bobbie Laundry's Laptop",
-      "parent_scope_id": "Server A/Drive:\\location\\general\\Team Folder",
-      "parent_scope_type": "ACCOUNT",
-      "resource_properties": {
-        "type": "device",
-        "device_type": "laptop",
-        "os": "macOS",
-        "serial_number": "C02YK9XMJGH6"
-      },
-      "is_enabled": true,
-      "owners": ["bobbie.laundry@beatles.ai"],
-      "tags": [
-        {"key": "owner", "value": "bobbie.laundry@beatles.ai"},
-        {"key": "device_type", "value": "laptop"}
-      ]
-    }
-  },
-  "agents": {
-    "agent-cursor-mike.richard": {
-      "id": "agent-cursor-mike.richard",
-      "name": "Cursor (mike.richard@beatles.ai)",
-      "end_user_auth_type": "OAUTH_PER_USER",
-      "device_id": "resource-laptop-mike.richard",
-      "user_id": "mike.richard@beatles.ai",
-      "agent_model": {
-        "id": "ANTHROPIC/claude-sonnet-4/4.6",
-        "name": "claude-sonnet-4",
-        "version": "4.6",
-        "provider": "ANTHROPIC",
-        "kind": "PREBUILT"
-      },
-      "license_profiles": [
-        {
-          "name": "cursor-pro",
-          "tier": "INDIVIDUAL",
-          "license_data": {
-            "licensed_user": "mike.richard@beatles.ai",
-            "plan": "pro"
-          }
-        }
-      ]
-    },
-    "agent-claude-desktop-mike.richard": {
-      "id": "agent-claude-desktop-mike.richard",
-      "name": "Claude Desktop (mike.richard@beatles.ai)",
-      "end_user_auth_type": "OAUTH_PER_USER",
-      "device_id": "resource-laptop-mike.richard",
-      "user_id": "mike.richard@beatles.ai",
-      "agent_model": {
-        "id": "ANTHROPIC/claude-sonnet-4/4.6",
-        "name": "claude-sonnet-4",
-        "version": "4.6",
-        "provider": "ANTHROPIC",
-        "kind": "PREBUILT"
-      },
-      "license_profiles": [
-        {
-          "name": "claude-pro",
-          "tier": "INDIVIDUAL",
-          "license_data": {
-            "licensed_user": "mike.richard@beatles.ai",
-            "plan": "pro"
-          }
-        }
-      ]
-    },
-    "agent-antigravity-mike.richard": {
-      "id": "agent-antigravity-mike.richard",
-      "name": "Antigravity (mike.richard@beatles.ai)",
-      "end_user_auth_type": "OAUTH_PER_USER",
-      "device_id": "resource-laptop-mike.richard",
-      "user_id": "mike.richard@beatles.ai",
-      "agent_model": {
-        "id": "AGENT_MODEL_PROVIDER_UNKNOWN/antigravity/",
-        "name": "antigravity",
-        "version": "",
-        "provider": "AGENT_MODEL_PROVIDER_UNKNOWN",
-        "kind": "AGENT_MODEL_KIND_UNSPECIFIED"
-      },
-      "license_profiles": [
-        {
-          "name": "antigravity-standard",
-          "tier": "INDIVIDUAL",
-          "license_data": {
-            "licensed_user": "mike.richard@beatles.ai"
-          }
-        }
-      ]
-    },
-    "agent-claude-desktop-bobbie.laundry": {
-      "id": "agent-claude-desktop-bobbie.laundry",
-      "name": "Claude Desktop (bobbie.laundry@beatles.ai)",
-      "end_user_auth_type": "OAUTH_PER_USER",
-      "device_id": "resource-laptop-bobbie.laundry",
-      "user_id": "bobbie.laundry@beatles.ai",
-      "agent_model": {
-        "id": "ANTHROPIC/claude-sonnet-4/4.6",
-        "name": "claude-sonnet-4",
-        "version": "4.6",
-        "provider": "ANTHROPIC",
-        "kind": "PREBUILT"
-      },
-      "license_profiles": [
-        {
-          "name": "claude-pro",
-          "tier": "INDIVIDUAL",
-          "license_data": {
-            "licensed_user": "bobbie.laundry@beatles.ai",
-            "plan": "pro"
-          }
-        }
-      ]
-    }
+  "Group E": {
+   "id": "Group E",
+   "member_user_ids": [
+    "mike.richard@beatles.ai"
+   ],
+   "name": "Group E"
   }
+ },
+ "users": {
+  "matt.james@beatles.ai": {
+   "id": "matt.james@beatles.ai",
+   "username": "matt.james@beatles.ai",
+   "name": "Matt James",
+   "status": "ENABLED"
+  },
+  "marcus.smith@beatles.ai": {
+   "id": "marcus.smith@beatles.ai",
+   "username": "marcus.smith@beatles.ai",
+   "name": "Marcus Smith",
+   "status": "ENABLED"
+  },
+  "matt.cooper@beatles.ai": {
+   "id": "matt.cooper@beatles.ai",
+   "username": "matt.cooper@beatles.ai",
+   "name": "Matt Cooper",
+   "status": "ENABLED"
+  },
+  "fred.marsh@beatles.ai": {
+   "id": "id-fred.marsh@beatles.ai",
+   "username": "fred.marsh@beatles.ai",
+   "name": "Fred Marsh",
+   "status": "ENABLED"
+  },
+  "richar.Mike@beatles.ai": {
+   "id": "richar.Mike@beatles.ai",
+   "username": "richar.Mike@beatles.ai",
+   "name": "Richard Mike",
+   "status": "ENABLED"
+  },
+  "samy.joseph@beatles.ai": {
+   "id": "samy.joseph@beatles.ai",
+   "username": "samy.joseph@beatles.ai",
+   "name": "Samy Joseph",
+   "status": "ENABLED"
+  },
+  "hail.mary@beatles.ai": {
+   "id": "hail.mary@beatles.ai",
+   "username": "hail.mary@beatles.ai",
+   "name": "Hail Mary",
+   "status": "ENABLED"
+  },
+  "abby.palmer@beatles.ai": {
+   "hr_type": "EMPLOYEE",
+   "id": "abby.palmer@beatles.ai",
+   "name": "Abby Palmer",
+   "status": "ENABLED",
+   "username": "abby.palmer@beatles.ai"
+  },
+  "bobbie.laundry@beatles.ai": {
+   "hr_type": "CONTINGENT_WORKER",
+   "id": "bobbie.laundry@beatles.ai",
+   "name": "Bobbie Laundry",
+   "status": "ENABLED",
+   "username": "bobbie.laundry@beatles.ai"
+  },
+  "chip.brown@beatles.ai": {
+   "hr_type": "EMPLOYEE",
+   "id": "chip.brown@beatles.ai",
+   "name": "Brown Chip",
+   "status": "ENABLED",
+   "username": "chip.brown@beatles.ai"
+  },
+  "devin.chapman@beatles.ai": {
+   "hr_type": "EMPLOYEE",
+   "id": "devin.chapman@beatles.ai",
+   "name": "Devin Chapman",
+   "status": "ENABLED",
+   "username": "devin.chapman@beatles.ai"
+  },
+  "jane.doe@beatles.ai": {
+   "hr_type": "EMPLOYEE",
+   "id": "jane.doe@beatles.ai",
+   "name": "Jane Doe",
+   "status": "ENABLED",
+   "username": "jane.doe@beatles.ai"
+  },
+  "john.smith@beatles.ai": {
+   "hr_type": "EMPLOYEE",
+   "id": "john.smith@beatles.ai",
+   "name": "John Smith",
+   "status": "ENABLED",
+   "username": "john.smith@beatles.ai"
+  },
+  "kieran.juarez@beatles.ai": {
+   "hr_type": "EMPLOYEE",
+   "id": "kieran.juarez@beatles.ai",
+   "name": "Kieran Juarez",
+   "status": "ENABLED",
+   "username": "kieran.juarez@beatles.ai"
+  },
+  "mike.richard@beatles.ai": {
+   "hr_type": "EMPLOYEE",
+   "id": "mike.richard@beatles.ai",
+   "name": "Mike Richard",
+   "status": "ENABLED",
+   "username": "mike.richard@beatles.ai",
+   "hris_attributes": {
+    "email": "mike.richard@beatles.ai",
+    "org_name": "Engineering",
+    "business_title": "Sr. HR Administrator",
+    "manager_id": "ashley.porter@beatles.ai",
+    "manager_name": "Ashley, Porter",
+    "position_title": "Sr. HR Administrator",
+    "division": "North America",
+    "city": "Lindon",
+    "state": "Utah",
+    "country": "United States",
+    "hire_date": "2025-01-06T00:00:00Z",
+    "termination_date": "2030-02-06T00:00:00Z"
+   },
+   "idp_attributes_map": {
+    "cost_center": "4242",
+    "security_clearance": "Top Secret"
+   }
+  },
+  "ashley.porter@beatles.ai": {
+   "hr_type": "EMPLOYEE",
+   "id": "ashley.porter@beatles.ai",
+   "name": "Ashley Porter",
+   "status": "ENABLED",
+   "username": "ashley.porter@beatles.ai"
+  }
+ },
+ "nhis": {
+  "application-1": {
+   "id": "app-uuid-00001",
+   "username": "application-1",
+   "name": "Application 1 Service Identity",
+   "owner_id": "matt.james@beatles.ai",
+   "custodian_id": "marcus.smith@beatles.ai",
+   "status": "ENABLED"
+  },
+  "application-2": {
+   "id": "app-uuid-00002",
+   "username": "application-2",
+   "name": "Application 2 Service Identity",
+   "owner_id": "matt.james@beatles.ai",
+   "custodian_id": "marcus.smith@beatles.ai",
+   "status": "ENABLED"
+  },
+  "application-3": {
+   "id": "app-uuid-00003",
+   "username": "application-3",
+   "name": "Application 3 Service Identity",
+   "owner_id": "matt.cooper@beatles.ai",
+   "custodian_id": "matt.james@beatles.ai",
+   "status": "ENABLED"
+  },
+  "application-4": {
+   "id": "app-uuid-00004",
+   "username": "application-4",
+   "name": "Application 4 Service Identity",
+   "owner_id": "matt.cooper@beatles.ai",
+   "custodian_id": "marcus.smith@beatles.ai",
+   "status": "DISABLED"
+  },
+  "application-5": {
+   "id": "app-uuid-00005",
+   "username": "application-5",
+   "name": "Application 5 Service Identity",
+   "owner_id": "marcus.smith@beatles.ai",
+   "custodian_id": "matt.cooper@beatles.ai",
+   "status": "ENABLED"
+  }
+ },
+ "scopes": {
+  "Server A": {
+   "id": "Server A",
+   "name": "Server A",
+   "type": "FOLDER"
+  },
+  "Server A/Drive:\\location\\finance\\Reports": {
+   "id": "Server A/Drive:\\location\\finance\\Reports",
+   "name": "Drive:\\location\\finance\\Reports",
+   "parent_scope_id": "Server A",
+   "type": "ACCOUNT"
+  },
+  "Server A/Drive:\\location\\general\\Team Folder": {
+   "id": "Server A/Drive:\\location\\general\\Team Folder",
+   "name": "Drive:\\location\\general\\Team Folder",
+   "parent_scope_id": "Server A",
+   "type": "ACCOUNT"
+  },
+  "Server B": {
+   "id": "Server B",
+   "name": "Server B",
+   "type": "FOLDER"
+  },
+  "Server B/Drive:\\projects\\Engineering": {
+   "id": "Server B/Drive:\\projects\\Engineering",
+   "name": "Drive:\\projects\\Engineering",
+   "parent_scope_id": "Server B",
+   "type": "ACCOUNT"
+  }
+ },
+ "roles": {
+  "beatles-matt-cooper-role": {
+   "id": "beatles-matt-cooper-role",
+   "name": "beatles-matt-cooper-role",
+   "type": "CUSTOM_APP_USER_ROLE",
+   "permissions": [
+    "pManageUsers",
+    "pModifyBank",
+    "pModifyBilling",
+    "pViewOrg",
+    "pViewBank",
+    "pViewBilling",
+    "pViewCheckInfo",
+    "pViewCheckImage",
+    "pDataEntry",
+    "pViewCheckReports",
+    "pViewTxnReports",
+    "pMergeRecords",
+    "pImpersonation",
+    "pDoCsEmulation",
+    "pManualCharges",
+    "pAccessToHighSecurityPartnersData",
+    "pAccessHIPAAOrgs",
+    "pViewRiskProfile",
+    "pVirtualCardPFY",
+    "pViewChecks",
+    "pManageVendorsAdvanced",
+    "enabedBillbaseUI",
+    "enabledNewSuperOrgPage"
+   ]
+  },
+  "riskops_manager": {
+   "id": "riskops_manager",
+   "name": "riskops_manager",
+   "type": "CUSTOM_APP_ROLE",
+   "permissions": [
+    "pModifyData",
+    "pModifyBank",
+    "pModifyVerify",
+    "pModifyBilling",
+    "pPrintChecks",
+    "pViewOrg",
+    "pViewACH",
+    "pViewBank",
+    "pViewPositivePay",
+    "pViewBilling",
+    "pViewVerify",
+    "pViewCheckInfo",
+    "pEnterVoidChecks",
+    "pViewCheckImage",
+    "pModifyCheckImage",
+    "pDataEntry",
+    "pViewCheckFiles",
+    "pViewCheckReports",
+    "pViewTxnReports",
+    "pEditFraudControl",
+    "pModifyFundingBank",
+    "pMergeRecords",
+    "pModifyEmail",
+    "pImpersonation",
+    "pDoCsEmulation",
+    "pARApproval",
+    "pViewTaxIdReports",
+    "pUpdateOrgBilling",
+    "pManualCharges",
+    "pManualRefunds",
+    "pAccessToHighSecurityPartnersData",
+    "pManageIntlPayments",
+    "pModifyPayment",
+    "pAccessToTinEin",
+    "pPhotoIDVerification",
+    "pAccessHIPAAOrgs",
+    "pManageWalletBalance",
+    "pViewRiskProfile",
+    "pViewComplianceFields",
+    "pEditComplianceFields",
+    "pVirtualCardPFY",
+    "pViewChecks"
+   ]
+  },
+  "processing_l1": {
+   "id": "processing_l1",
+   "name": "processing_l1",
+   "type": "CUSTOM_APP_ROLE",
+   "permissions": [
+    "pModifyData",
+    "pModifyBank",
+    "pModifyBilling",
+    "pViewOrg",
+    "pViewBank",
+    "pViewBilling",
+    "pViewCheckInfo",
+    "pViewCheckImage",
+    "pDataEntry",
+    "pViewTxnReports",
+    "pMergeRecords",
+    "pModifyEmail",
+    "pImpersonation",
+    "pDoCsEmulation",
+    "pUpdateOrgBilling",
+    "pManualCharges",
+    "pManualRefunds",
+    "pPhotoIDVerification",
+    "pEditTaxExempt",
+    "pAccessHIPAAOrgs",
+    "pEditPaymentStatus",
+    "pManageBillingDiscounts",
+    "pViewChecks",
+    "pManageVendorsAdvanced",
+    "enabedBillbaseUI",
+    "enabledNewSuperOrgPage"
+   ]
+  },
+  "partner_support_l1": {
+   "id": "partner_support_l1",
+   "name": "partner_support_l1",
+   "type": "CUSTOM_APP_ROLE",
+   "permissions": [
+    "pModifyData",
+    "pModifyBank",
+    "pModifyBilling",
+    "pViewOrg",
+    "pViewBank",
+    "pViewBilling",
+    "pViewCheckInfo",
+    "pViewCheckImage",
+    "pDataEntry",
+    "pViewCheckReports",
+    "pViewTxnReports",
+    "pMergeRecords",
+    "pImpersonation",
+    "pDoCsEmulation",
+    "pManualCharges",
+    "pAccessToHighSecurityPartnersData",
+    "pAccessHIPAAOrgs",
+    "pViewRiskProfile",
+    "pVirtualCardPFY",
+    "pViewChecks",
+    "pManageVendorsAdvanced",
+    "enabedBillbaseUI",
+    "enabledNewSuperOrgPage"
+   ]
+  },
+  "internal_support_l1": {
+   "id": "internal_support_l1",
+   "name": "internal_support_l1",
+   "type": "CUSTOM_APP_ROLE",
+   "permissions": [
+    "pModifyData",
+    "pModifyBank",
+    "pModifyBilling",
+    "pViewOrg",
+    "pViewACH",
+    "pViewBilling",
+    "pViewCheckInfo",
+    "pViewCheckImage",
+    "pModifyCheckImage",
+    "pDataEntry",
+    "pViewCheckReports",
+    "pViewTxnReports",
+    "pMergeRecords",
+    "pModifyEmail",
+    "pImpersonation",
+    "pDoCsEmulation",
+    "pSyncTools",
+    "pUpdateOrgBilling",
+    "pSyncConfig",
+    "pAccessHIPAAOrgs",
+    "pViewRiskProfile",
+    "pViewChecks",
+    "pManageVendorsAdvanced",
+    "enabedBillbaseUI"
+   ]
+  },
+  "tech_support_l1": {
+   "id": "tech_support_l1",
+   "name": "tech_support_l1",
+   "type": "CUSTOM_APP_ROLE",
+   "permissions": [
+    "pModifyData",
+    "pModifyBank",
+    "pModifyBilling",
+    "pViewOrg",
+    "pViewACH",
+    "pViewBank",
+    "pViewBilling",
+    "pViewCheckInfo",
+    "pViewCheckImage",
+    "pModifyCheckImage",
+    "pDataEntry",
+    "pViewCheckReports",
+    "pViewTxnReports",
+    "pMergeRecords",
+    "pModifyEmail",
+    "pImpersonation",
+    "pDoCsEmulation",
+    "pSyncTools",
+    "pUpdateOrgBilling",
+    "pSyncConfig",
+    "pAccessToHighSecurityPartnersData",
+    "pManageFederatedDomains",
+    "pAccessHIPAAOrgs",
+    "pViewRiskProfile",
+    "pViewChecks",
+    "pManageVendorsAdvanced",
+    "pManageStripeAccount",
+    "enabedBillbaseUI",
+    "enabledNewSuperOrgPage"
+   ]
+  },
+  "Modify": {
+   "id": "Modify",
+   "name": "Modify",
+   "type": "CUSTOM_APP_ROLE",
+   "permissions": [
+    "Modify"
+   ]
+  },
+  "Modify-S": {
+   "id": "Modify-S",
+   "name": "Modify-S",
+   "type": "CUSTOM_APP_ROLE",
+   "permissions": [
+    "Modify-S"
+   ]
+  },
+  "Read": {
+   "id": "Read",
+   "name": "Read",
+   "type": "CUSTOM_APP_ROLE",
+   "permissions": [
+    "Read"
+   ]
+  }
+ },
+ "assignments": {
+  "fred.marsh@beatles.ai_partner_support_l1": {
+   "id": "fred.marsh@beatles.ai_partner_support_l1",
+   "principal_id": "fred.marsh@beatles.ai",
+   "principal_type": "HUMAN",
+   "role_id": "partner_support_l1"
+  },
+  "matt.cooper@beatles.ai_beatles-matt-cooper-role": {
+   "id": "matt.cooper@beatles.ai_beatles-matt-cooper-role",
+   "principal_id": "matt.cooper@beatles.ai",
+   "principal_type": "HUMAN",
+   "role_id": "beatles-matt-cooper-role"
+  },
+  "richar.Mike@beatles.ai_tech_support_l1": {
+   "id": "richar.Mike@beatles.ai_tech_support_l1",
+   "principal_id": "richar.Mike@beatles.ai",
+   "principal_type": "HUMAN",
+   "role_id": "tech_support_l1"
+  },
+  "marcus.smith@beatles.ai_processing_l1": {
+   "id": "marcus.smith@beatles.ai_processing_l1",
+   "principal_id": "marcus.smith@beatles.ai",
+   "principal_type": "HUMAN",
+   "role_id": "processing_l1"
+  },
+  "mike.richard@beatles.ai_processing_l1": {
+   "id": "mike.richard@beatles.ai_processing_l1",
+   "principal_id": "mike.richard@beatles.ai",
+   "principal_type": "HUMAN",
+   "role_id": "processing_l1"
+  },
+  "matt.james@beatles.ai_processing_l1": {
+   "id": "matt.james@beatles.ai_processing_l1",
+   "principal_id": "matt.james@beatles.ai",
+   "principal_type": "HUMAN",
+   "role_id": "processing_l1"
+  },
+  "matt.james@beatles.ai_tech_support_l1": {
+   "id": "matt.james@beatles.ai_tech_support_l1",
+   "principal_id": "matt.james@beatles.ai",
+   "principal_type": "HUMAN",
+   "role_id": "tech_support_l1"
+  },
+  "matt.james@beatles.ai_riskops_manager": {
+   "id": "matt.james@beatles.ai_riskops_manager",
+   "principal_id": "matt.james@beatles.ai",
+   "principal_type": "HUMAN",
+   "role_id": "riskops_manager"
+  },
+  "samy.joseph@beatles.ai_internal_support_l1": {
+   "id": "samy.joseph@beatles.ai_internal_support_l1",
+   "principal_id": "samy.joseph@beatles.ai",
+   "principal_type": "HUMAN",
+   "role_id": "internal_support_l1",
+   "scope_id": "Server A/Drive:\\location\\general\\Team Folder"
+  },
+  "netapp_beatles|Group A|Modify|Server A/Drive:\\location\\general\\Team Folder": {
+   "id": "netapp_beatles|Group A|Modify|Server A/Drive:\\location\\general\\Team Folder",
+   "principal_id": "Group A",
+   "principal_type": "GROUP",
+   "role_id": "Modify",
+   "scope_id": "Server A/Drive:\\location\\general\\Team Folder"
+  },
+  "netapp_beatles|Group B|Modify-S|Server A/Drive:\\location\\finance\\Reports": {
+   "id": "netapp_beatles|Group B|Modify-S|Server A/Drive:\\location\\finance\\Reports",
+   "principal_id": "Group B",
+   "principal_type": "GROUP",
+   "role_id": "Modify-S",
+   "scope_id": "Server A/Drive:\\location\\finance\\Reports"
+  },
+  "netapp_beatles|Group C|Read|Server A/Drive:\\location\\finance\\Reports": {
+   "id": "netapp_beatles|Group C|Read|Server A/Drive:\\location\\finance\\Reports",
+   "principal_id": "Group C",
+   "principal_type": "GROUP",
+   "role_id": "Read",
+   "scope_id": "Server A/Drive:\\location\\finance\\Reports"
+  },
+  "netapp_beatles|Group D|Modify|Server B/Drive:\\projects\\Engineering": {
+   "id": "netapp_beatles|Group D|Modify|Server B/Drive:\\projects\\Engineering",
+   "principal_id": "Group D",
+   "principal_type": "GROUP",
+   "role_id": "Modify",
+   "scope_id": "Server B/Drive:\\projects\\Engineering"
+  },
+  "netapp_beatles|Group D|Read|Server B/Drive:\\projects\\Engineering": {
+   "id": "netapp_beatles|Group D|Read|Server B/Drive:\\projects\\Engineering",
+   "principal_id": "Group D",
+   "principal_type": "GROUP",
+   "role_id": "Read",
+   "scope_id": "Server B/Drive:\\projects\\Engineering"
+  },
+  "netapp_beatles|Group E|Read|Server A/Drive:\\location\\general\\Team Folder": {
+   "id": "netapp_beatles|Group E|Read|Server A/Drive:\\location\\general\\Team Folder",
+   "principal_id": "Group E",
+   "principal_type": "GROUP",
+   "role_id": "Read",
+   "scope_id": "Server A/Drive:\\location\\general\\Team Folder"
+  }
+ },
+ "resources": {
+  "resource-finance-reports-db": {
+   "id": "resource-finance-reports-db",
+   "name": "Finance Reports Database",
+   "parent_scope_id": "Server A/Drive:\\location\\finance\\Reports",
+   "parent_scope_type": "ACCOUNT",
+   "resource_properties": {
+    "type": "database",
+    "engine": "postgres",
+    "region": "us-east-1"
+   },
+   "is_enabled": true,
+   "owners": [
+    "matt.james@beatles.ai",
+    "marcus.smith@beatles.ai"
+   ],
+   "tags": [
+    {
+     "key": "env",
+     "value": "production"
+    },
+    {
+     "key": "team",
+     "value": "finance"
+    }
+   ]
+  },
+  "resource-team-folder-docs": {
+   "id": "resource-team-folder-docs",
+   "name": "Team Shared Documents",
+   "parent_scope_id": "Server A/Drive:\\location\\general\\Team Folder",
+   "parent_scope_type": "ACCOUNT",
+   "resource_properties": {
+    "type": "storage",
+    "path": "Drive:\\location\\general\\Team Folder\\docs",
+    "size_mb": 2048
+   },
+   "is_enabled": true,
+   "owners": [
+    "chip.brown@beatles.ai"
+   ],
+   "tags": [
+    {
+     "key": "env",
+     "value": "production"
+    },
+    {
+     "key": "classification",
+     "value": "internal"
+    }
+   ]
+  },
+  "resource-laptop-mike.richard": {
+   "id": "resource-laptop-mike.richard",
+   "name": "Mike Richard's Laptop",
+   "parent_scope_id": "Server A/Drive:\\location\\general\\Team Folder",
+   "parent_scope_type": "ACCOUNT",
+   "resource_properties": {
+    "type": "device",
+    "device_type": "laptop",
+    "os": "macOS",
+    "serial_number": "C02XR1XMJGH5"
+   },
+   "is_enabled": true,
+   "owners": [
+    "mike.richard@beatles.ai"
+   ],
+   "tags": [
+    {
+     "key": "owner",
+     "value": "mike.richard@beatles.ai"
+    },
+    {
+     "key": "device_type",
+     "value": "laptop"
+    }
+   ]
+  },
+  "resource-laptop-bobbie.laundry": {
+   "id": "resource-laptop-bobbie.laundry",
+   "name": "Bobbie Laundry's Laptop",
+   "parent_scope_id": "Server A/Drive:\\location\\general\\Team Folder",
+   "parent_scope_type": "ACCOUNT",
+   "resource_properties": {
+    "type": "device",
+    "device_type": "laptop",
+    "os": "macOS",
+    "serial_number": "C02YK9XMJGH6"
+   },
+   "is_enabled": true,
+   "owners": [
+    "bobbie.laundry@beatles.ai"
+   ],
+   "tags": [
+    {
+     "key": "owner",
+     "value": "bobbie.laundry@beatles.ai"
+    },
+    {
+     "key": "device_type",
+     "value": "laptop"
+    }
+   ]
+  }
+ },
+ "agents": {
+  "agent-cursor-mike.richard": {
+   "id": "agent-cursor-mike.richard",
+   "name": "Cursor (mike.richard@beatles.ai)",
+   "end_user_auth_type": "OAUTH_PER_USER",
+   "device_id": "resource-laptop-mike.richard",
+   "user_id": "mike.richard@beatles.ai",
+   "agent_model": {
+    "id": "ANTHROPIC/claude-sonnet-4/4.6",
+    "name": "claude-sonnet-4",
+    "version": "4.6",
+    "provider": "ANTHROPIC",
+    "kind": "PREBUILT"
+   },
+   "license_profiles": [
+    {
+     "name": "cursor-pro",
+     "tier": "INDIVIDUAL",
+     "license_data": {
+      "licensed_user": "mike.richard@beatles.ai",
+      "plan": "pro"
+     }
+    }
+   ]
+  },
+  "agent-claude-desktop-mike.richard": {
+   "id": "agent-claude-desktop-mike.richard",
+   "name": "Claude Desktop (mike.richard@beatles.ai)",
+   "end_user_auth_type": "OAUTH_PER_USER",
+   "device_id": "resource-laptop-mike.richard",
+   "user_id": "mike.richard@beatles.ai",
+   "agent_model": {
+    "id": "ANTHROPIC/claude-sonnet-4/4.6",
+    "name": "claude-sonnet-4",
+    "version": "4.6",
+    "provider": "ANTHROPIC",
+    "kind": "PREBUILT"
+   },
+   "license_profiles": [
+    {
+     "name": "claude-pro",
+     "tier": "INDIVIDUAL",
+     "license_data": {
+      "licensed_user": "mike.richard@beatles.ai",
+      "plan": "pro"
+     }
+    }
+   ]
+  },
+  "agent-antigravity-mike.richard": {
+   "id": "agent-antigravity-mike.richard",
+   "name": "Antigravity (mike.richard@beatles.ai)",
+   "end_user_auth_type": "OAUTH_PER_USER",
+   "device_id": "resource-laptop-mike.richard",
+   "user_id": "mike.richard@beatles.ai",
+   "agent_model": {
+    "id": "AGENT_MODEL_PROVIDER_UNKNOWN/antigravity/",
+    "name": "antigravity",
+    "version": "",
+    "provider": "AGENT_MODEL_PROVIDER_UNKNOWN",
+    "kind": "AGENT_MODEL_KIND_UNSPECIFIED"
+   },
+   "license_profiles": [
+    {
+     "name": "antigravity-standard",
+     "tier": "INDIVIDUAL",
+     "license_data": {
+      "licensed_user": "mike.richard@beatles.ai"
+     }
+    }
+   ]
+  },
+  "agent-claude-desktop-bobbie.laundry": {
+   "id": "agent-claude-desktop-bobbie.laundry",
+   "name": "Claude Desktop (bobbie.laundry@beatles.ai)",
+   "end_user_auth_type": "OAUTH_PER_USER",
+   "device_id": "resource-laptop-bobbie.laundry",
+   "user_id": "bobbie.laundry@beatles.ai",
+   "agent_model": {
+    "id": "ANTHROPIC/claude-sonnet-4/4.6",
+    "name": "claude-sonnet-4",
+    "version": "4.6",
+    "provider": "ANTHROPIC",
+    "kind": "PREBUILT"
+   },
+   "license_profiles": [
+    {
+     "name": "claude-pro",
+     "tier": "INDIVIDUAL",
+     "license_data": {
+      "licensed_user": "bobbie.laundry@beatles.ai",
+      "plan": "pro"
+     }
+    }
+   ]
+  }
+ },
+ "apps": {
+  "app-001": {
+   "id": "app-001",
+   "name": "HR Portal",
+   "owners": [
+    "alice@example.com",
+    "bob@example.com"
+   ],
+   "entitlement_types": [
+    "role",
+    "permission"
+   ],
+   "auth": {
+    "method": "sso",
+    "idp_name": "Okta"
+   }
+  },
+  "app-002": {
+   "id": "app-002",
+   "name": "Finance Suite",
+   "owners": [
+    "carol@example.com"
+   ],
+   "entitlement_types": [
+    "role"
+   ],
+   "auth": {
+    "method": "scim",
+    "idp_name": "Azure AD"
+   }
+  },
+  "app-003": {
+   "id": "app-003",
+   "name": "Dev Tools",
+   "owners": [
+    "dave@example.com",
+    "eve@example.com"
+   ],
+   "entitlement_types": [
+    "role",
+    "permission",
+    "group"
+   ],
+   "auth": null
+  },
+  "app-004": {
+   "id": "app-004",
+   "name": "Customer Support Platform",
+   "owners": [
+    "frank@example.com"
+   ],
+   "entitlement_types": [
+    "role",
+    "group"
+   ],
+   "auth": {
+    "method": "sso",
+    "idp_name": "OneLogin"
+   }
+  },
+  "app-005": {
+   "id": "app-005",
+   "name": "Data Warehouse",
+   "owners": [
+    "grace@example.com",
+    "hank@example.com"
+   ],
+   "entitlement_types": [
+    "permission"
+   ],
+   "auth": {
+    "method": "scim",
+    "idp_name": "Okta"
+   }
+  }
+ }
 }

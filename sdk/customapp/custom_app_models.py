@@ -286,7 +286,7 @@ class CustomAppNhiV2:
     username: str
     name: str
     id: str
-    # type: Optional[str] = NhiType.CUSTOM_APP_NHI.name
+    type: Optional[str] = NhiType.CUSTOM_APP_NHI.name
     is_external_client: Optional[bool] = False
     owner_id: Optional[str] = None
     custodian_id: Optional[str] = None
@@ -474,6 +474,9 @@ class CustomAppResource:
     # Per-product collection failures on a resource that did answer, e.g. ["claude"].
     # Matches customapp_resource.proto#11.
     unreported_products: List[str] = field(default_factory=list)
+    # Why a resource that did not answer could not be reached, e.g.
+    # "batch-init: Could not establish sensor comms". Matches customapp_resource.proto#12.
+    collection_error: Optional[str] = None
 
 
 @dataclass

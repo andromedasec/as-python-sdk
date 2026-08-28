@@ -10,6 +10,23 @@ from api.graphql import graphql_query_snippets as gql_snippets
 logger = logging.getLogger(__name__)
 logging.getLogger("gql").setLevel(logging.ERROR)
 
+# Every test here talks to a running apiserver, so the whole module is gated
+# behind the `live` marker (deselected by `make test`, run by `make test.live`).
+pytestmark = pytest.mark.live
+
+
+def _missing_fixture(message: str):
+    """Fail in strict mode, skip otherwise. Never returns.
+
+    Mirrors policy_author/tests/test_catalog_tools.py. Credentials prove you can
+    reach an apiserver; they say nothing about what the tenant contains. A local
+    bringup typically has no JIT eligibility data, so tests that need it skip
+    rather than fail. Set AS_LIVE_STRICT=1 (make test.live LIVE_STRICT=1) against
+    a seeded tenant, where absent data IS a regression.
+    """
+    if os.getenv("AS_LIVE_STRICT", "").lower() not in ("", "0", "false", "no"):
+        raise AssertionError(f"{message}\n(AS_LIVE_STRICT is set, so this is a failure)")
+    pytest.skip(f"{message}\nSet AS_LIVE_STRICT=1 to make this a failure instead.")
 
 
 @pytest.fixture(name="ai", scope="module")
@@ -22,7 +39,16 @@ def ai_fixture():
     elif session_cookie:
         api_session = au.get_api_session_w_cookie(session_cookie)
     else:
-        raise ValueError("No API token or session cookie provided")
+        msg = (
+            "sdk live tests need a logged-in tenant: export AS_API_TOKEN "
+            "(or AS_SESSION_COOKIE) and run against a local apiserver. "
+            "Use `make test.live` in services/ai-agent, which checks this up front."
+        )
+        # In CI a missing token means the job is misconfigured — fail loudly so it
+        # can't pass vacuously. Locally, skip so the suite stays green without creds.
+        if os.getenv("CI"):
+            pytest.fail(msg)
+        pytest.skip(msg)
     gql_endpoint = os.getenv("AS_GQL_ENDPOINT", "http://localhost:8088/graphql")
     ai = AndromedaInventory(None, api_session, output_dir="/tmp/andromeda-inventory/test_as_inventory/", gql_endpoint=gql_endpoint)
     return ai
@@ -216,9 +242,15 @@ def test_identity_eligible_resources(ai: AndromedaInventory):
     """
     identity_filter = {"email": {"icontains": "bobbie.landry"}}
     identity = next(ai.as_humans_itr(filters=identity_filter))
-    logger.debug("Identity: %s eligible resources count %s", identity["id"],
-        len(list(ai.as_identity_eligible_resources_itr(identity["id"]))))
-    for resource in ai.as_identity_eligible_resources_itr(identity["id"]):
+    resources = list(ai.as_identity_eligible_resources_itr(identity["id"]))
+    logger.debug("Identity: %s eligible resources count %s", identity["id"], len(resources))
+    if not resources:
+        # Without this the loop below body-never-executes and the test passes vacuously.
+        _missing_fixture(
+            f"identity {identity['id']} has no JIT-eligible resources; this tenant "
+            "has no eligibility policies seeded"
+        )
+    for resource in resources:
         logger.debug("Identity eligible resource: %s", resource)
         assert resource["serviceType"], f"Service type is missing for {resource}"
         assert resource["scopeId"], f"Scope ID is missing for {resource}"
@@ -235,7 +267,14 @@ def test_identity_eligible_resource_roles(ai: AndromedaInventory):
     """
     identity_filter = {"email": {"icontains": "bobbie.landry"}}
     identity = next(ai.as_humans_itr(filters=identity_filter))
-    resource = next(ai.as_identity_eligible_resources_itr(identity["id"]))
+    resource = next(ai.as_identity_eligible_resources_itr(identity["id"]), None)
+    if resource is None:
+        # Bare next() here raised StopIteration, which surfaces as an inscrutable
+        # test error rather than "this tenant has no eligibility data".
+        _missing_fixture(
+            f"identity {identity['id']} has no JIT-eligible resources; this tenant "
+            "has no eligibility policies seeded"
+        )
     filters = {
         "scopeId": {"equals": resource["scopeId"]},
         "serviceType": {"equals": resource["serviceType"]},
