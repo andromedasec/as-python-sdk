@@ -17,7 +17,11 @@ def convert_to_andromeda_dict(obj: Any) -> Any:
     if isinstance(obj, str):
         return obj
     if isinstance(obj, dict):
-        return {k: convert_to_andromeda_dict(v) for k, v in obj.items() if v}
+        result = {k: convert_to_andromeda_dict(v) for k, v in obj.items() if v}
+        # Feature overrides distinguish absent from empty and preserve explicit false values.
+        if obj.get("provider_features") is not None:
+            result["provider_features"] = obj["provider_features"]
+        return result
     if isinstance(obj, list):
         return [convert_to_andromeda_dict(item) for item in obj if item]
     return obj

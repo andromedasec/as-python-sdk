@@ -52,6 +52,17 @@ CSV File → CustomAppTransformer → Validate → Transform → Export JSON →
 
 ---
 
+## Large Inventories
+
+`CustomAppInventory` retains everything until `export()`. For large inventories, use `InventoryWriter`
+from `sdk.customapp.inventory_writer`; it rotates parts near 8 MB so none approaches Conduit's 20 MB
+message limit (one indivisible oversized object is written alone). One-part output is a normal single file.
+
+```python
+with InventoryWriter(output_dir, app_name="myapp") as out:
+    out.add_user(CustomAppUser(...))
+```
+
 ## Custom App Models
 
 ### Location

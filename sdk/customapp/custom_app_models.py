@@ -3,9 +3,9 @@
 # can use these data files to
 
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from enum import Enum
-from typing import Dict, Optional, List
+from typing import Any, Dict, Optional, List
 import re
 import logging
 
@@ -729,6 +729,24 @@ class CustomAppPermission(CustomAppPermissionV2):
         self.service_name = value
 
 @dataclass
+class CustomAppChildApplication:
+    """An application governed by the source system (e.g. one SailPoint IdentityIQ application).
+
+    Reported by an applications-inventory script; Andromeda creates one child provider per entry
+    and passes its ``id`` to the shared ``app_inventory.py`` script via ``--app-id``. ``attributes`` are
+    metadata fetched from the external system, such as owner, type, or environment. The collector
+    can use it to determine capabilities; Andromeda stores it without interpreting its keys.
+    ``provider_features`` follows the
+    ProviderFeatures JSON schema and replaces the child's capabilities on each discovery.
+    """
+    id: str
+    name: str
+    description: Optional[str] = None
+    attributes: Dict[str, Any] = field(default_factory=dict)
+    provider_features: Optional[Dict[str, Any]] = None
+
+
+@dataclass
 class CustomAppInventory:
     """Container for all custom application inventory data."""
     users: Dict[str, CustomAppUser] = field(default_factory=dict)
@@ -740,6 +758,12 @@ class CustomAppInventory:
     scopes: Dict[str, CustomAppScope] = field(default_factory=dict)
     resources: Dict[str, CustomAppResource] = field(default_factory=dict)
     agents: Dict[str, CustomAppAgent] = field(default_factory=dict)
+    # Only applications-inventory providers report these; every other section stays empty for them.
+    child_applications: Dict[str, CustomAppChildApplication] = field(default_factory=dict)
+
+
+# The top-level sections of an inventory document, derived from the model so they cannot drift.
+INVENTORY_SECTIONS = tuple(f.name for f in fields(CustomAppInventory))
 
 
 def load_inventory_from_json(data: dict) -> CustomAppInventory:
@@ -820,6 +844,10 @@ def load_inventory_from_json(data: dict) -> CustomAppInventory:
                     for s in agent_data['mcp_servers']
                 ]
             inventory.agents[agent_id] = CustomAppAgent(**agent_data)
+
+    if 'child_applications' in data:
+        for app_id, app_data in data['child_applications'].items():
+            inventory.child_applications[app_id] = CustomAppChildApplication(**app_data)
 
     return inventory
 
