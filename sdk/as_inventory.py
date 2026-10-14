@@ -3,7 +3,7 @@
 import argparse
 import os
 import logging
-from typing import Generator, Optional
+from typing import Dict, Generator, List, Optional
 import functools
 import hashlib
 import json
@@ -21,6 +21,7 @@ from gql.transport.requests import RequestsHTTPTransport
 from api.graphql import graphql_query_snippets as gql_snippets
 from gql.transport.exceptions import TransportQueryError
 from sdk.api_utils import APIUtils
+from sdk.gql_partial import execute_allow_partial, has_field, is_not_found
 
 logger = logging.getLogger(__name__)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
@@ -219,13 +220,19 @@ class AndromedaInventory(dict):
         """
         page_size = kwargs.get('page_size', 100)
         max_items = kwargs.get('max_count', 10000)
-        skip = 0
+        # Row to begin at, for callers paging on someone's behalf rather than draining.
+        # Applied server-side through the existing pageArgs; skipping client-side would
+        # re-fetch every earlier page. Note max_items is counted from here, so it caps
+        # rows returned by this call rather than the absolute offset reached.
+        start_skip = kwargs.get('start_skip', 0)
         rate_limit = kwargs.get('rate_limit', 1)
-        for pop_arg in ['page_size', 'skip']:
+        # Paging controls are consumed here, never forwarded: base_fn takes only
+        # (page_size, skip) plus whatever the partial already bound.
+        for pop_arg in ['page_size', 'skip', 'start_skip', 'max_count', 'rate_limit']:
             kwargs.pop(pop_arg, None)
         total: int | None = None
         fetched = 0
-        for skip in range(0, max_items, page_size):
+        for skip in range(start_skip, start_skip + max_items, page_size):
             try:
                 #logger.debug("Fetching items: page_size %s skip %s", page_size, skip)
                 items = base_fn(page_size, skip, *args, **kwargs)
@@ -253,7 +260,13 @@ class AndromedaInventory(dict):
             if len(items) < page_size:
                 # Fewer items returned than the page_size indicates this is the last batch
                 break
-            if total is not None and fetched >= total:
+            # fetched counts from start_skip while total is an absolute row count, so
+            # the offset actually reached is start_skip + fetched. Comparing bare fetched
+            # against total is always the smaller number and so fires LATE, never early:
+            # rows stay correct (the short-page check still ends the loop) but a caller
+            # that started past row 0 spends the extra round trip this check exists to
+            # save. Cost, not corruption — which is why it needs a test to stay fixed.
+            if total is not None and start_skip + fetched >= total:
                 break
             if rate_limit:
                 time.sleep(rate_limit)
@@ -347,6 +360,47 @@ class AndromedaInventory(dict):
             self.as_provider_accounts_base_fn, provider_id, filters)
         for account in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
             yield account
+
+    def resolve_accounts(self, account_id: str = "", account_name: str = "") -> Generator[Dict[str, str], None, None]:
+        """Every (account_id, provider_id) pair matching an exact account_id and/or a
+        case-insensitive account_name substring — AND'd together when both are given.
+        Yields incrementally: when account_id is given, scanning stops at the first match
+        (it identifies a single account, tenant-wide), so a caller that only needs one
+        result never pays for enumerating every remaining provider.
+
+        Andromeda has no tenant-wide account lookup: an account can only be fetched
+        scoped to its provider (provider_accounts_itr). A caller that needs to resolve an
+        account by id or name without already knowing its provider — e.g. to reach an
+        account-scoped connection such as as_account_non_human_identities_itr — has to
+        enumerate every provider's accounts first. This is that enumeration, shared so
+        every such caller does it the same, correct way instead of re-deriving it.
+
+        account_id matches EITHER Andromeda's internal Account.id OR the cloud provider's
+        own native account identifier (Account.providerAccountId — an AWS account number,
+        an Azure subscription id, etc). A user is far more likely to know and mention the
+        native id than Andromeda's internal one, so accepting only the latter would silently
+        return nothing for the common case of someone quoting an account number they can
+        actually see in their own cloud console.
+
+        account_name is a substring match and can legitimately hit accounts in more than
+        one provider; every matching pair is yielded (a caller unioning across all of them,
+        as get_non_human_identities_list does, is the honest answer to genuine ambiguity —
+        silently picking one would just be a new instance of the arbitrary-slice bug this
+        exists to avoid). Yields nothing if neither filter is given, rather than every
+        account in the tenant.
+        """
+        account_name_lower = account_name.strip().lower() if account_name else ""
+        if not account_id and not account_name_lower:
+            return
+        for provider in self.as_provider_itr():
+            for account in self.provider_accounts_itr(provider.get("id")):
+                if account_id and account_id not in (account.get("id"), account.get("providerAccountId")):
+                    continue
+                if account_name_lower and account_name_lower not in (account.get("name") or "").lower():
+                    continue
+                yield {"account_id": account.get("id"), "provider_id": account.get("providerId")}
+                if account_id:
+                    return
 
     def provider_resource_groups_base_fn(self, provider_id: str, account_id: str, filters: dict,
                                         page_size: int, skip: int) -> Generator[list, None, None]:
@@ -465,12 +519,13 @@ class AndromedaInventory(dict):
         return policies
 
     def provider_account_policies_itr(self, provider_id: str, account_id: str,
-                                filters=None, page_size: int = None) -> Generator[dict, None, None]:
+                                filters=None, page_size: int = None,
+                                skip: int = 0) -> Generator[dict, None, None]:
+        """:param skip: row to start at, applied server-side."""
         page_size = page_size if page_size else self.default_page_size
         partial_fn_itr = functools.partial(
             self.as_provider_accounts_policies_data_base_fn, provider_id, account_id, filters)
-        for as_policy in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
-            yield as_policy
+        yield from self.as_gql_generic_itr(partial_fn_itr, page_size=page_size, start_skip=skip)
 
     def as_provider_policies_data_base_fn(
             self, provider_id: str, filters: dict,
@@ -1006,11 +1061,15 @@ class AndromedaInventory(dict):
         logger.debug("num identities returned %s", len(identity_nodes))
         return humans
 
-    def as_humans_itr(self, filters=None, page_size: int = None, *args, **kwargs) -> Generator[dict, None, None]:
+    def as_humans_itr(self, filters=None, page_size: int = None, skip: int = 0,
+                      max_count: int = None, *args, **kwargs) -> Generator[dict, None, None]:
         """
         Get all humans from the inventory
         :param filters: filters to apply to the query
         :param page_size: page size to use for the query
+        :param max_count: override as_gql_generic_itr's default 10,000-row cap for a
+            caller that needs to drain (or detect truncation past) a larger set —
+            e.g. a tenant-wide set diff. Omit to keep the default.
         :param args: additional arguments to pass to the query
         :param kwargs: additional keyword arguments to pass to the query
         :return: generator of human dictionaries
@@ -1018,7 +1077,10 @@ class AndromedaInventory(dict):
         page_size = page_size if page_size else self.default_page_size
         partial_fn_itr = functools.partial(
             self.as_humans_base_fn, filters)
-        yield from self.as_gql_generic_itr(partial_fn_itr, page_size=page_size)
+        itr_kwargs = {"page_size": page_size, "start_skip": skip}
+        if max_count is not None:
+            itr_kwargs["max_count"] = max_count
+        yield from self.as_gql_generic_itr(partial_fn_itr, **itr_kwargs)
 
     def as_humans_user_role_base_fn(self, filters: dict,
                                     page_size: int = 100, skip: int = 0) -> list:
@@ -1065,11 +1127,11 @@ class AndromedaInventory(dict):
         logger.debug("as_humans_user_role_base_fn: num identities returned %s", len(humans))
         return humans
 
-    def as_humans_user_role_itr(self, filters=None, page_size: int = None) -> Generator[dict, None, None]:
+    def as_humans_user_role_itr(self, filters=None, page_size: int = None, skip: int = 0) -> Generator[dict, None, None]:
         """Iterate human identities using USER-role-accessible fields only."""
         page_size = page_size if page_size else self.default_page_size
         partial_fn_itr = functools.partial(self.as_humans_user_role_base_fn, filters)
-        yield from self.as_gql_generic_itr(partial_fn_itr, page_size=page_size)
+        yield from self.as_gql_generic_itr(partial_fn_itr, page_size=page_size, start_skip=skip)
 
     def as_non_humans_identities_base_fn(
             self, filters: dict, page_size: int = 100, skip: int = 0) ->Generator[list, None, None]:
@@ -1124,7 +1186,7 @@ class AndromedaInventory(dict):
         logger.debug("num identities returned %s", len(identity_nodes))
         return non_humans
 
-    def as_non_humans_identities_itr(self, filters=None, page_size: int = None, *args, **kwargs) -> Generator[dict, None, None]:
+    def as_non_humans_identities_itr(self, filters=None, page_size: int = None, skip: int = 0, *args, **kwargs) -> Generator[dict, None, None]:
         """
         Get all non humans from the inventory
         :param filters: filters to apply to the query
@@ -1136,6 +1198,67 @@ class AndromedaInventory(dict):
         page_size = page_size if page_size else self.default_page_size
         partial_fn_itr = functools.partial(
             self.as_non_humans_identities_base_fn, filters)
+        yield from self.as_gql_generic_itr(partial_fn_itr, page_size=page_size, start_skip=skip)
+
+    def as_account_non_human_identities_base_fn(
+            self, account_id: str, provider_id: str, filters: dict,
+            page_size: int, skip: int) -> Generator[list, None, None]:
+        """Non-human identities with an actual presence in ONE account, via the
+        account-scoped Account.serviceIdentities connection.
+
+        Unlike as_non_humans_identities_base_fn (tenant-wide, filterable only by each
+        NHI's single `originAccountId`/`originAccountName`), this is the only correct way
+        to answer "which NHIs are in account X" for an NHI whose origin account differs
+        from an account it also holds bindings in — originAccountName-based filtering,
+        client-side or server-side, silently drops those regardless of how exhaustively
+        the tenant-wide list is scanned, because the field it matches against never says
+        account X for them.
+        """
+        ds = DSLSchema(self.gql_client.schema)
+        query = dsl_gql(DSLQuery(
+            ds.Query.Account(id=account_id, providerId=provider_id).select(
+                ds.Account.serviceIdentities(
+                    pageArgs={"pageSize": page_size, "skip": skip},
+                    filters=filters,
+                ).select(
+                    ds.AccountServiceIdentitiesConnection.edges.select(
+                        ds.AccountServiceIdentityEdge.node.select(
+                            *gql_snippets.list_trivial_fields_ServiceIdentity(ds),
+                        ),
+                        ds.AccountServiceIdentityEdge.serviceIdentityAccountData.select(
+                            *gql_snippets.list_trivial_fields_ServiceIdentityAccountData(ds),
+                            ds.ServiceIdentityAccountData.opsInsights.select(
+                                *gql_snippets.list_trivial_fields_ServiceIdentityOpsInsightData(ds),
+                            ),
+                            ds.ServiceIdentityAccountData.riskFactorsData.select(
+                                *gql_snippets.list_trivial_fields_ServiceIdentityRiskFactorData(ds),
+                            ),
+                        ),
+                    ),
+                )
+            )
+        ))
+        response = self.gql_client.execute(query, get_execution_result=True).formatted
+        account = response["data"].get("Account") or {}
+        edges = ((account.get("serviceIdentities") or {}).get("edges")) or []
+        non_humans = []
+        for edge in edges:
+            non_human = dict(edge["node"])
+            acct_data = edge.get("serviceIdentityAccountData") or {}
+            non_human["opsInsights"] = acct_data.get("opsInsights")
+            non_human["riskFactorsData"] = acct_data.get("riskFactorsData")
+            non_human["activityCount"] = acct_data.get("activityCount")
+            non_human["lastActivityAt"] = acct_data.get("lastActivityAt")
+            non_humans.append(non_human)
+        logger.debug("account %s provider %s: %d NHIs returned", account_id, provider_id, len(non_humans))
+        return non_humans
+
+    def as_account_non_human_identities_itr(
+            self, account_id: str, provider_id: str, filters: dict = None,
+            page_size: int = None) -> Generator[dict, None, None]:
+        page_size = page_size if page_size else self.default_page_size
+        partial_fn_itr = functools.partial(
+            self.as_account_non_human_identities_base_fn, account_id, provider_id, filters)
         yield from self.as_gql_generic_itr(partial_fn_itr, page_size=page_size)
 
 
@@ -1329,6 +1452,13 @@ class AndromedaInventory(dict):
                                     ds.GroupHumanMembersDataConnection.edges.select(
                                         ds.GroupHumanMembersDataEdge.node.select(
                                             *gql_snippets.list_trivial_fields_IdentityOriginData(ds),
+                                            # The Andromeda identity this origin resolves to, so a
+                                            # caller can join group membership straight to identity
+                                            # id (e.g. to diff against a rule's live matches)
+                                            # without a second lookup by originUserId/username.
+                                            ds.IdentityOriginData.identity.select(
+                                                ds.Identity.id(),
+                                            ),
                                         ),
                                     ),
                                     ds.GroupHumanMembersDataConnection.pageInfo.select(
@@ -1345,17 +1475,41 @@ class AndromedaInventory(dict):
             )
         ))
         response = self.gql_client.execute(query, get_execution_result=True).formatted
-        group_data = next(iter(response["data"]['Provider']['groups']['edges']))
+        group_data = next(iter(response["data"]['Provider']['groups']['edges']), None)
+        if group_data is None:
+            # No group with this exact name in this provider — yield nothing rather
+            # than raising, so a caller sees "no members" resolve the same way a
+            # genuinely empty group does and can tell them apart via a name lookup.
+            logger.debug("group %s not found in provider %s", group_name, provider_id)
+            return []
         human_members_nodes = group_data['providerGroupsData']['members']['humanUsers']['edges']
-        human_members = [h['node'] for h in human_members_nodes]
+        human_members = []
+        for h in human_members_nodes:
+            node = h['node']
+            # Flatten the nested identity object to a plain id — None when the origin
+            # has not (yet) resolved to an Andromeda identity, e.g. a stale/orphaned
+            # incarnation; callers that join on identity_id must handle that case
+            # rather than assume every member resolves.
+            node['identity_id'] = (node.pop('identity', None) or {}).get('id')
+            human_members.append(node)
         logger.debug("group %s members: %s page_size %s skip %s",
                      group_name, len(human_members), page_size, skip)
         return human_members
 
-    def as_provider_group_humans_itr(self, provider_id:str, group_name: str, filters: str=None) -> Generator[dict, None, None]:
+    def as_provider_group_humans_itr(self, provider_id: str, group_name: str, filters: dict = None,
+                                     skip: int = 0, max_count: int = None) -> Generator[dict, None, None]:
+        """skip: server-side offset into the group's membership (applied via the
+        query's own pageArgs.skip, same as as_humans_itr) — for a caller paging on
+        someone's behalf rather than draining, so resuming at a later page does not
+        re-walk every earlier one.
+        max_count: override as_gql_generic_itr's default 10,000-row cap — see
+        as_humans_itr. Omit to keep the default."""
         partial_fn_itr = functools.partial(
             self.get_provider_group_human_users_base_fn, provider_id, group_name, filters)
-        for identity_origin_data in self.as_gql_generic_itr(partial_fn_itr):
+        itr_kwargs = {"start_skip": skip}
+        if max_count is not None:
+            itr_kwargs["max_count"] = max_count
+        for identity_origin_data in self.as_gql_generic_itr(partial_fn_itr, **itr_kwargs):
             yield identity_origin_data
 
     def provider_assignable_users_base_fn(self, provider_id: str, provider_data: dict, filters: dict,
@@ -3962,12 +4116,16 @@ class AndromedaInventory(dict):
         logger.debug("num eligible resources returned %s", len(resources))
         return resources
 
-    def as_identity_eligible_resources_itr(self, identity_id: str, filters: Optional[dict]=None, page_size: Optional[int]=None) -> Generator[dict, None, None]:
-        """Iterate through the resources an identity is eligible to request JIT access to."""
+    def as_identity_eligible_resources_itr(self, identity_id: str, filters: Optional[dict]=None,
+                                           page_size: Optional[int]=None,
+                                           skip: int = 0) -> Generator[dict, None, None]:
+        """Iterate through the resources an identity is eligible to request JIT access to.
+
+        :param skip: row to start at, applied server-side.
+        """
         page_size = page_size if page_size else self.default_page_size
         partial_fn_itr = functools.partial(self.as_identity_eligible_resources_base_fn, identity_id, filters)
-        for resource in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
-            yield resource
+        yield from self.as_gql_generic_itr(partial_fn_itr, page_size=page_size, start_skip=skip)
 
     def as_identity_eligible_resource_roles_base_fn(self, identity_id: str, filters: Optional[dict]=None, page_size: Optional[int]=None, skip: Optional[int]=None) -> Generator[dict, None, None]:
         """Base function to iterate through the eligible roles for a chosen resource.
@@ -4020,7 +4178,7 @@ class AndromedaInventory(dict):
             yield role
 
     def as_identity_access_requests_base_fn(self, identity_id: str, filters: dict,
-            page_size: int, skip: int) -> Generator[list, None, None]:
+            page_size: int, skip: int, sort: Optional[str] = None) -> Generator[list, None, None]:
         logger.debug("Fetching access requests identity %s page_size %s skip %s",
                     identity_id, page_size, skip)
         ds = DSLSchema(self.gql_client.schema)
@@ -4033,7 +4191,7 @@ class AndromedaInventory(dict):
                 ds.Identity.email(),
                 ds.Identity.username(),
                 ds.Identity.requests(
-                    pageArgs={"pageSize": page_size, "skip": skip},
+                    pageArgs=self._page_args(page_size, skip, sort),
                     filters=filters).select(
                     ds.IdentityAccessRequestDataConnection.edges.select(
                         ds.IdentityAccessRequestDataEdge.node.select(
@@ -4129,14 +4287,31 @@ class AndromedaInventory(dict):
         response = self.gql_client.execute(query, get_execution_result=True).formatted
         return response["data"]['TenantData']
 
+    @staticmethod
+    def _page_args(page_size: int, skip: int, sort: Optional[str]) -> dict:
+        page_args = {"pageSize": page_size, "skip": skip}
+        if sort:
+            page_args["sort"] = sort
+        return page_args
+
     def as_identity_access_requests_itr(self, identity_id: str, filters: Optional[dict]=None,
-                                        page_size: Optional[int]=None) -> Generator[dict, None, None]:
-        """Iterate through access requests."""
+                                        page_size: Optional[int]=None, skip: int = 0,
+                                        max_count: Optional[int] = None,
+                                        sort: Optional[str] = None) -> Generator[dict, None, None]:
+        """Iterate through an identity's access requests.
+
+        :param skip: row to start at, applied server-side.
+        :param max_count: override as_gql_generic_itr's default 10,000-row cap.
+        :param sort: server-side order, e.g. "-createdAt" for newest first. The server
+            default is most recently updated first.
+        """
         page_size = page_size if page_size else self.default_page_size
         partial_fn_itr = functools.partial(
-            self.as_identity_access_requests_base_fn, identity_id, filters)
-        for request in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
-            yield request
+            self.as_identity_access_requests_base_fn, identity_id, filters, sort=sort)
+        itr_kwargs = {"page_size": page_size, "start_skip": skip}
+        if max_count is not None:
+            itr_kwargs["max_count"] = max_count
+        yield from self.as_gql_generic_itr(partial_fn_itr, **itr_kwargs)
 
     def as_identity_review_requests_base_fn(
             self, identity_id: str, filters: dict,
@@ -4201,13 +4376,16 @@ class AndromedaInventory(dict):
         return results
 
     def as_identity_review_requests_itr(self, identity_id: str, filters: Optional[dict]=None,
-                                        page_size: Optional[int]=None) -> Generator[dict, None, None]:
-        """Iterate through review assignments for a reviewer identity."""
+                                        page_size: Optional[int]=None,
+                                        skip: int = 0) -> Generator[dict, None, None]:
+        """Iterate through review assignments for a reviewer identity.
+
+        :param skip: row to start at, applied server-side.
+        """
         page_size = page_size if page_size else self.default_page_size
         partial_fn_itr = functools.partial(
             self.as_identity_review_requests_base_fn, identity_id, filters)
-        for review in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
-            yield review
+        yield from self.as_gql_generic_itr(partial_fn_itr, page_size=page_size, start_skip=skip)
 
     def as_access_management_requests_base_fn(
             self, filters: dict,
@@ -4280,13 +4458,20 @@ class AndromedaInventory(dict):
         return results
 
     def as_access_management_requests_itr(self, filters: Optional[dict]=None,
-                                          page_size: Optional[int]=None) -> Generator[dict, None, None]:
-        """Iterate over all tenant access requests (admin query, no identity scope required)."""
+                                          page_size: Optional[int]=None, skip: int = 0,
+                                          max_count: Optional[int] = None) -> Generator[dict, None, None]:
+        """Iterate over all tenant access requests (admin query, no identity scope required).
+
+        :param skip: row to start at, applied server-side.
+        :param max_count: override as_gql_generic_itr's default 10,000-row cap.
+        """
         page_size = page_size if page_size else self.default_page_size
         partial_fn_itr = functools.partial(
             self.as_access_management_requests_base_fn, filters or {})
-        for request in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
-            yield request
+        itr_kwargs = {"page_size": page_size, "start_skip": skip}
+        if max_count is not None:
+            itr_kwargs["max_count"] = max_count
+        yield from self.as_gql_generic_itr(partial_fn_itr, **itr_kwargs)
 
     def as_favorites_base_fn(self, filters: Optional[dict], page_size: int, skip: int) -> list:
         """Fetch one page of favorite access request templates."""
@@ -4611,13 +4796,16 @@ class AndromedaInventory(dict):
         logger.debug("num events returned %s", len(recommendations))
         return recommendations
 
-    def as_recommendations_itr(self, filters: dict = None, page_size: int = None) -> Generator[dict, None, None]:
-        """ Iterate through recommendations"""
+    def as_recommendations_itr(self, filters: dict = None, page_size: int = None,
+                               skip: int = 0) -> Generator[dict, None, None]:
+        """Iterate through recommendations.
+
+        :param skip: row to start at, applied server-side.
+        """
         page_size = page_size if page_size else self.default_page_size
         partial_fn_itr = functools.partial(
             self.as_recommendations_base_fn, filters)
-        for recommendation in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
-            yield recommendation
+        yield from self.as_gql_generic_itr(partial_fn_itr, page_size=page_size, start_skip=skip)
 
     def identity_id_from_user_id(self, api_session: requests.Session, api_utils: APIUtils,
         access_request_user_id: str) -> str:
@@ -4697,15 +4885,15 @@ class AndromedaInventory(dict):
         return items
 
     def as_user_attribute_values_itr(self, key: str, value_filters: dict | None = None,
-            page_size: int = None) -> Generator[dict, None, None]:
+            page_size: int = None, skip: int = 0) -> Generator[dict, None, None]:
+        """:param skip: row to start at among the key's values, applied server-side."""
         page_size = page_size if page_size else self.default_page_size
         effective_filters = {}
         if value_filters:
             effective_filters.update(value_filters)
         logger.debug("Fetching user attribute values key=%s value_filters=%s", key, effective_filters)
         partial_fn_itr = functools.partial(self.as_user_attribute_values_base_fn, key, effective_filters)
-        for item in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
-            yield item
+        yield from self.as_gql_generic_itr(partial_fn_itr, page_size=page_size, start_skip=skip)
 
     def as_user_attributes_base_fn(self, filters: dict | None,
             page_size: int, skip: int) -> list:
@@ -4837,12 +5025,12 @@ class AndromedaInventory(dict):
         return items
 
     def as_scopes_itr(self, filters: dict | None = None,
-            page_size: int = None) -> Generator[dict, None, None]:
+            page_size: int = None, skip: int = 0) -> Generator[dict, None, None]:
+        """:param skip: row to start at, applied server-side."""
         page_size = page_size if page_size else self.default_page_size
         logger.debug("Fetching scopes filters=%s", filters)
         partial_fn_itr = functools.partial(self.as_scopes_base_fn, filters)
-        for item in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
-            yield item
+        yield from self.as_gql_generic_itr(partial_fn_itr, page_size=page_size, start_skip=skip)
 
     def as_agents_base_fn(self, filters: dict | None,
             page_size: int = 100, skip: int = 0) -> list:
@@ -4917,6 +5105,375 @@ class AndromedaInventory(dict):
         partial_fn_itr = functools.partial(self.as_resources_base_fn, filters)
         for item in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
             yield item
+
+    # -- Entity tag lookups -------------------------------------------------
+    # One method per Taggable entity exposed in GQL. Each fetches a single node by
+    # id and returns its raw node dict (id, name, tags) or None when not found.
+    # The embedded `tags` field is an unbounded [Tag!] with no pageArgs, so the
+    # graph resolver (ListTagsForTaggable) returns every tag in one read — no tag
+    # pagination is possible or needed. Callers normalise the node for display.
+
+    def get_resource_tags(self, resource_id: str) -> Optional[dict]:
+        """Fetch a single resource's id, name and tags by id.
+
+        Args:
+            resource_id: Andromeda resource UUID.
+
+        Returns:
+            The resource node ``{id, name, tags: [{key, value}]}``, or ``None`` when
+            no resource matches the id.
+        """
+        ds = DSLSchema(self.gql_client.schema)
+        query = dsl_gql(DSLQuery(
+            ds.Query.Resources(
+                filters={"id": {"equals": resource_id}},
+                pageArgs={"pageSize": 1, "skip": 0},
+            ).select(
+                ds.ResourceConnection.edges.select(
+                    ds.ResourceEdge.node.select(
+                        ds.Resource.id,
+                        ds.Resource.name,
+                        ds.Resource.tags.select(ds.Tag.key, ds.Tag.value),
+                    )
+                )
+            )
+        ))
+        response = self.gql_client.execute(query, get_execution_result=True).formatted
+        edges = response["data"]["Resources"]["edges"]
+        return edges[0]["node"] if edges else None
+
+    def get_group_tags(self, group_id: str) -> Optional[dict]:
+        """Fetch a single group's id, name and tags by id.
+
+        Args:
+            group_id: Andromeda group UUID.
+
+        Returns:
+            The group node ``{id, name, tags: [{key, value}]}``, or ``None`` when no
+            group matches the id.
+        """
+        ds = DSLSchema(self.gql_client.schema)
+        query = dsl_gql(DSLQuery(
+            ds.Query.Groups(
+                filters={"id": {"equals": group_id}},
+                pageArgs={"pageSize": 1, "skip": 0},
+            ).select(
+                ds.GroupsConnection.edges.select(
+                    ds.GroupDataEdge.node.select(
+                        ds.Group.id,
+                        ds.Group.name,
+                        ds.Group.tags.select(ds.Tag.key, ds.Tag.value),
+                    )
+                )
+            )
+        ))
+        response = self.gql_client.execute(query, get_execution_result=True).formatted
+        edges = response["data"]["Groups"]["edges"]
+        return edges[0]["node"] if edges else None
+
+    def get_policy_tags(self, policy_id: str, provider_id: str) -> tuple[Optional[dict], bool]:
+        """Fetch a single policy's id, name and tags, scoped to its provider.
+
+        The policy is queried nested under its provider, so a miss can mean either
+        the provider or the policy is absent; the second return value disambiguates.
+
+        Args:
+            policy_id: Andromeda policy UUID.
+            provider_id: Andromeda provider UUID that owns the policy.
+
+        Returns:
+            ``(node, provider_found)`` where ``node`` is ``{id, name, tags:
+            [{key, value}]}`` or ``None`` when the policy is not found, and
+            ``provider_found`` is False only when the provider itself does not exist
+            (so a ``None`` node with ``provider_found=True`` means the provider
+            exists but has no such policy).
+        """
+        ds = DSLSchema(self.gql_client.schema)
+        query = dsl_gql(DSLQuery(
+            # Providers (list), not Provider(id): the singular root raises a 404 error on
+            # a missing provider, the list just comes back empty.
+            ds.Query.Providers(
+                filters={"id": {"equals": provider_id}},
+                pageArgs={"pageSize": 1, "skip": 0},
+            ).select(
+                ds.ProvidersConnection.edges.select(
+                    ds.ProviderEdge.node.select(
+                        ds.Provider.policies(
+                            filters={"id": {"equals": policy_id}},
+                            pageArgs={"pageSize": 1, "skip": 0},
+                        ).select(
+                            ds.PoliciesConnection.edges.select(
+                                ds.PolicyEdge.node.select(
+                                    ds.Policy.id,
+                                    ds.Policy.name,
+                                    ds.Policy.tags.select(ds.Tag.key, ds.Tag.value),
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        ))
+        response = self.gql_client.execute(query, get_execution_result=True).formatted
+        providers = response["data"]["Providers"]["edges"]
+        if not providers:
+            return None, False
+        edges = providers[0]["node"]["policies"]["edges"]
+        return (edges[0]["node"] if edges else None), True
+
+    def get_account_tags(self, account_id: str, provider_id: str) -> Optional[dict]:
+        """Fetch a single account's id, name and tags by id and provider.
+
+        Args:
+            account_id: Andromeda account UUID.
+            provider_id: Andromeda provider UUID that owns the account.
+
+        Returns:
+            The account node ``{id, name, tags}`` (tags are raw provider strings), or
+            ``None`` when no account matches. A flat lookup, so a miss cannot say
+            whether the account or the provider was wrong.
+        """
+        ds = DSLSchema(self.gql_client.schema)
+        query = dsl_gql(DSLQuery(
+            # Accounts (list), not Account(id): the singular root raises a 404 error on a
+            # missing account, the list just comes back empty.
+            ds.Query.Accounts(
+                providerId=provider_id,
+                filters={"id": {"equals": account_id}},
+                pageArgs={"pageSize": 1, "skip": 0},
+            ).select(
+                ds.AccountsConnection.edges.select(
+                    ds.AccountEdge.node.select(
+                        ds.Account.id,
+                        ds.Account.name,
+                        ds.Account.tags,
+                    )
+                )
+            )
+        ))
+        response = self.gql_client.execute(query, get_execution_result=True).formatted
+        edges = response["data"]["Accounts"]["edges"]
+        return edges[0]["node"] if edges else None
+
+    def get_resource_group_tags(self, resource_group_id: str, provider_id: str) -> Optional[dict]:
+        """Fetch a single resource group's id, name and tags by id and provider.
+
+        Args:
+            resource_group_id: Andromeda resource-group UUID.
+            provider_id: Andromeda provider UUID that owns the resource group.
+
+        Returns:
+            The resource-group node ``{id, name, tags: [{key, values: [...]}]}``
+            (tags are multi-value), or ``None`` when no resource group matches.
+        """
+        ds = DSLSchema(self.gql_client.schema)
+        query = dsl_gql(DSLQuery(
+            ds.Query.ResourceGroups(
+                providerId=provider_id,
+                filters={"id": {"equals": resource_group_id}},
+                pageArgs={"pageSize": 1, "skip": 0},
+            ).select(
+                ds.ResourceGroupConnection.edges.select(
+                    ds.ResourceGroupEdge.node.select(
+                        ds.ResourceGroup.id,
+                        ds.ResourceGroup.name,
+                        ds.ResourceGroup.tags.select(
+                            ds.ResourceGroupTag.key,
+                            ds.ResourceGroupTag.values,
+                        ),
+                    )
+                )
+            )
+        ))
+        response = self.gql_client.execute(query, get_execution_result=True).formatted
+        edges = response["data"]["ResourceGroups"]["edges"]
+        return edges[0]["node"] if edges else None
+
+    # --- JML event history (JmlPolicyRuntime) -------------------------------------------
+    # An event is one JmlPolicyRuntime: one JML policy evaluated for one user. These reads
+    # keep the rest of the data when one nested field fails (a deleted policy or rule is a
+    # NotFound error on that field), return the failed paths, and ask for fields newer than
+    # the server (skipReason, ruleEvaluationReason) only when its schema has them.
+
+    def get_jml_policy_runtimes(self, filters: dict, page_size: int,
+                                skip: int = 0) -> tuple[dict, list[str]]:
+        """One page of JML events (newest first) with their trigger, person, status and
+        action counts.
+
+        Args:
+            filters: JmlPolicyRuntimeFilters shape.
+            page_size: Rows for this page (the apiserver rejects more than 100).
+            skip: Rows to skip, for paging.
+
+        Returns:
+            (connection {pageInfo {count}, edges [{node}]}, incomplete_paths).
+        """
+        ds = DSLSchema(self.gql_client.schema)
+        query = dsl_gql(DSLQuery(
+            ds.Query.JmlPolicyRuntimes(
+                filters=filters, pageArgs={"pageSize": page_size, "skip": skip},
+            ).select(
+                ds.JmlPolicyRuntimeConnection.pageInfo.select(ds.PageInfo.count),
+                ds.JmlPolicyRuntimeConnection.edges.select(
+                    ds.JmlPolicyRuntimeEdge.node.select(
+                        ds.JmlPolicyRuntimeNode.id,
+                        ds.JmlPolicyRuntimeNode.jmlPolicy.select(ds.JmlPolicy.id, ds.JmlPolicy.name),
+                        ds.JmlPolicyRuntimeNode.triggerSpecification.select(
+                            ds.TriggerSpecificationNode.eventType,
+                            ds.TriggerSpecificationNode.triggerType,
+                            ds.TriggerSpecificationNode.totalAttemptCount,
+                            ds.TriggerSpecificationNode.identityId,
+                            ds.TriggerSpecificationNode.provider.select(ds.Provider.name),
+                            ds.TriggerSpecificationNode.changedAttributes.select(
+                                ds.ChangedAttributeNode.name,
+                                ds.ChangedAttributeNode.oldValue,
+                                ds.ChangedAttributeNode.newValue,
+                            ),
+                            ds.TriggerSpecificationNode.identity.select(
+                                ds.Identity.name,
+                                ds.Identity.orgInfo.select(
+                                    ds.HrIdentityInfo.hireDate,
+                                    ds.HrIdentityInfo.terminationDate,
+                                    ds.HrIdentityInfo.department,
+                                    ds.HrIdentityInfo.positionTitle,
+                                    ds.HrIdentityInfo.managerName,
+                                ),
+                            ),
+                        ),
+                        ds.JmlPolicyRuntimeNode.executionStatus.select(
+                            ds.ExecutionStatus.status,
+                            ds.ExecutionStatus.startedAt,
+                            ds.ExecutionStatus.completedAt,
+                        ),
+                        ds.JmlPolicyRuntimeNode.policyRuntimeSummary.select(
+                            ds.JmlPolicyRuntimeSummary.totalActionCount,
+                            ds.JmlPolicyRuntimeSummary.actionsGroupedByStatus.select(
+                                ds.JmlPolicyRuntimeActionStatusSummary.status,
+                                ds.JmlPolicyRuntimeActionStatusSummary.count,
+                            ),
+                        ),
+                    )
+                ),
+            )
+        ))
+        data, incomplete = execute_allow_partial(self.gql_client, query)
+        return data.get("JmlPolicyRuntimes") or {}, incomplete
+
+    def jml_policy_runtime_base_fn(self, runtime_id: str, *fields) -> tuple[Optional[dict], list[str]]:
+        """One JmlPolicyRuntime by id with the given extra selections (each a function of
+        the DSLSchema). (None, []) when no event has this id. Shared by the get_jml_policy_
+        runtime_* reads; the _base_fn suffix lets the ai-agent tool registry attribute
+        JmlPolicyRuntime to them."""
+        ds = DSLSchema(self.gql_client.schema)
+        query = dsl_gql(DSLQuery(
+            ds.Query.JmlPolicyRuntime(id=runtime_id).select(
+                ds.JmlPolicyRuntimeNode.id,
+                ds.JmlPolicyRuntimeNode.jmlPolicy.select(ds.JmlPolicy.name),
+                *[f(ds) for f in fields],
+            )
+        ))
+        try:
+            data, incomplete = execute_allow_partial(self.gql_client, query)
+        except TransportQueryError as exc:
+            if is_not_found(exc):
+                return None, []
+            raise
+        return data.get("JmlPolicyRuntime"), incomplete
+
+    def get_jml_policy_runtime_head(self, runtime_id: str) -> tuple[Optional[dict], list[str]]:
+        """One JML event's policy, type, attempt count and status.
+
+        Returns:
+            (node or None when no event has this id, incomplete_paths).
+        """
+        return self.jml_policy_runtime_base_fn(
+            runtime_id,
+            lambda ds: ds.JmlPolicyRuntimeNode.triggerSpecification.select(
+                ds.TriggerSpecificationNode.eventType,
+                ds.TriggerSpecificationNode.totalAttemptCount,
+            ),
+            lambda ds: ds.JmlPolicyRuntimeNode.executionStatus.select(
+                ds.ExecutionStatus.status,
+                ds.ExecutionStatus.startedAt,
+                ds.ExecutionStatus.completedAt,
+            ),
+        )
+
+    def get_jml_policy_runtime_actions(self, runtime_id: str, filters: dict,
+                                       page_size: int) -> tuple[Optional[dict], list[str]]:
+        """The actions of one JML event in planned order, with errors and, when the server
+        has it, skipReason.
+
+        Args:
+            runtime_id: The JmlPolicyRuntime id.
+            filters: JmlActionRuntimeFilters shape (e.g. attemptCount, status).
+            page_size: Rows to return (at most 100).
+
+        Returns:
+            (node {actions {pageInfo, edges}} or None when no event has this id,
+            incomplete_paths).
+        """
+        node_fields = [
+            "actionType", "status", "attemptCount", "scheduledAt", "startedAt", "completedAt",
+        ]
+        if has_field(self.gql_client.schema, "JmlActionRuntimeNode", "skipReason"):
+            node_fields.append("skipReason")
+        return self.jml_policy_runtime_base_fn(
+            runtime_id,
+            lambda ds: ds.JmlPolicyRuntimeNode.actions(
+                filters=filters, pageArgs={"pageSize": page_size},
+            ).select(
+                ds.JmlActionRuntimeConnection.pageInfo.select(ds.PageInfo.count),
+                ds.JmlActionRuntimeConnection.edges.select(
+                    ds.JmlActionRuntimeEdge.node.select(
+                        *[getattr(ds.JmlActionRuntimeNode, f) for f in node_fields],
+                        ds.JmlActionRuntimeNode.parentJmlRule.select(ds.JmlRule.name),
+                        ds.JmlActionRuntimeNode.errorDetails.select(
+                            ds.ErrorDetails.errorCode, ds.ErrorDetails.errorMessage),
+                    )
+                ),
+            ),
+        )
+
+    def get_jml_policy_runtime_rule_evaluations(
+            self, runtime_id: str, filters: Optional[dict],
+            page_size: int) -> tuple[Optional[dict], list[str]]:
+        """The rule evaluations of one JML event: outcome, per-condition results and, when
+        the server has it, ruleEvaluationReason.
+
+        Args:
+            runtime_id: The JmlPolicyRuntime id.
+            filters: Optional JmlRuleRuntimeFilters shape (e.g. jmlRuleId).
+            page_size: Rows to return (at most 100).
+
+        Returns:
+            (node {triggerSpecification, executionStatus, rules {pageInfo, edges}} or None
+            when no event has this id, incomplete_paths).
+        """
+        node_fields = ["jmlRuleId", "ruleEvaluationStatus"]
+        if has_field(self.gql_client.schema, "JmlRuleRuntimeNode", "ruleEvaluationReason"):
+            node_fields.append("ruleEvaluationReason")
+        args = {"pageArgs": {"pageSize": page_size}}
+        if filters:
+            args["filters"] = filters
+        return self.jml_policy_runtime_base_fn(
+            runtime_id,
+            lambda ds: ds.JmlPolicyRuntimeNode.triggerSpecification.select(
+                ds.TriggerSpecificationNode.eventType),
+            lambda ds: ds.JmlPolicyRuntimeNode.executionStatus.select(
+                ds.ExecutionStatus.startedAt, ds.ExecutionStatus.completedAt),
+            lambda ds: ds.JmlPolicyRuntimeNode.rules(**args).select(
+                ds.JmlRuleRuntimeConnection.pageInfo.select(ds.PageInfo.count),
+                ds.JmlRuleRuntimeConnection.edges.select(
+                    ds.JmlRuleRuntimeEdge.node.select(
+                        *[getattr(ds.JmlRuleRuntimeNode, f) for f in node_fields],
+                        ds.JmlRuleRuntimeNode.jmlRule.select(ds.JmlRule.name),
+                        ds.JmlRuleRuntimeNode.conditionEvaluations.select(
+                            ds.ConditionGroupEvaluation.results),
+                    )
+                ),
+            ),
+        )
 
     def fetch_agents_summary(self, filters: dict | None = None) -> dict:
         """

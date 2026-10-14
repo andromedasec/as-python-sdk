@@ -4,14 +4,11 @@ import json
 import logging
 from pathlib import Path
 
+from sdk.customapp.custom_app_models import INVENTORY_SECTIONS as SECTIONS
+
 logger = logging.getLogger(__name__)
 
 DEFAULT_DATA_FILE = Path(__file__).resolve().parent.parent / "customapp" / "mock_data_v3.json"
-
-SECTIONS = [
-    "users", "nhis", "groups", "scopes", "roles",
-    "permissions", "assignments", "resources", "agents",
-]
 
 
 class DataStore:  # pylint: disable=too-few-public-methods

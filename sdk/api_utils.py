@@ -76,13 +76,20 @@ class APIUtils:
         self.api_session = session
         return session
 
-    def get_api_session_w_cookie(self, cookie: str) -> requests.Session:
+    def get_api_session_w_cookie(self, cookie: str, refresh_token: str = None) -> requests.Session:
         """
         This function returns a requests session object with the correct headers
-        to authenticate with the Andromeda API
+        to authenticate with the Andromeda API.
+
+        When refresh_token is provided it is set as the DSR cookie, so apiserver
+        refreshes an expired DS session instead of returning 401. This is what
+        lets a long-running caller (e.g. a Temporal activity) keep authenticating
+        after the original session token would have expired.
         """
         session = requests.Session()
         session.cookies.set('DS', cookie)
+        if refresh_token:
+            session.cookies.set('DSR', refresh_token)
         return session
 
 

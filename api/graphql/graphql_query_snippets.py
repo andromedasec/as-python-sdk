@@ -178,6 +178,7 @@ def list_trivial_fields_GatewayEvent(ds: DSLSchema):
         ds.GatewayEvent.userIntent,
         ds.GatewayEvent.outcome,
         ds.GatewayEvent.errorReason,
+        ds.GatewayEvent.connectionId,
     )
 
 # End of file: andromeda/nonpublic/graph/gateway_events_service.proto
@@ -593,6 +594,20 @@ def list_trivial_user_fields_TagsGroupedByKey(ds: DSLSchema):
     return (
         ds.TagsGroupedByKey.key,
         ds.TagsGroupedByKey.count,
+    )
+def list_trivial_fields_TagsGroupedByKeyValue(ds: DSLSchema):
+    """ List all trivial fields of the TagsGroupedByKeyValue type """
+    return (
+        ds.TagsGroupedByKeyValue.key,
+        ds.TagsGroupedByKeyValue.value,
+        ds.TagsGroupedByKeyValue.count,
+    )
+def list_trivial_user_fields_TagsGroupedByKeyValue(ds: DSLSchema):
+    """ List trivial fields of the TagsGroupedByKeyValue type accessible to USER role """
+    return (
+        ds.TagsGroupedByKeyValue.key,
+        ds.TagsGroupedByKeyValue.value,
+        ds.TagsGroupedByKeyValue.count,
     )
 
 # End of file: andromeda/nonpublic/graph/tag_service.proto
@@ -1077,6 +1092,22 @@ def list_trivial_user_fields_ToolApplicationAgentAccessSummary(ds: DSLSchema):
         ds.ToolApplicationAgentAccessSummary.numPlatformDiscoveredConnectors,
         ds.ToolApplicationAgentAccessSummary.numAgentsWithBypassableGovernance,
     )
+def list_trivial_fields_AgentToAgentGatewayEndpoint(ds: DSLSchema):
+    """ List all trivial fields of the AgentToAgentGatewayEndpoint type """
+    return (
+        ds.AgentToAgentGatewayEndpoint.gatewayId,
+        ds.AgentToAgentGatewayEndpoint.gatewayName,
+        ds.AgentToAgentGatewayEndpoint.endpointUrl,
+        ds.AgentToAgentGatewayEndpoint.cardUrl,
+    )
+def list_trivial_user_fields_AgentToAgentGatewayEndpoint(ds: DSLSchema):
+    """ List trivial fields of the AgentToAgentGatewayEndpoint type accessible to USER role """
+    return (
+        ds.AgentToAgentGatewayEndpoint.gatewayId,
+        ds.AgentToAgentGatewayEndpoint.gatewayName,
+        ds.AgentToAgentGatewayEndpoint.endpointUrl,
+        ds.AgentToAgentGatewayEndpoint.cardUrl,
+    )
 def list_trivial_fields_ToolApplicationsConnection(ds: DSLSchema):
     """ List all trivial fields of the ToolApplicationsConnection type """
     return (
@@ -1099,6 +1130,7 @@ def list_trivial_fields_ToolApplicationAllowedTool(ds: DSLSchema):
         ds.ToolApplicationAllowedTool.source,
         ds.ToolApplicationAllowedTool.lastUpdatedBy,
         ds.ToolApplicationAllowedTool.updatedAt,
+        ds.ToolApplicationAllowedTool.effectCeiling,
     )
 def list_trivial_fields_ToolApplicationAllowedToolEdge(ds: DSLSchema):
     """ List all trivial fields of the ToolApplicationAllowedToolEdge type """
@@ -1116,6 +1148,7 @@ def list_trivial_fields_ToolApplicationConnectionSummary(ds: DSLSchema):
         ds.ToolApplicationConnectionSummary.description,
         ds.ToolApplicationConnectionSummary.authType,
         ds.ToolApplicationConnectionSummary.isDefault,
+        ds.ToolApplicationConnectionSummary.isPerAgentNhi,
         ds.ToolApplicationConnectionSummary.origin,
     )
 def list_trivial_user_fields_ToolApplicationConnectionSummary(ds: DSLSchema):
@@ -1208,6 +1241,72 @@ def list_trivial_fields_AgentsGroupedByConnectionStatus(ds: DSLSchema):
 
 # End of file: andromeda/nonpublic/graph/distribution.proto
 
+# File: andromeda/nonpublic/graph/delegated_access.proto
+def list_trivial_fields_DelegatedApp(ds: DSLSchema):
+    """ List all trivial fields of the DelegatedApp type """
+    return (
+        ds.DelegatedApp.id,
+        ds.DelegatedApp.name,
+        ds.DelegatedApp.clientId,
+        ds.DelegatedApp.providerId,
+        ds.DelegatedApp.providerType,
+        ds.DelegatedApp.hasTenantWideConsent,
+        ds.DelegatedApp.numUsers,
+        ds.DelegatedApp.numLeftUsers,
+        ds.DelegatedApp.numGrants,
+        ds.DelegatedApp.scopes,
+        ds.DelegatedApp.resourceNames,
+        ds.DelegatedApp.numStaleUsers,
+        ds.DelegatedApp.idpApplicationId,
+        ds.DelegatedApp.idpApplicationName,
+        ds.DelegatedApp.serviceIdentityId,
+        ds.DelegatedApp.serviceIdentityName,
+        ds.DelegatedApp.kind,
+    )
+def list_trivial_fields_DelegatedAppGrant(ds: DSLSchema):
+    """ List all trivial fields of the DelegatedAppGrant type """
+    return (
+        ds.DelegatedAppGrant.id,
+        ds.DelegatedAppGrant.tenantWide,
+        ds.DelegatedAppGrant.userId,
+        ds.DelegatedAppGrant.userName,
+        ds.DelegatedAppGrant.userPrincipalName,
+        ds.DelegatedAppGrant.userState,
+        ds.DelegatedAppGrant.scopes,
+        ds.DelegatedAppGrant.resourceName,
+        ds.DelegatedAppGrant.appId,
+        ds.DelegatedAppGrant.appName,
+        ds.DelegatedAppGrant.clientId,
+        ds.DelegatedAppGrant.providerId,
+        ds.DelegatedAppGrant.providerType,
+        ds.DelegatedAppGrant.identityId,
+        ds.DelegatedAppGrant.identityName,
+        ds.DelegatedAppGrant.identityStale,
+        ds.DelegatedAppGrant.userLeft,
+    )
+def list_trivial_fields_DelegatedAppEdge(ds: DSLSchema):
+    """ List all trivial fields of the DelegatedAppEdge type """
+    return (
+    )
+def list_trivial_fields_DelegatedAppsConnection(ds: DSLSchema):
+    """ List all trivial fields of the DelegatedAppsConnection type """
+    return (
+    )
+def list_trivial_fields_DelegatedAppGrantEdge(ds: DSLSchema):
+    """ List all trivial fields of the DelegatedAppGrantEdge type """
+    return (
+    )
+def list_trivial_fields_DelegatedAppGrantsConnection(ds: DSLSchema):
+    """ List all trivial fields of the DelegatedAppGrantsConnection type """
+    return (
+    )
+def list_trivial_fields_DelegatedAccessGrantsConnection(ds: DSLSchema):
+    """ List all trivial fields of the DelegatedAccessGrantsConnection type """
+    return (
+    )
+
+# End of file: andromeda/nonpublic/graph/delegated_access.proto
+
 # File: andromeda/nonpublic/graph/metrics_service.proto
 def list_trivial_fields_MetricsCollection(ds: DSLSchema):
     """ List all trivial fields of the MetricsCollection type """
@@ -1272,6 +1371,7 @@ def list_trivial_fields_Agent(ds: DSLSchema):
         ds.Agent.createdAt,
         ds.Agent.numUsers,
         ds.Agent.numApplications,
+        ds.Agent.numMcpServers,
         ds.Agent.numNonHumanIdentities,
         ds.Agent.risk,
         ds.Agent.riskLevel,
@@ -1284,6 +1384,7 @@ def list_trivial_fields_Agent(ds: DSLSchema):
         ds.Agent.numAgentsSharingIdentity,
         ds.Agent.isPublishedInternal,
         ds.Agent.isPublishedExternal,
+        ds.Agent.supportsAgentToAgent,
         ds.Agent.endUserAuthType,
         ds.Agent.isNotGoverned,
         ds.Agent.isGoverned,
@@ -1295,6 +1396,8 @@ def list_trivial_fields_Agent(ds: DSLSchema):
         ds.Agent.onboardingState,
         ds.Agent.appsToOnboardCount,
         ds.Agent.onboardingWorkflowId,
+        ds.Agent.shadowAgentType,
+        ds.Agent.shadowAgentDiscoveryMechanisms,
     )
 def list_trivial_user_fields_Agent(ds: DSLSchema):
     """ List trivial fields of the Agent type accessible to USER role """
@@ -1406,6 +1509,46 @@ def list_trivial_fields_AgentDelegation(ds: DSLSchema):
         ds.AgentDelegation.childInstanceId,
         ds.AgentDelegation.refType,
     )
+def list_trivial_fields_AgentSkillConnection(ds: DSLSchema):
+    """ List all trivial fields of the AgentSkillConnection type """
+    return (
+    )
+def list_trivial_fields_AgentSkillEdge(ds: DSLSchema):
+    """ List all trivial fields of the AgentSkillEdge type """
+    return (
+    )
+def list_trivial_fields_AgentSkill(ds: DSLSchema):
+    """ List all trivial fields of the AgentSkill type """
+    return (
+        ds.AgentSkill.id,
+        ds.AgentSkill.name,
+        ds.AgentSkill.description,
+        ds.AgentSkill.externalId,
+        ds.AgentSkill.contentHash,
+        ds.AgentSkill.content,
+        ds.AgentSkill.contentTruncatedAt,
+        ds.AgentSkill.source,
+        ds.AgentSkill.version,
+        ds.AgentSkill.providerComponentType,
+        ds.AgentSkill.allowedTools,
+        ds.AgentSkill.referencedTools,
+        ds.AgentSkill.referencedMcpServers,
+        ds.AgentSkill.referencedDomains,
+        ds.AgentSkill.referencedEnvVars,
+        ds.AgentSkill.referencedCommands,
+        ds.AgentSkill.hasScripts,
+        ds.AgentSkill.bundledFiles,
+        ds.AgentSkill.hasShellInjection,
+        ds.AgentSkill.modelInvocable,
+        ds.AgentSkill.createdBy,
+        ds.AgentSkill.modifiedBy,
+        ds.AgentSkill.modifiedAt,
+        ds.AgentSkill.analysisStatus,
+        ds.AgentSkill.riskLevel,
+        ds.AgentSkill.analysis,
+        ds.AgentSkill.analyzerVersion,
+        ds.AgentSkill.riskReasons,
+    )
 def list_trivial_fields_KnowledgeBaseConnection(ds: DSLSchema):
     """ List all trivial fields of the KnowledgeBaseConnection type """
     return (
@@ -1460,11 +1603,15 @@ def list_trivial_fields_AgentApplicationInfo(ds: DSLSchema):
     """ List all trivial fields of the AgentApplicationInfo type """
     return (
         ds.AgentApplicationInfo.connectionId,
+        ds.AgentApplicationInfo.syncStatus,
+        ds.AgentApplicationInfo.syncStatusUpdatedAt,
     )
 def list_trivial_user_fields_AgentApplicationInfo(ds: DSLSchema):
     """ List trivial fields of the AgentApplicationInfo type accessible to USER role """
     return (
         ds.AgentApplicationInfo.connectionId,
+        ds.AgentApplicationInfo.syncStatus,
+        ds.AgentApplicationInfo.syncStatusUpdatedAt,
     )
 def list_trivial_fields_AgentInstancesConnection(ds: DSLSchema):
     """ List all trivial fields of the AgentInstancesConnection type """
@@ -1500,6 +1647,7 @@ def list_trivial_fields_AgentActivity(ds: DSLSchema):
         ds.AgentActivity.sessionId,
         ds.AgentActivity.sourceIp,
         ds.AgentActivity.agentExternalId,
+        ds.AgentActivity.connectionId,
     )
 def list_trivial_fields_AgentOpsInsightData(ds: DSLSchema):
     """ List all trivial fields of the AgentOpsInsightData type """
@@ -1843,6 +1991,16 @@ def list_trivial_user_fields_Provider(ds: DSLSchema):
         ds.Provider.risk,
         ds.Provider.mode,
     )
+def list_trivial_fields_SupportedNhiTypeData(ds: DSLSchema):
+    """ List all trivial fields of the SupportedNhiTypeData type """
+    return (
+        ds.SupportedNhiTypeData.serviceIdentityType,
+    )
+def list_trivial_user_fields_SupportedNhiTypeData(ds: DSLSchema):
+    """ List trivial fields of the SupportedNhiTypeData type accessible to USER role """
+    return (
+        ds.SupportedNhiTypeData.serviceIdentityType,
+    )
 def list_trivial_fields_ProviderSummaryMetadata(ds: DSLSchema):
     """ List all trivial fields of the ProviderSummaryMetadata type """
     return (
@@ -1950,6 +2108,49 @@ def list_trivial_fields_ProviderStatus(ds: DSLSchema):
     return (
         ds.ProviderStatus.providerId,
         ds.ProviderStatus.lastUpdatedAt,
+    )
+def list_trivial_fields_DataIssue(ds: DSLSchema):
+    """ List all trivial fields of the DataIssue type """
+    return (
+        ds.DataIssue.category,
+        ds.DataIssue.message,
+        ds.DataIssue.since,
+    )
+def list_trivial_fields_SyncAttempt(ds: DSLSchema):
+    """ List all trivial fields of the SyncAttempt type """
+    return (
+        ds.SyncAttempt.startedAt,
+        ds.SyncAttempt.endedAt,
+        ds.SyncAttempt.outcome,
+        ds.SyncAttempt.trigger,
+    )
+def list_trivial_fields_DataFreshness(ds: DSLSchema):
+    """ List all trivial fields of the DataFreshness type """
+    return (
+        ds.DataFreshness.collectedAt,
+        ds.DataFreshness.pendingCollectedAt,
+        ds.DataFreshness.processedAt,
+        ds.DataFreshness.lastAttemptAt,
+        ds.DataFreshness.health,
+        ds.DataFreshness.updating,
+    )
+def list_trivial_fields_DataSourceFreshness(ds: DSLSchema):
+    """ List all trivial fields of the DataSourceFreshness type """
+    return (
+        ds.DataSourceFreshness.providerId,
+        ds.DataSourceFreshness.providerName,
+    )
+def list_trivial_fields_TenantDataFreshness(ds: DSLSchema):
+    """ List all trivial fields of the TenantDataFreshness type """
+    return (
+        ds.TenantDataFreshness.collectedAt,
+        ds.TenantDataFreshness.processedAt,
+        ds.TenantDataFreshness.processingState,
+        ds.TenantDataFreshness.health,
+        ds.TenantDataFreshness.updating,
+        ds.TenantDataFreshness.sourcesTotal,
+        ds.TenantDataFreshness.sourcesUpToDate,
+        ds.TenantDataFreshness.sourcesNeedingAttention,
     )
 def list_trivial_fields_InventoryStatus(ds: DSLSchema):
     """ List all trivial fields of the InventoryStatus type """
@@ -2429,9 +2630,12 @@ def list_trivial_fields_ProviderAccessKeyData(ds: DSLSchema):
 def list_trivial_user_fields_ProviderAccessKeyData(ds: DSLSchema):
     """ List trivial fields of the ProviderAccessKeyData type accessible to USER role """
     return (
+        ds.ProviderAccessKeyData.id,
         ds.ProviderAccessKeyData.keyId,
         ds.ProviderAccessKeyData.name,
+        ds.ProviderAccessKeyData.createdAt,
         ds.ProviderAccessKeyData.lastUsed,
+        ds.ProviderAccessKeyData.keyRotationPastDueDays,
         ds.ProviderAccessKeyData.keyRotationDueAt,
         ds.ProviderAccessKeyData.status,
         ds.ProviderAccessKeyData.keyType,
@@ -2631,6 +2835,15 @@ def list_trivial_fields_PrimaryIdentityProvidersConnection(ds: DSLSchema):
     """ List all trivial fields of the PrimaryIdentityProvidersConnection type """
     return (
     )
+def list_trivial_fields_SecondaryIdentityProviderEdge(ds: DSLSchema):
+    """ List all trivial fields of the SecondaryIdentityProviderEdge type """
+    return (
+        ds.SecondaryIdentityProviderEdge.priority,
+    )
+def list_trivial_fields_SecondaryIdentityProvidersConnection(ds: DSLSchema):
+    """ List all trivial fields of the SecondaryIdentityProvidersConnection type """
+    return (
+    )
 def list_trivial_fields_InsightThresholds(ds: DSLSchema):
     """ List all trivial fields of the InsightThresholds type """
     return (
@@ -2654,6 +2867,8 @@ def list_trivial_fields_TenantSettings(ds: DSLSchema):
         ds.TenantSettings.hidePeekViewForReviewers,
         ds.TenantSettings.hidePeekViewForResources,
         ds.TenantSettings.conversationalAiDisabled,
+        ds.TenantSettings.logoUrl,
+        ds.TenantSettings.displayName,
     )
 def list_trivial_user_fields_TenantSettings(ds: DSLSchema):
     """ List trivial fields of the TenantSettings type accessible to USER role """
@@ -2662,6 +2877,8 @@ def list_trivial_user_fields_TenantSettings(ds: DSLSchema):
         ds.TenantSettings.hidePeekViewForReviewers,
         ds.TenantSettings.hidePeekViewForResources,
         ds.TenantSettings.conversationalAiDisabled,
+        ds.TenantSettings.logoUrl,
+        ds.TenantSettings.displayName,
     )
 def list_trivial_fields_TenantData(ds: DSLSchema):
     """ List all trivial fields of the TenantData type """
@@ -2756,6 +2973,96 @@ def list_trivial_user_fields_DepartmentData(ds: DSLSchema):
     """ List trivial fields of the DepartmentData type accessible to USER role """
     return (
         ds.DepartmentData.department,
+    )
+def list_trivial_fields_CityDataConnection(ds: DSLSchema):
+    """ List all trivial fields of the CityDataConnection type """
+    return (
+    )
+def list_trivial_fields_CityDataEdge(ds: DSLSchema):
+    """ List all trivial fields of the CityDataEdge type """
+    return (
+    )
+def list_trivial_fields_CityData(ds: DSLSchema):
+    """ List all trivial fields of the CityData type """
+    return (
+        ds.CityData.city,
+    )
+def list_trivial_user_fields_CityData(ds: DSLSchema):
+    """ List trivial fields of the CityData type accessible to USER role """
+    return (
+        ds.CityData.city,
+    )
+def list_trivial_fields_StateDataConnection(ds: DSLSchema):
+    """ List all trivial fields of the StateDataConnection type """
+    return (
+    )
+def list_trivial_fields_StateDataEdge(ds: DSLSchema):
+    """ List all trivial fields of the StateDataEdge type """
+    return (
+    )
+def list_trivial_fields_StateData(ds: DSLSchema):
+    """ List all trivial fields of the StateData type """
+    return (
+        ds.StateData.state,
+    )
+def list_trivial_user_fields_StateData(ds: DSLSchema):
+    """ List trivial fields of the StateData type accessible to USER role """
+    return (
+        ds.StateData.state,
+    )
+def list_trivial_fields_CountryDataConnection(ds: DSLSchema):
+    """ List all trivial fields of the CountryDataConnection type """
+    return (
+    )
+def list_trivial_fields_CountryDataEdge(ds: DSLSchema):
+    """ List all trivial fields of the CountryDataEdge type """
+    return (
+    )
+def list_trivial_fields_CountryData(ds: DSLSchema):
+    """ List all trivial fields of the CountryData type """
+    return (
+        ds.CountryData.country,
+    )
+def list_trivial_user_fields_CountryData(ds: DSLSchema):
+    """ List trivial fields of the CountryData type accessible to USER role """
+    return (
+        ds.CountryData.country,
+    )
+def list_trivial_fields_TitleDataConnection(ds: DSLSchema):
+    """ List all trivial fields of the TitleDataConnection type """
+    return (
+    )
+def list_trivial_fields_TitleDataEdge(ds: DSLSchema):
+    """ List all trivial fields of the TitleDataEdge type """
+    return (
+    )
+def list_trivial_fields_TitleData(ds: DSLSchema):
+    """ List all trivial fields of the TitleData type """
+    return (
+        ds.TitleData.title,
+    )
+def list_trivial_user_fields_TitleData(ds: DSLSchema):
+    """ List trivial fields of the TitleData type accessible to USER role """
+    return (
+        ds.TitleData.title,
+    )
+def list_trivial_fields_CompanyDataConnection(ds: DSLSchema):
+    """ List all trivial fields of the CompanyDataConnection type """
+    return (
+    )
+def list_trivial_fields_CompanyDataEdge(ds: DSLSchema):
+    """ List all trivial fields of the CompanyDataEdge type """
+    return (
+    )
+def list_trivial_fields_CompanyData(ds: DSLSchema):
+    """ List all trivial fields of the CompanyData type """
+    return (
+        ds.CompanyData.company,
+    )
+def list_trivial_user_fields_CompanyData(ds: DSLSchema):
+    """ List trivial fields of the CompanyData type accessible to USER role """
+    return (
+        ds.CompanyData.company,
     )
 def list_trivial_fields_AdDomainDataConnection(ds: DSLSchema):
     """ List all trivial fields of the AdDomainDataConnection type """
@@ -3013,6 +3320,25 @@ def list_trivial_fields_McpToolAction(ds: DSLSchema):
     """ List all trivial fields of the McpToolAction type """
     return (
         ds.McpToolAction.name,
+        ds.McpToolAction.effect,
+    )
+def list_trivial_fields_McpPolicyCondition(ds: DSLSchema):
+    """ List all trivial fields of the McpPolicyCondition type """
+    return (
+        ds.McpPolicyCondition.attribute,
+        ds.McpPolicyCondition.operator,
+        ds.McpPolicyCondition.values,
+        ds.McpPolicyCondition.expectedSource,
+    )
+def list_trivial_fields_McpToolGuardrail(ds: DSLSchema):
+    """ List all trivial fields of the McpToolGuardrail type """
+    return (
+        ds.McpToolGuardrail.tool,
+        ds.McpToolGuardrail.paramPath,
+        ds.McpToolGuardrail.operator,
+        ds.McpToolGuardrail.values,
+        ds.McpToolGuardrail.outcome,
+        ds.McpToolGuardrail.message,
     )
 def list_trivial_fields_AgentAppAccessPolicy(ds: DSLSchema):
     """ List all trivial fields of the AgentAppAccessPolicy type """
@@ -3340,6 +3666,7 @@ def list_trivial_fields_ServiceIdentity(ds: DSLSchema):
         ds.ServiceIdentity.username,
         ds.ServiceIdentity.state,
         ds.ServiceIdentity.serviceIdentityType,
+        ds.ServiceIdentity.isAndromedaManaged,
         ds.ServiceIdentity.createdAt,
         ds.ServiceIdentity.awsExternalServiceIdentitySubType,
         ds.ServiceIdentity.blastRisk,
@@ -3363,6 +3690,7 @@ def list_trivial_user_fields_ServiceIdentity(ds: DSLSchema):
         ds.ServiceIdentity.id,
         ds.ServiceIdentity.username,
         ds.ServiceIdentity.serviceIdentityType,
+        ds.ServiceIdentity.isAndromedaManaged,
     )
 def list_trivial_fields_ServiceIdentityEdge(ds: DSLSchema):
     """ List all trivial fields of the ServiceIdentityEdge type """
@@ -3522,6 +3850,7 @@ def list_trivial_fields_ProviderScopeData(ds: DSLSchema):
         ds.ProviderScopeData.type,
         ds.ProviderScopeData.isInherited,
         ds.ProviderScopeData.providerType,
+        ds.ProviderScopeData.description,
     )
 def list_trivial_user_fields_ProviderScopeData(ds: DSLSchema):
     """ List trivial fields of the ProviderScopeData type accessible to USER role """
@@ -3531,6 +3860,7 @@ def list_trivial_user_fields_ProviderScopeData(ds: DSLSchema):
         ds.ProviderScopeData.type,
         ds.ProviderScopeData.isInherited,
         ds.ProviderScopeData.providerType,
+        ds.ProviderScopeData.description,
     )
 def list_trivial_fields_FolderScopeData(ds: DSLSchema):
     """ List all trivial fields of the FolderScopeData type """
@@ -3541,6 +3871,7 @@ def list_trivial_fields_FolderScopeData(ds: DSLSchema):
         ds.FolderScopeData.isInherited,
         ds.FolderScopeData.type,
         ds.FolderScopeData.providerId,
+        ds.FolderScopeData.description,
     )
 def list_trivial_user_fields_FolderScopeData(ds: DSLSchema):
     """ List trivial fields of the FolderScopeData type accessible to USER role """
@@ -3550,6 +3881,7 @@ def list_trivial_user_fields_FolderScopeData(ds: DSLSchema):
         ds.FolderScopeData.isInherited,
         ds.FolderScopeData.type,
         ds.FolderScopeData.providerId,
+        ds.FolderScopeData.description,
     )
 def list_trivial_fields_PopulationScopeData(ds: DSLSchema):
     """ List all trivial fields of the PopulationScopeData type """
@@ -3572,6 +3904,7 @@ def list_trivial_user_fields_PopulationScopeData(ds: DSLSchema):
         ds.PopulationScopeData.id,
         ds.PopulationScopeData.type,
         ds.PopulationScopeData.isInherited,
+        ds.PopulationScopeData.description,
         ds.PopulationScopeData.providerId,
     )
 def list_trivial_fields_AccountScopeData(ds: DSLSchema):
@@ -3583,6 +3916,7 @@ def list_trivial_fields_AccountScopeData(ds: DSLSchema):
         ds.AccountScopeData.isInherited,
         ds.AccountScopeData.type,
         ds.AccountScopeData.providerId,
+        ds.AccountScopeData.description,
     )
 def list_trivial_user_fields_AccountScopeData(ds: DSLSchema):
     """ List trivial fields of the AccountScopeData type accessible to USER role """
@@ -3592,6 +3926,7 @@ def list_trivial_user_fields_AccountScopeData(ds: DSLSchema):
         ds.AccountScopeData.isInherited,
         ds.AccountScopeData.type,
         ds.AccountScopeData.providerId,
+        ds.AccountScopeData.description,
     )
 def list_trivial_fields_ResourceGroupScopeData(ds: DSLSchema):
     """ List all trivial fields of the ResourceGroupScopeData type """
@@ -3602,6 +3937,7 @@ def list_trivial_fields_ResourceGroupScopeData(ds: DSLSchema):
         ds.ResourceGroupScopeData.isInherited,
         ds.ResourceGroupScopeData.type,
         ds.ResourceGroupScopeData.providerId,
+        ds.ResourceGroupScopeData.description,
     )
 def list_trivial_user_fields_ResourceGroupScopeData(ds: DSLSchema):
     """ List trivial fields of the ResourceGroupScopeData type accessible to USER role """
@@ -3611,6 +3947,7 @@ def list_trivial_user_fields_ResourceGroupScopeData(ds: DSLSchema):
         ds.ResourceGroupScopeData.isInherited,
         ds.ResourceGroupScopeData.type,
         ds.ResourceGroupScopeData.providerId,
+        ds.ResourceGroupScopeData.description,
     )
 def list_trivial_fields_GroupScopeData(ds: DSLSchema):
     """ List all trivial fields of the GroupScopeData type """
@@ -3621,6 +3958,7 @@ def list_trivial_fields_GroupScopeData(ds: DSLSchema):
         ds.GroupScopeData.isInherited,
         ds.GroupScopeData.type,
         ds.GroupScopeData.providerId,
+        ds.GroupScopeData.description,
     )
 def list_trivial_user_fields_GroupScopeData(ds: DSLSchema):
     """ List trivial fields of the GroupScopeData type accessible to USER role """
@@ -3630,6 +3968,7 @@ def list_trivial_user_fields_GroupScopeData(ds: DSLSchema):
         ds.GroupScopeData.isInherited,
         ds.GroupScopeData.type,
         ds.GroupScopeData.providerId,
+        ds.GroupScopeData.description,
     )
 def list_trivial_fields_ResourceScopeData(ds: DSLSchema):
     """ List all trivial fields of the ResourceScopeData type """
@@ -3641,6 +3980,7 @@ def list_trivial_fields_ResourceScopeData(ds: DSLSchema):
         ds.ResourceScopeData.resourceType,
         ds.ResourceScopeData.type,
         ds.ResourceScopeData.providerId,
+        ds.ResourceScopeData.description,
     )
 def list_trivial_user_fields_ResourceScopeData(ds: DSLSchema):
     """ List trivial fields of the ResourceScopeData type accessible to USER role """
@@ -3652,6 +3992,7 @@ def list_trivial_user_fields_ResourceScopeData(ds: DSLSchema):
         ds.ResourceScopeData.resourceType,
         ds.ResourceScopeData.type,
         ds.ResourceScopeData.providerId,
+        ds.ResourceScopeData.description,
     )
 def list_trivial_fields_AgentConnectionScopeData(ds: DSLSchema):
     """ List all trivial fields of the AgentConnectionScopeData type """
@@ -3675,6 +4016,9 @@ def list_trivial_fields_AgentConnectionScopeData(ds: DSLSchema):
         ds.AgentConnectionScopeData.risk,
         ds.AgentConnectionScopeData.riskLevel,
         ds.AgentConnectionScopeData.governance,
+        ds.AgentConnectionScopeData.description,
+        ds.AgentConnectionScopeData.toolType,
+        ds.AgentConnectionScopeData.connectorDisplayName,
     )
 def list_trivial_user_fields_AgentConnectionScopeData(ds: DSLSchema):
     """ List trivial fields of the AgentConnectionScopeData type accessible to USER role """
@@ -3696,6 +4040,9 @@ def list_trivial_user_fields_AgentConnectionScopeData(ds: DSLSchema):
         ds.AgentConnectionScopeData.risk,
         ds.AgentConnectionScopeData.riskLevel,
         ds.AgentConnectionScopeData.governance,
+        ds.AgentConnectionScopeData.description,
+        ds.AgentConnectionScopeData.toolType,
+        ds.AgentConnectionScopeData.connectorDisplayName,
     )
 def list_trivial_fields_IdpApplicationScopeData(ds: DSLSchema):
     """ List all trivial fields of the IdpApplicationScopeData type """
@@ -3706,6 +4053,7 @@ def list_trivial_fields_IdpApplicationScopeData(ds: DSLSchema):
         ds.IdpApplicationScopeData.type,
         ds.IdpApplicationScopeData.isInherited,
         ds.IdpApplicationScopeData.providerId,
+        ds.IdpApplicationScopeData.description,
     )
 def list_trivial_user_fields_IdpApplicationScopeData(ds: DSLSchema):
     """ List trivial fields of the IdpApplicationScopeData type accessible to USER role """
@@ -3715,6 +4063,7 @@ def list_trivial_user_fields_IdpApplicationScopeData(ds: DSLSchema):
         ds.IdpApplicationScopeData.type,
         ds.IdpApplicationScopeData.isInherited,
         ds.IdpApplicationScopeData.providerId,
+        ds.IdpApplicationScopeData.description,
     )
 def list_trivial_fields_ScopeEdge(ds: DSLSchema):
     """ List all trivial fields of the ScopeEdge type """
@@ -3988,6 +4337,7 @@ def list_trivial_fields_BrokerNode(ds: DSLSchema):
         ds.BrokerNode.minorVersion,
         ds.BrokerNode.patchVersion,
         ds.BrokerNode.os,
+        ds.BrokerNode.versionChangedAt,
     )
 def list_trivial_fields_LastBrokerUpgrade(ds: DSLSchema):
     """ List all trivial fields of the LastBrokerUpgrade type """
@@ -4014,6 +4364,7 @@ def list_trivial_fields_BrokerProviderNode(ds: DSLSchema):
         ds.BrokerProviderNode.isAccessible,
         ds.BrokerProviderNode.errorMessage,
         ds.BrokerProviderNode.lastCheckedAt,
+        ds.BrokerProviderNode.errorCode,
         ds.BrokerProviderNode.availabilityStatus,
         ds.BrokerProviderNode.brokerId,
     )
@@ -4023,8 +4374,109 @@ def list_trivial_fields_BrokerCompatibilityInfo(ds: DSLSchema):
         ds.BrokerCompatibilityInfo.state,
         ds.BrokerCompatibilityInfo.message,
     )
+def list_trivial_fields_ProviderBrokersConnection(ds: DSLSchema):
+    """ List all trivial fields of the ProviderBrokersConnection type """
+    return (
+    )
+def list_trivial_fields_ProviderBrokerEdge(ds: DSLSchema):
+    """ List all trivial fields of the ProviderBrokerEdge type """
+    return (
+        ds.ProviderBrokerEdge.availabilityStatus,
+        ds.ProviderBrokerEdge.availabilityStatusChangedAt,
+        ds.ProviderBrokerEdge.providerId,
+        ds.ProviderBrokerEdge.errorMessage,
+        ds.ProviderBrokerEdge.errorCode,
+        ds.ProviderBrokerEdge.lastCheckedAt,
+    )
+def list_trivial_fields_LastBrokerTask(ds: DSLSchema):
+    """ List all trivial fields of the LastBrokerTask type """
+    return (
+        ds.LastBrokerTask.taskType,
+        ds.LastBrokerTask.status,
+        ds.LastBrokerTask.createdAt,
+    )
+def list_trivial_fields_ProviderHaState(ds: DSLSchema):
+    """ List all trivial fields of the ProviderHaState type """
+    return (
+        ds.ProviderHaState.lastPromotedAt,
+        ds.ProviderHaState.consecutiveFailoverCount,
+    )
 
 # End of file: andromeda/nonpublic/graph/broker_service.proto
+
+# File: andromeda/nonpublic/graph/worker_registry_service.proto
+def list_trivial_fields_WorkerRegistryConnection(ds: DSLSchema):
+    """ List all trivial fields of the WorkerRegistryConnection type """
+    return (
+    )
+def list_trivial_fields_WorkerRegistryEdge(ds: DSLSchema):
+    """ List all trivial fields of the WorkerRegistryEdge type """
+    return (
+    )
+def list_trivial_fields_WorkerRegistryNode(ds: DSLSchema):
+    """ List all trivial fields of the WorkerRegistryNode type """
+    return (
+        ds.WorkerRegistryNode.id,
+        ds.WorkerRegistryNode.name,
+        ds.WorkerRegistryNode.providerId,
+        ds.WorkerRegistryNode.updatedAt,
+        ds.WorkerRegistryNode.createdAt,
+    )
+def list_trivial_fields_RegisteredWorkerConnection(ds: DSLSchema):
+    """ List all trivial fields of the RegisteredWorkerConnection type """
+    return (
+    )
+def list_trivial_fields_RegisteredWorkerEdge(ds: DSLSchema):
+    """ List all trivial fields of the RegisteredWorkerEdge type """
+    return (
+    )
+def list_trivial_fields_RegisteredWorkerNode(ds: DSLSchema):
+    """ List all trivial fields of the RegisteredWorkerNode type """
+    return (
+        ds.RegisteredWorkerNode.id,
+        ds.RegisteredWorkerNode.registryId,
+        ds.RegisteredWorkerNode.firstName,
+        ds.RegisteredWorkerNode.lastName,
+        ds.RegisteredWorkerNode.email,
+        ds.RegisteredWorkerNode.workerType,
+        ds.RegisteredWorkerNode.status,
+        ds.RegisteredWorkerNode.updatedAt,
+        ds.RegisteredWorkerNode.createdAt,
+        ds.RegisteredWorkerNode.country,
+        ds.RegisteredWorkerNode.managerEmail,
+        ds.RegisteredWorkerNode.startDate,
+        ds.RegisteredWorkerNode.department,
+        ds.RegisteredWorkerNode.organization,
+        ds.RegisteredWorkerNode.contractId,
+        ds.RegisteredWorkerNode.company,
+        ds.RegisteredWorkerNode.managerIdentityId,
+    )
+def list_trivial_fields_WorkerContractConnection(ds: DSLSchema):
+    """ List all trivial fields of the WorkerContractConnection type """
+    return (
+    )
+def list_trivial_fields_WorkerContractEdge(ds: DSLSchema):
+    """ List all trivial fields of the WorkerContractEdge type """
+    return (
+    )
+def list_trivial_fields_WorkerContractNode(ds: DSLSchema):
+    """ List all trivial fields of the WorkerContractNode type """
+    return (
+        ds.WorkerContractNode.id,
+        ds.WorkerContractNode.registryId,
+        ds.WorkerContractNode.name,
+        ds.WorkerContractNode.vendorName,
+        ds.WorkerContractNode.contractManagerEmail,
+        ds.WorkerContractNode.contractManagerIdentityId,
+        ds.WorkerContractNode.contractType,
+        ds.WorkerContractNode.costCenter,
+        ds.WorkerContractNode.startDate,
+        ds.WorkerContractNode.endDate,
+        ds.WorkerContractNode.updatedAt,
+        ds.WorkerContractNode.createdAt,
+    )
+
+# End of file: andromeda/nonpublic/graph/worker_registry_service.proto
 
 # File: andromeda/nonpublic/graph/agent_assignments.proto
 def list_trivial_fields_AnySubjectPrincipal(ds: DSLSchema):
@@ -4115,6 +4567,40 @@ def list_trivial_user_fields_AgentResolvedAssignment(ds: DSLSchema):
         ds.AgentResolvedAssignment.blastRisk,
         ds.AgentResolvedAssignment.governance,
     )
+def list_trivial_fields_AgentConfiguredAssignmentRollup(ds: DSLSchema):
+    """ List all trivial fields of the AgentConfiguredAssignmentRollup type """
+    return (
+        ds.AgentConfiguredAssignmentRollup.policyId,
+        ds.AgentConfiguredAssignmentRollup.policyName,
+        ds.AgentConfiguredAssignmentRollup.runtimePrincipalId,
+        ds.AgentConfiguredAssignmentRollup.runtimePrincipalName,
+        ds.AgentConfiguredAssignmentRollup.runtimePrincipalType,
+        ds.AgentConfiguredAssignmentRollup.subjectPrincipalCount,
+        ds.AgentConfiguredAssignmentRollup.policyType,
+        ds.AgentConfiguredAssignmentRollup.blastRisk,
+        ds.AgentConfiguredAssignmentRollup.governance,
+    )
+def list_trivial_user_fields_AgentConfiguredAssignmentRollup(ds: DSLSchema):
+    """ List trivial fields of the AgentConfiguredAssignmentRollup type accessible to USER role """
+    return (
+        ds.AgentConfiguredAssignmentRollup.policyId,
+        ds.AgentConfiguredAssignmentRollup.policyName,
+        ds.AgentConfiguredAssignmentRollup.runtimePrincipalId,
+        ds.AgentConfiguredAssignmentRollup.runtimePrincipalName,
+        ds.AgentConfiguredAssignmentRollup.runtimePrincipalType,
+        ds.AgentConfiguredAssignmentRollup.subjectPrincipalCount,
+        ds.AgentConfiguredAssignmentRollup.policyType,
+        ds.AgentConfiguredAssignmentRollup.blastRisk,
+        ds.AgentConfiguredAssignmentRollup.governance,
+    )
+def list_trivial_fields_AgentConfiguredAssignmentRollupEdge(ds: DSLSchema):
+    """ List all trivial fields of the AgentConfiguredAssignmentRollupEdge type """
+    return (
+    )
+def list_trivial_fields_AgentConfiguredAssignmentRollupConnection(ds: DSLSchema):
+    """ List all trivial fields of the AgentConfiguredAssignmentRollupConnection type """
+    return (
+    )
 
 # End of file: andromeda/nonpublic/graph/agent_assignments.proto
 
@@ -4192,12 +4678,18 @@ def list_trivial_fields_AgentInstance(ds: DSLSchema):
         ds.AgentInstance.externalId,
         ds.AgentInstance.externalResourceType,
         ds.AgentInstance.createdAt,
+        ds.AgentInstance.supportsAgentToAgent,
+        ds.AgentInstance.peerKey,
+        ds.AgentInstance.agentToAgentAuthorizationSchemes,
     )
 def list_trivial_user_fields_AgentInstance(ds: DSLSchema):
     """ List trivial fields of the AgentInstance type accessible to USER role """
     return (
         ds.AgentInstance.id,
         ds.AgentInstance.name,
+        ds.AgentInstance.supportsAgentToAgent,
+        ds.AgentInstance.peerKey,
+        ds.AgentInstance.agentToAgentAuthorizationSchemes,
     )
 
 # End of file: andromeda/nonpublic/graph/agent_instance.proto
@@ -5134,6 +5626,58 @@ def list_trivial_fields_ActivitiesConnection(ds: DSLSchema):
     """ List all trivial fields of the ActivitiesConnection type """
     return (
     )
+def list_trivial_fields_AgenticActivitiesConnection(ds: DSLSchema):
+    """ List all trivial fields of the AgenticActivitiesConnection type """
+    return (
+    )
+def list_trivial_fields_AgenticActivityEdge(ds: DSLSchema):
+    """ List all trivial fields of the AgenticActivityEdge type """
+    return (
+    )
+def list_trivial_fields_AgenticActivity(ds: DSLSchema):
+    """ List all trivial fields of the AgenticActivity type """
+    return (
+        ds.AgenticActivity.timestamp,
+        ds.AgenticActivity.actingIdentity,
+        ds.AgenticActivity.actingIdentityId,
+        ds.AgenticActivity.actorName,
+        ds.AgenticActivity.actorId,
+        ds.AgenticActivity.userAgent,
+        ds.AgenticActivity.action,
+        ds.AgenticActivity.resource,
+        ds.AgenticActivity.providerId,
+        ds.AgenticActivity.providerName,
+        ds.AgenticActivity.providerType,
+        ds.AgenticActivity.scopeId,
+        ds.AgenticActivity.scopeType,
+        ds.AgenticActivity.scopeName,
+        ds.AgenticActivity.agentId,
+        ds.AgenticActivity.agentName,
+        ds.AgenticActivity.sourceIp,
+        ds.AgenticActivity.agentExternalId,
+    )
+def list_trivial_user_fields_AgenticActivity(ds: DSLSchema):
+    """ List trivial fields of the AgenticActivity type accessible to USER role """
+    return (
+        ds.AgenticActivity.timestamp,
+        ds.AgenticActivity.actingIdentity,
+        ds.AgenticActivity.actingIdentityId,
+        ds.AgenticActivity.actorName,
+        ds.AgenticActivity.actorId,
+        ds.AgenticActivity.userAgent,
+        ds.AgenticActivity.action,
+        ds.AgenticActivity.resource,
+        ds.AgenticActivity.providerId,
+        ds.AgenticActivity.providerName,
+        ds.AgenticActivity.providerType,
+        ds.AgenticActivity.scopeId,
+        ds.AgenticActivity.scopeType,
+        ds.AgenticActivity.scopeName,
+        ds.AgenticActivity.agentId,
+        ds.AgenticActivity.agentName,
+        ds.AgenticActivity.sourceIp,
+        ds.AgenticActivity.agentExternalId,
+    )
 def list_trivial_fields_KnownLocationsConnection(ds: DSLSchema):
     """ List all trivial fields of the KnownLocationsConnection type """
     return (
@@ -5557,6 +6101,7 @@ def list_trivial_fields_IdentityOriginData(ds: DSLSchema):
         ds.IdentityOriginData.lastLoginAt,
         ds.IdentityOriginData.passwordLastUsed,
         ds.IdentityOriginData.passwordLastChangedAt,
+        ds.IdentityOriginData.deprovisionedAt,
         ds.IdentityOriginData.state,
         ds.IdentityOriginData.blastRisk,
         ds.IdentityOriginData.blastRiskLevel,
@@ -5579,6 +6124,7 @@ def list_trivial_user_fields_IdentityOriginData(ds: DSLSchema):
         ds.IdentityOriginData.originUserName,
         ds.IdentityOriginData.originUserUsername,
         ds.IdentityOriginData.passwordLastChangedAt,
+        ds.IdentityOriginData.deprovisionedAt,
         ds.IdentityOriginData.state,
         ds.IdentityOriginData.blastRisk,
         ds.IdentityOriginData.originUserExternalId,
@@ -5755,6 +6301,18 @@ def list_trivial_user_fields_GroupMembershipMetadata(ds: DSLSchema):
         ds.GroupMembershipMetadata.isMemberViaSyncedGroup,
         ds.GroupMembershipMetadata.sourceGroupId,
         ds.GroupMembershipMetadata.sourceGroupName,
+    )
+def list_trivial_fields_GroupMembershipOrigin(ds: DSLSchema):
+    """ List all trivial fields of the GroupMembershipOrigin type """
+    return (
+        ds.GroupMembershipOrigin.groupId,
+        ds.GroupMembershipOrigin.groupName,
+    )
+def list_trivial_user_fields_GroupMembershipOrigin(ds: DSLSchema):
+    """ List trivial fields of the GroupMembershipOrigin type accessible to USER role """
+    return (
+        ds.GroupMembershipOrigin.groupId,
+        ds.GroupMembershipOrigin.groupName,
     )
 def list_trivial_fields_GroupHumanMembersDataConnection(ds: DSLSchema):
     """ List all trivial fields of the GroupHumanMembersDataConnection type """
@@ -6640,6 +7198,13 @@ def list_trivial_fields_PoliciesSummary(ds: DSLSchema):
     """ List all trivial fields of the PoliciesSummary type """
     return (
     )
+def list_trivial_fields_IdentityProvidersGroupedByType(ds: DSLSchema):
+    """ List all trivial fields of the IdentityProvidersGroupedByType type """
+    return (
+        ds.IdentityProvidersGroupedByType.type,
+        ds.IdentityProvidersGroupedByType.category,
+        ds.IdentityProvidersGroupedByType.count,
+    )
 def list_trivial_fields_IdentityGroupedByRiskLevel(ds: DSLSchema):
     """ List all trivial fields of the IdentityGroupedByRiskLevel type """
     return (
@@ -7133,6 +7698,36 @@ def list_trivial_user_fields_AccessReviewerCampaignEdge(ds: DSLSchema):
     return (
         ds.AccessReviewerCampaignEdge.node,
         ds.AccessReviewerCampaignEdge.reviewerCampaignData,
+    )
+def list_trivial_fields_AccessReviewerSetConnection(ds: DSLSchema):
+    """ List all trivial fields of the AccessReviewerSetConnection type """
+    return (
+    )
+def list_trivial_fields_AccessReviewerSetEdge(ds: DSLSchema):
+    """ List all trivial fields of the AccessReviewerSetEdge type """
+    return (
+        ds.AccessReviewerSetEdge.node,
+    )
+def list_trivial_user_fields_AccessReviewerSetEdge(ds: DSLSchema):
+    """ List trivial fields of the AccessReviewerSetEdge type accessible to USER role """
+    return (
+        ds.AccessReviewerSetEdge.node,
+    )
+def list_trivial_fields_AccessReviewerPerCampaignDataEdge(ds: DSLSchema):
+    """ List all trivial fields of the AccessReviewerPerCampaignDataEdge type """
+    return (
+        ds.AccessReviewerPerCampaignDataEdge.node,
+        ds.AccessReviewerPerCampaignDataEdge.reviewerPerCampaignData,
+    )
+def list_trivial_user_fields_AccessReviewerPerCampaignDataEdge(ds: DSLSchema):
+    """ List trivial fields of the AccessReviewerPerCampaignDataEdge type accessible to USER role """
+    return (
+        ds.AccessReviewerPerCampaignDataEdge.node,
+        ds.AccessReviewerPerCampaignDataEdge.reviewerPerCampaignData,
+    )
+def list_trivial_fields_AccessReviewerPerCampaignDataConnection(ds: DSLSchema):
+    """ List all trivial fields of the AccessReviewerPerCampaignDataConnection type """
+    return (
     )
 def list_trivial_fields_AccessReviewerData(ds: DSLSchema):
     """ List all trivial fields of the AccessReviewerData type """
@@ -7819,6 +8414,22 @@ def list_trivial_user_fields_CampaignSummary(ds: DSLSchema):
         ds.CampaignSummary.reviewerCount,
         ds.CampaignSummary.reviewsCount,
     )
+def list_trivial_fields_CampaignScopeReviewSummary(ds: DSLSchema):
+    """ List all trivial fields of the CampaignScopeReviewSummary type """
+    return (
+        ds.CampaignScopeReviewSummary.scopeType,
+        ds.CampaignScopeReviewSummary.totalCount,
+        ds.CampaignScopeReviewSummary.fullyReviewedCount,
+        ds.CampaignScopeReviewSummary.signedOffCount,
+    )
+def list_trivial_user_fields_CampaignScopeReviewSummary(ds: DSLSchema):
+    """ List trivial fields of the CampaignScopeReviewSummary type accessible to USER role """
+    return (
+        ds.CampaignScopeReviewSummary.scopeType,
+        ds.CampaignScopeReviewSummary.totalCount,
+        ds.CampaignScopeReviewSummary.fullyReviewedCount,
+        ds.CampaignScopeReviewSummary.signedOffCount,
+    )
 def list_trivial_fields_CampaignProviderEdge(ds: DSLSchema):
     """ List all trivial fields of the CampaignProviderEdge type """
     return (
@@ -7838,6 +8449,28 @@ def list_trivial_user_fields_CampaignAccessReviewColumnConfigItem(ds: DSLSchema)
     return (
         ds.CampaignAccessReviewColumnConfigItem.column,
         ds.CampaignAccessReviewColumnConfigItem.displayName,
+    )
+def list_trivial_fields_CampaignStatistics(ds: DSLSchema):
+    """ List all trivial fields of the CampaignStatistics type """
+    return (
+        ds.CampaignStatistics.rolesCount,
+        ds.CampaignStatistics.appsCount,
+        ds.CampaignStatistics.scopesCount,
+        ds.CampaignStatistics.resourcesCount,
+        ds.CampaignStatistics.humanIdentitiesCount,
+        ds.CampaignStatistics.nonHumanIdentitiesCount,
+        ds.CampaignStatistics.agentsCount,
+    )
+def list_trivial_user_fields_CampaignStatistics(ds: DSLSchema):
+    """ List trivial fields of the CampaignStatistics type accessible to USER role """
+    return (
+        ds.CampaignStatistics.rolesCount,
+        ds.CampaignStatistics.appsCount,
+        ds.CampaignStatistics.scopesCount,
+        ds.CampaignStatistics.resourcesCount,
+        ds.CampaignStatistics.humanIdentitiesCount,
+        ds.CampaignStatistics.nonHumanIdentitiesCount,
+        ds.CampaignStatistics.agentsCount,
     )
 def list_trivial_fields_CampaignAccessReviewsColumnConfig(ds: DSLSchema):
     """ List all trivial fields of the CampaignAccessReviewsColumnConfig type """
@@ -7908,6 +8541,18 @@ def list_trivial_user_fields_CampaignReviewersGroupedByStatus(ds: DSLSchema):
         ds.CampaignReviewersGroupedByStatus.status,
         ds.CampaignReviewersGroupedByStatus.count,
     )
+def list_trivial_fields_CampaignReviewersGroupedByIdentityState(ds: DSLSchema):
+    """ List all trivial fields of the CampaignReviewersGroupedByIdentityState type """
+    return (
+        ds.CampaignReviewersGroupedByIdentityState.state,
+        ds.CampaignReviewersGroupedByIdentityState.count,
+    )
+def list_trivial_user_fields_CampaignReviewersGroupedByIdentityState(ds: DSLSchema):
+    """ List trivial fields of the CampaignReviewersGroupedByIdentityState type accessible to USER role """
+    return (
+        ds.CampaignReviewersGroupedByIdentityState.state,
+        ds.CampaignReviewersGroupedByIdentityState.count,
+    )
 def list_trivial_fields_AccessReviewerCampaignData(ds: DSLSchema):
     """ List all trivial fields of the AccessReviewerCampaignData type """
     return (
@@ -7921,6 +8566,16 @@ def list_trivial_user_fields_AccessReviewerCampaignData(ds: DSLSchema):
         ds.AccessReviewerCampaignData.id,
         ds.AccessReviewerCampaignData.isReviewerReassigned,
         ds.AccessReviewerCampaignData.originalReviewerAssignmentReason,
+    )
+def list_trivial_fields_AccessReviewerCampaignDataV2(ds: DSLSchema):
+    """ List all trivial fields of the AccessReviewerCampaignDataV2 type """
+    return (
+        ds.AccessReviewerCampaignDataV2.originalReviewerAssignmentReason,
+    )
+def list_trivial_user_fields_AccessReviewerCampaignDataV2(ds: DSLSchema):
+    """ List trivial fields of the AccessReviewerCampaignDataV2 type accessible to USER role """
+    return (
+        ds.AccessReviewerCampaignDataV2.originalReviewerAssignmentReason,
     )
 def list_trivial_fields_AccessReviewsGroupedConnection(ds: DSLSchema):
     """ List all trivial fields of the AccessReviewsGroupedConnection type """
@@ -7940,6 +8595,28 @@ def list_trivial_user_fields_AccessReviewsGroupedNode(ds: DSLSchema):
     """ List trivial fields of the AccessReviewsGroupedNode type accessible to USER role """
     return (
         ds.AccessReviewsGroupedNode.reviewerDetailsId,
+    )
+def list_trivial_fields_AccessReviewsReviewerGroupedConnection(ds: DSLSchema):
+    """ List all trivial fields of the AccessReviewsReviewerGroupedConnection type """
+    return (
+    )
+def list_trivial_fields_AccessReviewsReviewerGroupedEdge(ds: DSLSchema):
+    """ List all trivial fields of the AccessReviewsReviewerGroupedEdge type """
+    return (
+    )
+def list_trivial_fields_AccessReviewsReviewerGroupedNode(ds: DSLSchema):
+    """ List all trivial fields of the AccessReviewsReviewerGroupedNode type """
+    return (
+        ds.AccessReviewsReviewerGroupedNode.reviewerIdentityId,
+        ds.AccessReviewsReviewerGroupedNode.reviewerName,
+        ds.AccessReviewsReviewerGroupedNode.reviewerEmail,
+    )
+def list_trivial_user_fields_AccessReviewsReviewerGroupedNode(ds: DSLSchema):
+    """ List trivial fields of the AccessReviewsReviewerGroupedNode type accessible to USER role """
+    return (
+        ds.AccessReviewsReviewerGroupedNode.reviewerIdentityId,
+        ds.AccessReviewsReviewerGroupedNode.reviewerName,
+        ds.AccessReviewsReviewerGroupedNode.reviewerEmail,
     )
 def list_trivial_fields_AccessReviewsIdentityGroupedConnection(ds: DSLSchema):
     """ List all trivial fields of the AccessReviewsIdentityGroupedConnection type """
@@ -7962,6 +8639,28 @@ def list_trivial_user_fields_AccessReviewsIdentityGroupedNode(ds: DSLSchema):
         ds.AccessReviewsIdentityGroupedNode.reviewerDetailsId,
         ds.AccessReviewsIdentityGroupedNode.identityId,
         ds.AccessReviewsIdentityGroupedNode.identityName,
+    )
+def list_trivial_fields_AccessReviewsOriginalReviewerGroupedConnection(ds: DSLSchema):
+    """ List all trivial fields of the AccessReviewsOriginalReviewerGroupedConnection type """
+    return (
+    )
+def list_trivial_fields_AccessReviewsOriginalReviewerGroupedEdge(ds: DSLSchema):
+    """ List all trivial fields of the AccessReviewsOriginalReviewerGroupedEdge type """
+    return (
+    )
+def list_trivial_fields_AccessReviewsOriginalReviewerGroupedNode(ds: DSLSchema):
+    """ List all trivial fields of the AccessReviewsOriginalReviewerGroupedNode type """
+    return (
+        ds.AccessReviewsOriginalReviewerGroupedNode.reviewerDetailsId,
+        ds.AccessReviewsOriginalReviewerGroupedNode.originalReviewerId,
+        ds.AccessReviewsOriginalReviewerGroupedNode.originalReviewerName,
+    )
+def list_trivial_user_fields_AccessReviewsOriginalReviewerGroupedNode(ds: DSLSchema):
+    """ List trivial fields of the AccessReviewsOriginalReviewerGroupedNode type accessible to USER role """
+    return (
+        ds.AccessReviewsOriginalReviewerGroupedNode.reviewerDetailsId,
+        ds.AccessReviewsOriginalReviewerGroupedNode.originalReviewerId,
+        ds.AccessReviewsOriginalReviewerGroupedNode.originalReviewerName,
     )
 def list_trivial_fields_AccessReviewsConnection(ds: DSLSchema):
     """ List all trivial fields of the AccessReviewsConnection type """
@@ -8104,6 +8803,7 @@ def list_trivial_fields_SnapshotScopeData(ds: DSLSchema):
         ds.SnapshotScopeData.externalId,
         ds.SnapshotScopeData.isInherited,
         ds.SnapshotScopeData.providerId,
+        ds.SnapshotScopeData.description,
     )
 def list_trivial_user_fields_SnapshotScopeData(ds: DSLSchema):
     """ List trivial fields of the SnapshotScopeData type accessible to USER role """
@@ -8114,6 +8814,7 @@ def list_trivial_user_fields_SnapshotScopeData(ds: DSLSchema):
         ds.SnapshotScopeData.externalId,
         ds.SnapshotScopeData.isInherited,
         ds.SnapshotScopeData.providerId,
+        ds.SnapshotScopeData.description,
     )
 def list_trivial_fields_SnapshotAgentInstanceData(ds: DSLSchema):
     """ List all trivial fields of the SnapshotAgentInstanceData type """
@@ -8243,6 +8944,7 @@ def list_trivial_fields_AccessReview(ds: DSLSchema):
         ds.AccessReview.id,
         ds.AccessReview.campaignId,
         ds.AccessReview.campaignName,
+        ds.AccessReview.entitlementType,
         ds.AccessReview.assignedReviewerId,
         ds.AccessReview.assignedReviewerName,
         ds.AccessReview.assignedReviewerIds,
@@ -8261,6 +8963,7 @@ def list_trivial_user_fields_AccessReview(ds: DSLSchema):
         ds.AccessReview.id,
         ds.AccessReview.campaignId,
         ds.AccessReview.campaignName,
+        ds.AccessReview.entitlementType,
         ds.AccessReview.assignedReviewerId,
         ds.AccessReview.assignedReviewerName,
         ds.AccessReview.assignedReviewerIds,
@@ -8355,6 +9058,7 @@ def list_trivial_fields_CampaignTemplate(ds: DSLSchema):
         ds.CampaignTemplate.scheduled,
         ds.CampaignTemplate.fallbackReviewerId,
         ds.CampaignTemplate.disableSelfReview,
+        ds.CampaignTemplate.restrictReassignmentToOwners,
         ds.CampaignTemplate.smtpIntegrationId,
     )
 def list_trivial_user_fields_CampaignTemplate(ds: DSLSchema):
@@ -8368,6 +9072,7 @@ def list_trivial_user_fields_CampaignTemplate(ds: DSLSchema):
         ds.CampaignTemplate.nhiKeyRotationMode,
         ds.CampaignTemplate.description,
         ds.CampaignTemplate.scheduled,
+        ds.CampaignTemplate.restrictReassignmentToOwners,
         ds.CampaignTemplate.smtpIntegrationId,
     )
 def list_trivial_fields_IdentityOpsInsightDataList(ds: DSLSchema):
@@ -8420,6 +9125,7 @@ def list_trivial_fields_NhiKeyRotationsSummary(ds: DSLSchema):
         ds.NhiKeyRotationsSummary.oldKeyStillInUseCount,
         ds.NhiKeyRotationsSummary.decommissioningRejectedCount,
         ds.NhiKeyRotationsSummary.decommissionedCount,
+        ds.NhiKeyRotationsSummary.rotationFailedCount,
     )
 def list_trivial_user_fields_NhiKeyRotationsSummary(ds: DSLSchema):
     """ List trivial fields of the NhiKeyRotationsSummary type accessible to USER role """
@@ -8431,6 +9137,7 @@ def list_trivial_user_fields_NhiKeyRotationsSummary(ds: DSLSchema):
         ds.NhiKeyRotationsSummary.oldKeyStillInUseCount,
         ds.NhiKeyRotationsSummary.decommissioningRejectedCount,
         ds.NhiKeyRotationsSummary.decommissionedCount,
+        ds.NhiKeyRotationsSummary.rotationFailedCount,
     )
 def list_trivial_fields_NhiKeyRotationFilterFacets(ds: DSLSchema):
     """ List all trivial fields of the NhiKeyRotationFilterFacets type """
@@ -8767,6 +9474,20 @@ def list_trivial_fields_TriggerSpecificationNode(ds: DSLSchema):
         ds.TriggerSpecificationNode.userId,
         ds.TriggerSpecificationNode.identityId,
         ds.TriggerSpecificationNode.triggerType,
+        ds.TriggerSpecificationNode.isMockUser,
+    )
+def list_trivial_fields_MockUserAttributeNode(ds: DSLSchema):
+    """ List all trivial fields of the MockUserAttributeNode type """
+    return (
+        ds.MockUserAttributeNode.key,
+        ds.MockUserAttributeNode.value,
+    )
+def list_trivial_fields_ChangedAttributeNode(ds: DSLSchema):
+    """ List all trivial fields of the ChangedAttributeNode type """
+    return (
+        ds.ChangedAttributeNode.name,
+        ds.ChangedAttributeNode.oldValue,
+        ds.ChangedAttributeNode.newValue,
     )
 def list_trivial_fields_JmlPolicyRuntimeNode(ds: DSLSchema):
     """ List all trivial fields of the JmlPolicyRuntimeNode type """
@@ -8807,6 +9528,7 @@ def list_trivial_fields_JmlRuleRuntimeNode(ds: DSLSchema):
         ds.JmlRuleRuntimeNode.id,
         ds.JmlRuleRuntimeNode.jmlRuleId,
         ds.JmlRuleRuntimeNode.ruleEvaluationStatus,
+        ds.JmlRuleRuntimeNode.ruleEvaluationReason,
     )
 def list_trivial_fields_JmlActionRuntimeConnection(ds: DSLSchema):
     """ List all trivial fields of the JmlActionRuntimeConnection type """
@@ -8972,6 +9694,30 @@ def list_trivial_fields_CustomWebhookActionRuntime(ds: DSLSchema):
     """ List all trivial fields of the CustomWebhookActionRuntime type """
     return (
     )
+def list_trivial_fields_TriggerJoinerPolicyActionRuntime(ds: DSLSchema):
+    """ List all trivial fields of the TriggerJoinerPolicyActionRuntime type """
+    return (
+        ds.TriggerJoinerPolicyActionRuntime.jmlPolicyId,
+    )
+def list_trivial_user_fields_TriggerJoinerPolicyActionRuntime(ds: DSLSchema):
+    """ List trivial fields of the TriggerJoinerPolicyActionRuntime type accessible to USER role """
+    return (
+        ds.TriggerJoinerPolicyActionRuntime.jmlPolicyId,
+    )
+def list_trivial_fields_TriggerIdentityCampaignActionRuntime(ds: DSLSchema):
+    """ List all trivial fields of the TriggerIdentityCampaignActionRuntime type """
+    return (
+        ds.TriggerIdentityCampaignActionRuntime.campaignTemplateId,
+        ds.TriggerIdentityCampaignActionRuntime.completionDays,
+        ds.TriggerIdentityCampaignActionRuntime.timezone,
+    )
+def list_trivial_user_fields_TriggerIdentityCampaignActionRuntime(ds: DSLSchema):
+    """ List trivial fields of the TriggerIdentityCampaignActionRuntime type accessible to USER role """
+    return (
+        ds.TriggerIdentityCampaignActionRuntime.campaignTemplateId,
+        ds.TriggerIdentityCampaignActionRuntime.completionDays,
+        ds.TriggerIdentityCampaignActionRuntime.timezone,
+    )
 def list_trivial_fields_JmlActionRuntimeNode(ds: DSLSchema):
     """ List all trivial fields of the JmlActionRuntimeNode type """
     return (
@@ -8987,6 +9733,7 @@ def list_trivial_fields_JmlActionRuntimeNode(ds: DSLSchema):
         ds.JmlActionRuntimeNode.scheduledAt,
         ds.JmlActionRuntimeNode.identityId,
         ds.JmlActionRuntimeNode.attemptCount,
+        ds.JmlActionRuntimeNode.skipReason,
     )
 def list_trivial_user_fields_JmlActionRuntimeNode(ds: DSLSchema):
     """ List trivial fields of the JmlActionRuntimeNode type accessible to USER role """
@@ -8995,6 +9742,12 @@ def list_trivial_user_fields_JmlActionRuntimeNode(ds: DSLSchema):
         ds.JmlActionRuntimeNode.scheduledAt,
         ds.JmlActionRuntimeNode.identityId,
         ds.JmlActionRuntimeNode.attemptCount,
+        ds.JmlActionRuntimeNode.skipReason,
+    )
+def list_trivial_fields_TriggerIdentityCampaignActionRuntimeOutput(ds: DSLSchema):
+    """ List all trivial fields of the TriggerIdentityCampaignActionRuntimeOutput type """
+    return (
+        ds.TriggerIdentityCampaignActionRuntimeOutput.campaignInstanceId,
     )
 def list_trivial_fields_UpdateUserInProviderActionRuntimeOutput(ds: DSLSchema):
     """ List all trivial fields of the UpdateUserInProviderActionRuntimeOutput type """
@@ -9212,6 +9965,26 @@ def list_trivial_fields_AccountTakeoverEvidence(ds: DSLSchema):
         ds.AccountTakeoverEvidence.detectionTime,
         ds.AccountTakeoverEvidence.queryDate,
         ds.AccountTakeoverEvidence.evidenceSummary,
+    )
+def list_trivial_fields_ExternalRiskEvidence(ds: DSLSchema):
+    """ List all trivial fields of the ExternalRiskEvidence type """
+    return (
+        ds.ExternalRiskEvidence.source,
+        ds.ExternalRiskEvidence.reference,
+        ds.ExternalRiskEvidence.status,
+        ds.ExternalRiskEvidence.firstSeen,
+        ds.ExternalRiskEvidence.resolvedReason,
+        ds.ExternalRiskEvidence.identityId,
+        ds.ExternalRiskEvidence.deviceId,
+        ds.ExternalRiskEvidence.falconAid,
+        ds.ExternalRiskEvidence.hostname,
+        ds.ExternalRiskEvidence.alertName,
+        ds.ExternalRiskEvidence.alertSeverity,
+        ds.ExternalRiskEvidence.alertStatus,
+        ds.ExternalRiskEvidence.score,
+        ds.ExternalRiskEvidence.level,
+        ds.ExternalRiskEvidence.evidenceSummary,
+        ds.ExternalRiskEvidence.raisedToHighAt,
     )
 def list_trivial_fields_ErroredCountryInfo(ds: DSLSchema):
     """ List all trivial fields of the ErroredCountryInfo type """
@@ -9445,6 +10218,60 @@ def list_trivial_user_fields_AccessRequestScope(ds: DSLSchema):
         ds.AccessRequestScope.scopeId,
         ds.AccessRequestScope.scopeName,
     )
+def list_trivial_fields_NhiLifecycleRequestData(ds: DSLSchema):
+    """ List all trivial fields of the NhiLifecycleRequestData type """
+    return (
+        ds.NhiLifecycleRequestData.serviceIdentityType,
+        ds.NhiLifecycleRequestData.displayName,
+        ds.NhiLifecycleRequestData.purpose,
+        ds.NhiLifecycleRequestData.ownerIdentityIds,
+        ds.NhiLifecycleRequestData.requestedKeyType,
+    )
+def list_trivial_user_fields_NhiLifecycleRequestData(ds: DSLSchema):
+    """ List trivial fields of the NhiLifecycleRequestData type accessible to USER role """
+    return (
+        ds.NhiLifecycleRequestData.serviceIdentityType,
+        ds.NhiLifecycleRequestData.displayName,
+        ds.NhiLifecycleRequestData.purpose,
+        ds.NhiLifecycleRequestData.ownerIdentityIds,
+        ds.NhiLifecycleRequestData.requestedKeyType,
+    )
+def list_trivial_fields_NhiRoleAssignmentRequestData(ds: DSLSchema):
+    """ List all trivial fields of the NhiRoleAssignmentRequestData type """
+    return (
+        ds.NhiRoleAssignmentRequestData.nhiIdentityId,
+        ds.NhiRoleAssignmentRequestData.managedNhiId,
+        ds.NhiRoleAssignmentRequestData.nhiDisplayName,
+        ds.NhiRoleAssignmentRequestData.serviceIdentityType,
+    )
+def list_trivial_user_fields_NhiRoleAssignmentRequestData(ds: DSLSchema):
+    """ List trivial fields of the NhiRoleAssignmentRequestData type accessible to USER role """
+    return (
+        ds.NhiRoleAssignmentRequestData.nhiIdentityId,
+        ds.NhiRoleAssignmentRequestData.managedNhiId,
+        ds.NhiRoleAssignmentRequestData.nhiDisplayName,
+        ds.NhiRoleAssignmentRequestData.serviceIdentityType,
+    )
+def list_trivial_fields_NhiLifecycleRoleBindingRequest(ds: DSLSchema):
+    """ List all trivial fields of the NhiLifecycleRoleBindingRequest type """
+    return (
+        ds.NhiLifecycleRoleBindingRequest.roleId,
+        ds.NhiLifecycleRoleBindingRequest.scopeId,
+        ds.NhiLifecycleRoleBindingRequest.scopeType,
+        ds.NhiLifecycleRoleBindingRequest.roleName,
+        ds.NhiLifecycleRoleBindingRequest.scopeName,
+        ds.NhiLifecycleRoleBindingRequest.roleType,
+    )
+def list_trivial_user_fields_NhiLifecycleRoleBindingRequest(ds: DSLSchema):
+    """ List trivial fields of the NhiLifecycleRoleBindingRequest type accessible to USER role """
+    return (
+        ds.NhiLifecycleRoleBindingRequest.roleId,
+        ds.NhiLifecycleRoleBindingRequest.scopeId,
+        ds.NhiLifecycleRoleBindingRequest.scopeType,
+        ds.NhiLifecycleRoleBindingRequest.roleName,
+        ds.NhiLifecycleRoleBindingRequest.scopeName,
+        ds.NhiLifecycleRoleBindingRequest.roleType,
+    )
 
 # End of file: andromeda/api/models/config/jit_request.proto
 
@@ -9513,6 +10340,11 @@ def list_trivial_user_fields_PermissionSetTemplate(ds: DSLSchema):
 # End of file: andromeda/api/models/config/permission_set_template.proto
 
 # File: andromeda/api/models/config/match.proto
+def list_trivial_fields_SimpleStringMatchCriteria(ds: DSLSchema):
+    """ List all trivial fields of the SimpleStringMatchCriteria type """
+    return (
+        ds.SimpleStringMatchCriteria.placeholder,
+    )
 def list_trivial_fields_TagMatch(ds: DSLSchema):
     """ List all trivial fields of the TagMatch type """
     return (
@@ -9544,6 +10376,35 @@ def list_trivial_fields_IdentitySignificanceMatch(ds: DSLSchema):
     return (
         ds.IdentitySignificanceMatch.matchCriteria,
         ds.IdentitySignificanceMatch.values,
+    )
+def list_trivial_fields_TitleMatch(ds: DSLSchema):
+    """ List all trivial fields of the TitleMatch type """
+    return (
+        ds.TitleMatch.values,
+    )
+def list_trivial_fields_CityMatch(ds: DSLSchema):
+    """ List all trivial fields of the CityMatch type """
+    return (
+        ds.CityMatch.matchCriteria,
+        ds.CityMatch.values,
+    )
+def list_trivial_fields_StateMatch(ds: DSLSchema):
+    """ List all trivial fields of the StateMatch type """
+    return (
+        ds.StateMatch.matchCriteria,
+        ds.StateMatch.values,
+    )
+def list_trivial_fields_CountryMatch(ds: DSLSchema):
+    """ List all trivial fields of the CountryMatch type """
+    return (
+        ds.CountryMatch.matchCriteria,
+        ds.CountryMatch.values,
+    )
+def list_trivial_fields_CompanyMatch(ds: DSLSchema):
+    """ List all trivial fields of the CompanyMatch type """
+    return (
+        ds.CompanyMatch.matchCriteria,
+        ds.CompanyMatch.values,
     )
 def list_trivial_fields_UserAttributeMatch(ds: DSLSchema):
     """ List all trivial fields of the UserAttributeMatch type """
@@ -9654,6 +10515,12 @@ def list_trivial_fields_UiColumnPreference(ds: DSLSchema):
         ds.UiColumnPreference.column,
         ds.UiColumnPreference.hidden,
     )
+def list_trivial_user_fields_UiColumnPreference(ds: DSLSchema):
+    """ List trivial fields of the UiColumnPreference type accessible to USER role """
+    return (
+        ds.UiColumnPreference.column,
+        ds.UiColumnPreference.hidden,
+    )
 
 # End of file: andromeda/api/models/config/ui_view_options.proto
 
@@ -9720,6 +10587,11 @@ def list_trivial_fields_SetActiveDirectoryParentDnAction(ds: DSLSchema):
     """ List all trivial fields of the SetActiveDirectoryParentDnAction type """
     return (
         ds.SetActiveDirectoryParentDnAction.parentDn,
+    )
+def list_trivial_fields_GrantCrowdstrikeRoleAction(ds: DSLSchema):
+    """ List all trivial fields of the GrantCrowdstrikeRoleAction type """
+    return (
+        ds.GrantCrowdstrikeRoleAction.roleId,
     )
 def list_trivial_fields_CreateUserActionNotificationSettings(ds: DSLSchema):
     """ List all trivial fields of the CreateUserActionNotificationSettings type """
@@ -10167,6 +11039,7 @@ def list_trivial_fields_ProviderFeatures(ds: DSLSchema):
         ds.ProviderFeatures.nhiSupported,
         ds.ProviderFeatures.nhiTypes,
         ds.ProviderFeatures.activityLogsSupported,
+        ds.ProviderFeatures.accessKeysSupported,
         ds.ProviderFeatures.supportedRecommendationTypes,
         ds.ProviderFeatures.superAdminSupported,
         ds.ProviderFeatures.effectivePermissionSupported,
@@ -10185,6 +11058,7 @@ def list_trivial_user_fields_ProviderFeatures(ds: DSLSchema):
     return (
         ds.ProviderFeatures.riskSupported,
         ds.ProviderFeatures.activityLogsSupported,
+        ds.ProviderFeatures.accessKeysSupported,
         ds.ProviderFeatures.superAdminSupported,
         ds.ProviderFeatures.effectivePermissionSupported,
         ds.ProviderFeatures.adhocProviderInventorySyncDisabled,
@@ -10287,6 +11161,7 @@ def list_trivial_fields_NhiFeaturesData(ds: DSLSchema):
         ds.NhiFeaturesData.subtypesSupported,
         ds.NhiFeaturesData.perAgentNhiSupportedAuthTypes,
         ds.NhiFeaturesData.perAgentNhiKeyTypeLabel,
+        ds.NhiFeaturesData.nhiLifecycleSupported,
     )
 def list_trivial_user_fields_NhiFeaturesData(ds: DSLSchema):
     """ List trivial fields of the NhiFeaturesData type accessible to USER role """
@@ -10294,6 +11169,7 @@ def list_trivial_user_fields_NhiFeaturesData(ds: DSLSchema):
         ds.NhiFeaturesData.originScopes,
         ds.NhiFeaturesData.perAgentNhiSupportedAuthTypes,
         ds.NhiFeaturesData.perAgentNhiKeyTypeLabel,
+        ds.NhiFeaturesData.nhiLifecycleSupported,
     )
 def list_trivial_fields_BrokerFeatures(ds: DSLSchema):
     """ List all trivial fields of the BrokerFeatures type """
@@ -10480,6 +11356,7 @@ def list_trivial_fields_AccessRequestValidationConfig(ds: DSLSchema):
         ds.AccessRequestValidationConfig.recurringJitEnabled,
         ds.AccessRequestValidationConfig.eligibilityBasedRevocationStrategy,
         ds.AccessRequestValidationConfig.requestExpirationDays,
+        ds.AccessRequestValidationConfig.revokeOngoingAccessOnExternalRiskSignal,
     )
 def list_trivial_user_fields_AccessRequestValidationConfig(ds: DSLSchema):
     """ List trivial fields of the AccessRequestValidationConfig type accessible to USER role """
@@ -10488,6 +11365,18 @@ def list_trivial_user_fields_AccessRequestValidationConfig(ds: DSLSchema):
         ds.AccessRequestValidationConfig.maxDuration,
         ds.AccessRequestValidationConfig.allowedRequestTypes,
         ds.AccessRequestValidationConfig.recurringJitEnabled,
+    )
+def list_trivial_fields_AgentStepUpGrantConfig(ds: DSLSchema):
+    """ List all trivial fields of the AgentStepUpGrantConfig type """
+    return (
+        ds.AgentStepUpGrantConfig.grantSeconds,
+        ds.AgentStepUpGrantConfig.bindToArguments,
+    )
+def list_trivial_user_fields_AgentStepUpGrantConfig(ds: DSLSchema):
+    """ List trivial fields of the AgentStepUpGrantConfig type accessible to USER role """
+    return (
+        ds.AgentStepUpGrantConfig.grantSeconds,
+        ds.AgentStepUpGrantConfig.bindToArguments,
     )
 
 # End of file: andromeda/api/models/config/jit_profile.proto
@@ -10629,6 +11518,14 @@ def list_trivial_fields_CampaignNotificationsConfig(ds: DSLSchema):
     return (
         ds.CampaignNotificationsConfig.reviewReminderIntervalDays,
         ds.CampaignNotificationsConfig.dailyReminderThresholdDays,
+        ds.CampaignNotificationsConfig.digestRecipients,
+        ds.CampaignNotificationsConfig.notifyDigestOnCampaignCompletion,
+        ds.CampaignNotificationsConfig.signoffReportType,
+    )
+def list_trivial_user_fields_CampaignNotificationsConfig(ds: DSLSchema):
+    """ List trivial fields of the CampaignNotificationsConfig type accessible to USER role """
+    return (
+        ds.CampaignNotificationsConfig.notifyDigestOnCampaignCompletion,
     )
 def list_trivial_fields_EligibilityStatusMatch(ds: DSLSchema):
     """ List all trivial fields of the EligibilityStatusMatch type """
@@ -11025,6 +11922,7 @@ def list_trivial_fields_CampaignSnapshotLevelledReviewer(ds: DSLSchema):
         ds.CampaignSnapshotLevelledReviewer.originalReviewerId,
         ds.CampaignSnapshotLevelledReviewer.originalReviewerName,
         ds.CampaignSnapshotLevelledReviewer.originalReviewerAssignmentReason,
+        ds.CampaignSnapshotLevelledReviewer.level,
     )
 def list_trivial_user_fields_CampaignSnapshotLevelledReviewer(ds: DSLSchema):
     """ List trivial fields of the CampaignSnapshotLevelledReviewer type accessible to USER role """
@@ -11035,6 +11933,7 @@ def list_trivial_user_fields_CampaignSnapshotLevelledReviewer(ds: DSLSchema):
         ds.CampaignSnapshotLevelledReviewer.originalReviewerId,
         ds.CampaignSnapshotLevelledReviewer.originalReviewerName,
         ds.CampaignSnapshotLevelledReviewer.originalReviewerAssignmentReason,
+        ds.CampaignSnapshotLevelledReviewer.level,
     )
 def list_trivial_fields_CampaignSnapshotReviewReviewerTrail(ds: DSLSchema):
     """ List all trivial fields of the CampaignSnapshotReviewReviewerTrail type """
@@ -11188,6 +12087,7 @@ def list_trivial_fields_CampaignSnapshotReviewAction(ds: DSLSchema):
         ds.CampaignSnapshotReviewAction.processedAt,
         ds.CampaignSnapshotReviewAction.triggeredByEmail,
         ds.CampaignSnapshotReviewAction.level,
+        ds.CampaignSnapshotReviewAction.reviewerSetId,
     )
 def list_trivial_user_fields_CampaignSnapshotReviewAction(ds: DSLSchema):
     """ List trivial fields of the CampaignSnapshotReviewAction type accessible to USER role """
@@ -11198,6 +12098,7 @@ def list_trivial_user_fields_CampaignSnapshotReviewAction(ds: DSLSchema):
         ds.CampaignSnapshotReviewAction.triggeredById,
         ds.CampaignSnapshotReviewAction.processedAt,
         ds.CampaignSnapshotReviewAction.triggeredByEmail,
+        ds.CampaignSnapshotReviewAction.reviewerSetId,
     )
 def list_trivial_fields_ReassignReviewActionData(ds: DSLSchema):
     """ List all trivial fields of the ReassignReviewActionData type """
@@ -11423,6 +12324,10 @@ def list_trivial_fields_ProvidersPoliciesData(ds: DSLSchema):
 
 # End of file: andromeda/nonpublic/conduit/conduit_service.proto
 
+# File: andromeda/api/models/config/agent_access_policy.proto
+
+# End of file: andromeda/api/models/config/agent_access_policy.proto
+
 # File: andromeda/api/models/config/access_bundle.proto
 
 # End of file: andromeda/api/models/config/access_bundle.proto
@@ -11434,6 +12339,10 @@ def list_trivial_fields_ProvidersPoliciesData(ds: DSLSchema):
 # File: andromeda/api/models/config/enums_derived.proto
 
 # End of file: andromeda/api/models/config/enums_derived.proto
+
+# File: andromeda/api/models/config/worker_registry.proto
+
+# End of file: andromeda/api/models/config/worker_registry.proto
 
 # File: andromeda/api/models/config/inventory_resource_mapping.proto
 
