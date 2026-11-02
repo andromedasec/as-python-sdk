@@ -1,0 +1,1092 @@
+{
+  "permissions": {},
+  "groups": {},
+  "nhis": {},
+  "scopes": {},
+  "roles": {},
+  "assignments": {},
+  "resources": {},
+  "agents": {},
+  "users": {
+    "jane@beatles.ai": {
+      "id": "jane@beatles.ai",
+      "username": "jane@beatles.ai",
+      "name": "Jane Doe",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "jane@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Marketing Manager",
+        "manager_id": "ringo.starr@beatles.ai",
+        "manager_name": "Ringo Starr",
+        "position_title": "Marketing Manager",
+        "division": "Marketing",
+        "city": "San Francisco",
+        "state": "CA",
+        "country": "US",
+        "hire_date": "2021-04-12T00:00:00Z"
+      }
+    },
+    "jane_adm@beatles.ai": {
+      "id": "jane_adm@beatles.ai",
+      "username": "jane_adm@beatles.ai",
+      "name": "Jane Doe",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "jane_adm@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Marketing Manager",
+        "manager_id": "ringo.starr@beatles.ai",
+        "manager_name": "Ringo Starr",
+        "position_title": "Marketing Manager",
+        "division": "Marketing",
+        "city": "San Francisco",
+        "state": "CA",
+        "country": "US",
+        "hire_date": "2021-04-12T00:00:00Z"
+      }
+    },
+    "john@beatles.ai": {
+      "id": "john@beatles.ai",
+      "username": "john@beatles.ai",
+      "name": "John Smith",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "john@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Staff Engineer",
+        "manager_id": "george.harrison@beatles.ai",
+        "manager_name": "George Harrison",
+        "position_title": "Staff Software Engineer",
+        "division": "Engineering",
+        "city": "Austin",
+        "state": "TX",
+        "country": "US",
+        "hire_date": "2019-06-03T00:00:00Z"
+      }
+    },
+    "john_42@beatles.ai": {
+      "id": "john_42@beatles.ai",
+      "username": "john_42@beatles.ai",
+      "name": "John Smith",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "john_42@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Staff Engineer",
+        "manager_id": "george.harrison@beatles.ai",
+        "manager_name": "George Harrison",
+        "position_title": "Staff Software Engineer",
+        "division": "Engineering",
+        "city": "Austin",
+        "state": "TX",
+        "country": "US",
+        "hire_date": "2019-06-03T00:00:00Z"
+      }
+    },
+    "yoko@beatles.ai": {
+      "id": "yoko@beatles.ai",
+      "username": "yoko@beatles.ai",
+      "name": "Yoko Ono",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "yoko@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Design Lead",
+        "manager_id": "paul.mccartney@beatles.ai",
+        "manager_name": "Paul McCartney",
+        "position_title": "Lead Product Designer",
+        "division": "Design",
+        "city": "New York",
+        "state": "NY",
+        "country": "US",
+        "hire_date": "2020-01-20T00:00:00Z"
+      }
+    },
+    "yoko_911@beatles.ai": {
+      "id": "yoko_911@beatles.ai",
+      "username": "yoko_911@beatles.ai",
+      "name": "Yoko Ono",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "yoko_911@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Design Lead",
+        "manager_id": "paul.mccartney@beatles.ai",
+        "manager_name": "Paul McCartney",
+        "position_title": "Lead Product Designer",
+        "division": "Design",
+        "city": "New York",
+        "state": "NY",
+        "country": "US",
+        "hire_date": "2020-01-20T00:00:00Z"
+      }
+    },
+    "ringo@beatles.ai": {
+      "id": "ringo@beatles.ai",
+      "username": "ringo@beatles.ai",
+      "name": "Ringo Starr",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "ringo@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Director of Operations",
+        "manager_id": "paul.mccartney@beatles.ai",
+        "manager_name": "Paul McCartney",
+        "position_title": "Director, Operations",
+        "division": "Operations",
+        "city": "San Francisco",
+        "state": "CA",
+        "country": "US",
+        "hire_date": "2016-11-01T00:00:00Z"
+      }
+    },
+    "paul@beatles.ai": {
+      "id": "paul@beatles.ai",
+      "username": "paul@beatles.ai",
+      "name": "Paul McCartney",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "paul@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "VP Sales",
+        "manager_id": "",
+        "manager_name": "",
+        "position_title": "Vice President, Sales",
+        "division": "Sales",
+        "city": "London",
+        "state": "",
+        "country": "GB",
+        "hire_date": "2015-07-15T00:00:00Z"
+      }
+    },
+    "george@beatles.ai": {
+      "id": "george@beatles.ai",
+      "username": "george@beatles.ai",
+      "name": "George Harrison",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "george@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Engineering Manager",
+        "manager_id": "ringo.starr@beatles.ai",
+        "manager_name": "Ringo Starr",
+        "position_title": "Engineering Manager",
+        "division": "Engineering",
+        "city": "Seattle",
+        "state": "WA",
+        "country": "US",
+        "hire_date": "2017-03-22T00:00:00Z"
+      }
+    },
+    "linda@beatles.ai": {
+      "id": "linda@beatles.ai",
+      "username": "linda@beatles.ai",
+      "name": "Linda McCartney",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "linda@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "HR Business Partner",
+        "manager_id": "paul.mccartney@beatles.ai",
+        "manager_name": "Paul McCartney",
+        "position_title": "HR Business Partner",
+        "division": "People",
+        "city": "London",
+        "state": "",
+        "country": "GB",
+        "hire_date": "2018-09-10T00:00:00Z"
+      }
+    },
+    "svc_backup@beatles.ai": {
+      "id": "svc_backup@beatles.ai",
+      "username": "svc_backup@beatles.ai",
+      "name": "Backup Service Account",
+      "status": "ENABLED",
+      "idp_attributes_map": {
+        "account_type": "service",
+        "owner_team": "Platform"
+      }
+    },
+    "svc_etl@beatles.ai": {
+      "id": "svc_etl@beatles.ai",
+      "username": "svc_etl@beatles.ai",
+      "name": "ETL Pipeline Service",
+      "status": "ENABLED",
+      "idp_attributes_map": {
+        "account_type": "service",
+        "owner_team": "Data"
+      }
+    },
+    "svc_ci@beatles.ai": {
+      "id": "svc_ci@beatles.ai",
+      "username": "svc_ci@beatles.ai",
+      "name": "CI Build Runner",
+      "status": "ENABLED",
+      "idp_attributes_map": {
+        "account_type": "service",
+        "owner_team": "Engineering"
+      }
+    },
+    "svc_monitoring@beatles.ai": {
+      "id": "svc_monitoring@beatles.ai",
+      "username": "svc_monitoring@beatles.ai",
+      "name": "Monitoring Collector",
+      "status": "ENABLED",
+      "idp_attributes_map": {
+        "account_type": "service",
+        "owner_team": "SRE"
+      }
+    },
+    "svc_jenkins@beatles.ai": {
+      "id": "svc_jenkins@beatles.ai",
+      "username": "svc_jenkins@beatles.ai",
+      "name": "Jenkins CI Service",
+      "status": "ENABLED",
+      "idp_attributes_map": {
+        "account_type": "service",
+        "owner_team": "Engineering"
+      }
+    },
+    "svc_terraform@beatles.ai": {
+      "id": "svc_terraform@beatles.ai",
+      "username": "svc_terraform@beatles.ai",
+      "name": "Terraform Automation",
+      "status": "ENABLED",
+      "idp_attributes_map": {
+        "account_type": "service",
+        "owner_team": "Platform"
+      }
+    },
+    "svc_grafana@beatles.ai": {
+      "id": "svc_grafana@beatles.ai",
+      "username": "svc_grafana@beatles.ai",
+      "name": "Grafana Dashboards",
+      "status": "ENABLED",
+      "idp_attributes_map": {
+        "account_type": "service",
+        "owner_team": "SRE"
+      }
+    },
+    "svc_pagerduty@beatles.ai": {
+      "id": "svc_pagerduty@beatles.ai",
+      "username": "svc_pagerduty@beatles.ai",
+      "name": "PagerDuty Integration",
+      "status": "ENABLED",
+      "idp_attributes_map": {
+        "account_type": "service",
+        "owner_team": "SRE"
+      }
+    },
+    "svc_datadog@beatles.ai": {
+      "id": "svc_datadog@beatles.ai",
+      "username": "svc_datadog@beatles.ai",
+      "name": "Datadog Agent",
+      "status": "ENABLED",
+      "idp_attributes_map": {
+        "account_type": "service",
+        "owner_team": "SRE"
+      }
+    },
+    "svc_github_actions@beatles.ai": {
+      "id": "svc_github_actions@beatles.ai",
+      "username": "svc_github_actions@beatles.ai",
+      "name": "GitHub Actions Runner",
+      "status": "ENABLED",
+      "idp_attributes_map": {
+        "account_type": "service",
+        "owner_team": "Engineering"
+      }
+    },
+    "j.doe@beatles.ai": {
+      "id": "j.doe@beatles.ai",
+      "username": "j.doe@beatles.ai",
+      "name": "Jane Doe",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "j.doe@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Marketing Manager",
+        "manager_id": "ringo.starr@beatles.ai",
+        "manager_name": "Ringo Starr",
+        "position_title": "Marketing Manager",
+        "division": "Marketing",
+        "city": "San Francisco",
+        "state": "CA",
+        "country": "US",
+        "hire_date": "2021-04-12T00:00:00Z"
+      }
+    },
+    "ja.doe@beatles.ai": {
+      "id": "ja.doe@beatles.ai",
+      "username": "ja.doe@beatles.ai",
+      "name": "Jacqline Doe",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "ja.doe@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Finance Analyst",
+        "manager_id": "paul.mccartney@beatles.ai",
+        "manager_name": "Paul McCartney",
+        "position_title": "Senior Finance Analyst",
+        "division": "Finance",
+        "city": "New York",
+        "state": "NY",
+        "country": "US",
+        "hire_date": "2022-02-14T00:00:00Z"
+      }
+    },
+    "jk.doe@beatles.ai": {
+      "id": "jk.doe@beatles.ai",
+      "username": "jk.doe@beatles.ai",
+      "name": "Jack Doe",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "jk.doe@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Senior SRE",
+        "manager_id": "george.harrison@beatles.ai",
+        "manager_name": "George Harrison",
+        "position_title": "Senior Site Reliability Engineer",
+        "division": "Engineering",
+        "city": "Seattle",
+        "state": "WA",
+        "country": "US",
+        "hire_date": "2020-10-05T00:00:00Z"
+      }
+    },
+    "j.smith@beatles.ai": {
+      "id": "j.smith@beatles.ai",
+      "username": "j.smith@beatles.ai",
+      "name": "John Smith",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "j.smith@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Staff Engineer",
+        "manager_id": "george.harrison@beatles.ai",
+        "manager_name": "George Harrison",
+        "position_title": "Staff Software Engineer",
+        "division": "Engineering",
+        "city": "Austin",
+        "state": "TX",
+        "country": "US",
+        "hire_date": "2019-06-03T00:00:00Z"
+      }
+    },
+    "mi.smith@beatles.ai": {
+      "id": "mi.smith@beatles.ai",
+      "username": "mi.smith@beatles.ai",
+      "name": "Michael Smith",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "mi.smith@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Operations Lead",
+        "manager_id": "ringo.starr@beatles.ai",
+        "manager_name": "Ringo Starr",
+        "position_title": "Operations Lead",
+        "division": "Operations",
+        "city": "Chicago",
+        "state": "IL",
+        "country": "US",
+        "hire_date": "2018-05-18T00:00:00Z"
+      }
+    },
+    "ma.smith@beatles.ai": {
+      "id": "ma.smith@beatles.ai",
+      "username": "ma.smith@beatles.ai",
+      "name": "Marcus Smith",
+      "status": "ENABLED",
+      "hr_type": "CONTINGENT_WORKER",
+      "hris_attributes": {
+        "email": "ma.smith@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Backend Engineer",
+        "manager_id": "george.harrison@beatles.ai",
+        "manager_name": "George Harrison",
+        "position_title": "Backend Engineer (Contract)",
+        "division": "Engineering",
+        "city": "Austin",
+        "state": "TX",
+        "country": "US",
+        "hire_date": "2024-01-08T00:00:00Z"
+      }
+    },
+    "r.starr@beatles.ai": {
+      "id": "r.starr@beatles.ai",
+      "username": "r.starr@beatles.ai",
+      "name": "Ringo Starr",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "r.starr@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Director of Operations",
+        "manager_id": "paul.mccartney@beatles.ai",
+        "manager_name": "Paul McCartney",
+        "position_title": "Director, Operations",
+        "division": "Operations",
+        "city": "San Francisco",
+        "state": "CA",
+        "country": "US",
+        "hire_date": "2016-11-01T00:00:00Z"
+      }
+    },
+    "p.mccartney@beatles.ai": {
+      "id": "p.mccartney@beatles.ai",
+      "username": "p.mccartney@beatles.ai",
+      "name": "Paul McCartney",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "p.mccartney@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "VP Sales",
+        "manager_id": "",
+        "manager_name": "",
+        "position_title": "Vice President, Sales",
+        "division": "Sales",
+        "city": "London",
+        "state": "",
+        "country": "GB",
+        "hire_date": "2015-07-15T00:00:00Z"
+      }
+    },
+    "g.harrison@beatles.ai": {
+      "id": "g.harrison@beatles.ai",
+      "username": "g.harrison@beatles.ai",
+      "name": "George Harrison",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "g.harrison@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Engineering Manager",
+        "manager_id": "ringo.starr@beatles.ai",
+        "manager_name": "Ringo Starr",
+        "position_title": "Engineering Manager",
+        "division": "Engineering",
+        "city": "Seattle",
+        "state": "WA",
+        "country": "US",
+        "hire_date": "2017-03-22T00:00:00Z"
+      }
+    },
+    "r.green@beatles.ai": {
+      "id": "r.green@beatles.ai",
+      "username": "r.green@beatles.ai",
+      "name": "Rachel Green",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "r.green@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Account Executive",
+        "manager_id": "paul.mccartney@beatles.ai",
+        "manager_name": "Paul McCartney",
+        "position_title": "Account Executive",
+        "division": "Sales",
+        "city": "New York",
+        "state": "NY",
+        "country": "US",
+        "hire_date": "2023-08-01T00:00:00Z"
+      }
+    },
+    "alice@beatles.ai": {
+      "id": "alice@beatles.ai",
+      "username": "alice@beatles.ai",
+      "name": "Alice Chen",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "alice@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Software Engineer",
+        "manager_id": "george.harrison@beatles.ai",
+        "manager_name": "George Harrison",
+        "position_title": "Software Engineer",
+        "division": "Engineering",
+        "city": "Seattle",
+        "state": "WA",
+        "country": "US",
+        "hire_date": "2022-11-14T00:00:00Z"
+      }
+    },
+    "alice_123@beatles.ai": {
+      "id": "alice_123@beatles.ai",
+      "username": "alice_123@beatles.ai",
+      "name": "Alice Chen",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "alice_123@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Software Engineer",
+        "manager_id": "george.harrison@beatles.ai",
+        "manager_name": "George Harrison",
+        "position_title": "Software Engineer",
+        "division": "Engineering",
+        "city": "Seattle",
+        "state": "WA",
+        "country": "US",
+        "hire_date": "2022-11-14T00:00:00Z"
+      }
+    },
+    "alice_admin@beatles.ai": {
+      "id": "alice_admin@beatles.ai",
+      "username": "alice_admin@beatles.ai",
+      "name": "Alice Chen",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "alice_admin@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Software Engineer",
+        "manager_id": "george.harrison@beatles.ai",
+        "manager_name": "George Harrison",
+        "position_title": "Software Engineer",
+        "division": "Engineering",
+        "city": "Seattle",
+        "state": "WA",
+        "country": "US",
+        "hire_date": "2022-11-14T00:00:00Z"
+      }
+    },
+    "a.chen@beatles.ai": {
+      "id": "a.chen@beatles.ai",
+      "username": "a.chen@beatles.ai",
+      "name": "Alice Chen",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "a.chen@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Software Engineer",
+        "manager_id": "george.harrison@beatles.ai",
+        "manager_name": "George Harrison",
+        "position_title": "Software Engineer",
+        "division": "Engineering",
+        "city": "Seattle",
+        "state": "WA",
+        "country": "US",
+        "hire_date": "2022-11-14T00:00:00Z"
+      }
+    },
+    "bob@beatles.ai": {
+      "id": "bob@beatles.ai",
+      "username": "bob@beatles.ai",
+      "name": "Bob Williams",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "bob@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "DevOps Engineer",
+        "manager_id": "ringo.starr@beatles.ai",
+        "manager_name": "Ringo Starr",
+        "position_title": "DevOps Engineer",
+        "division": "Operations",
+        "city": "Austin",
+        "state": "TX",
+        "country": "US",
+        "hire_date": "2020-07-01T00:00:00Z"
+      }
+    },
+    "bob_oncall@beatles.ai": {
+      "id": "bob_oncall@beatles.ai",
+      "username": "bob_oncall@beatles.ai",
+      "name": "Bob Williams",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "bob_oncall@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "DevOps Engineer",
+        "manager_id": "ringo.starr@beatles.ai",
+        "manager_name": "Ringo Starr",
+        "position_title": "DevOps Engineer",
+        "division": "Operations",
+        "city": "Austin",
+        "state": "TX",
+        "country": "US",
+        "hire_date": "2020-07-01T00:00:00Z"
+      }
+    },
+    "bob_privilege@beatles.ai": {
+      "id": "bob_privilege@beatles.ai",
+      "username": "bob_privilege@beatles.ai",
+      "name": "Bob Williams",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "bob_privilege@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "DevOps Engineer",
+        "manager_id": "ringo.starr@beatles.ai",
+        "manager_name": "Ringo Starr",
+        "position_title": "DevOps Engineer",
+        "division": "Operations",
+        "city": "Austin",
+        "state": "TX",
+        "country": "US",
+        "hire_date": "2020-07-01T00:00:00Z"
+      }
+    },
+    "b.williams@beatles.ai": {
+      "id": "b.williams@beatles.ai",
+      "username": "b.williams@beatles.ai",
+      "name": "Bob Williams",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "b.williams@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "DevOps Engineer",
+        "manager_id": "ringo.starr@beatles.ai",
+        "manager_name": "Ringo Starr",
+        "position_title": "DevOps Engineer",
+        "division": "Operations",
+        "city": "Austin",
+        "state": "TX",
+        "country": "US",
+        "hire_date": "2020-07-01T00:00:00Z"
+      }
+    },
+    "carlos@beatles.ai": {
+      "id": "carlos@beatles.ai",
+      "username": "carlos@beatles.ai",
+      "name": "Carlos Rodriguez",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "carlos@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Senior Product Manager",
+        "manager_id": "paul.mccartney@beatles.ai",
+        "manager_name": "Paul McCartney",
+        "position_title": "Senior Product Manager",
+        "division": "Product",
+        "city": "New York",
+        "state": "NY",
+        "country": "US",
+        "hire_date": "2019-09-23T00:00:00Z"
+      }
+    },
+    "carlos_777@beatles.ai": {
+      "id": "carlos_777@beatles.ai",
+      "username": "carlos_777@beatles.ai",
+      "name": "Carlos Rodriguez",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "carlos_777@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Senior Product Manager",
+        "manager_id": "paul.mccartney@beatles.ai",
+        "manager_name": "Paul McCartney",
+        "position_title": "Senior Product Manager",
+        "division": "Product",
+        "city": "New York",
+        "state": "NY",
+        "country": "US",
+        "hire_date": "2019-09-23T00:00:00Z"
+      }
+    },
+    "carlos_admin@beatles.ai": {
+      "id": "carlos_admin@beatles.ai",
+      "username": "carlos_admin@beatles.ai",
+      "name": "Carlos Rodriguez",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "carlos_admin@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Senior Product Manager",
+        "manager_id": "paul.mccartney@beatles.ai",
+        "manager_name": "Paul McCartney",
+        "position_title": "Senior Product Manager",
+        "division": "Product",
+        "city": "New York",
+        "state": "NY",
+        "country": "US",
+        "hire_date": "2019-09-23T00:00:00Z"
+      }
+    },
+    "c.rodriguez@beatles.ai": {
+      "id": "c.rodriguez@beatles.ai",
+      "username": "c.rodriguez@beatles.ai",
+      "name": "Carlos Rodriguez",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "c.rodriguez@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Senior Product Manager",
+        "manager_id": "paul.mccartney@beatles.ai",
+        "manager_name": "Paul McCartney",
+        "position_title": "Senior Product Manager",
+        "division": "Product",
+        "city": "New York",
+        "state": "NY",
+        "country": "US",
+        "hire_date": "2019-09-23T00:00:00Z"
+      }
+    },
+    "diana@beatles.ai": {
+      "id": "diana@beatles.ai",
+      "username": "diana@beatles.ai",
+      "name": "Diana Patel",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "diana@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Compliance Lead",
+        "manager_id": "linda.mccartney@beatles.ai",
+        "manager_name": "Linda McCartney",
+        "position_title": "Compliance Lead",
+        "division": "People",
+        "city": "London",
+        "state": "",
+        "country": "GB",
+        "hire_date": "2021-02-08T00:00:00Z"
+      }
+    },
+    "diana_sox@beatles.ai": {
+      "id": "diana_sox@beatles.ai",
+      "username": "diana_sox@beatles.ai",
+      "name": "Diana Patel",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "diana_sox@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Compliance Lead",
+        "manager_id": "linda.mccartney@beatles.ai",
+        "manager_name": "Linda McCartney",
+        "position_title": "Compliance Lead",
+        "division": "People",
+        "city": "London",
+        "state": "",
+        "country": "GB",
+        "hire_date": "2021-02-08T00:00:00Z"
+      }
+    },
+    "diana_privilege@beatles.ai": {
+      "id": "diana_privilege@beatles.ai",
+      "username": "diana_privilege@beatles.ai",
+      "name": "Diana Patel",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "diana_privilege@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Compliance Lead",
+        "manager_id": "linda.mccartney@beatles.ai",
+        "manager_name": "Linda McCartney",
+        "position_title": "Compliance Lead",
+        "division": "People",
+        "city": "London",
+        "state": "",
+        "country": "GB",
+        "hire_date": "2021-02-08T00:00:00Z"
+      }
+    },
+    "d.patel@beatles.ai": {
+      "id": "d.patel@beatles.ai",
+      "username": "d.patel@beatles.ai",
+      "name": "Diana Patel",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "d.patel@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Compliance Lead",
+        "manager_id": "linda.mccartney@beatles.ai",
+        "manager_name": "Linda McCartney",
+        "position_title": "Compliance Lead",
+        "division": "People",
+        "city": "London",
+        "state": "",
+        "country": "GB",
+        "hire_date": "2021-02-08T00:00:00Z"
+      }
+    },
+    "erik@beatles.ai": {
+      "id": "erik@beatles.ai",
+      "username": "erik@beatles.ai",
+      "name": "Erik Johansson",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "erik@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Data Scientist",
+        "manager_id": "george.harrison@beatles.ai",
+        "manager_name": "George Harrison",
+        "position_title": "Data Scientist",
+        "division": "Engineering",
+        "city": "Stockholm",
+        "state": "",
+        "country": "SE",
+        "hire_date": "2023-03-15T00:00:00Z"
+      }
+    },
+    "erik_42@beatles.ai": {
+      "id": "erik_42@beatles.ai",
+      "username": "erik_42@beatles.ai",
+      "name": "Erik Johansson",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "erik_42@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Data Scientist",
+        "manager_id": "george.harrison@beatles.ai",
+        "manager_name": "George Harrison",
+        "position_title": "Data Scientist",
+        "division": "Engineering",
+        "city": "Stockholm",
+        "state": "",
+        "country": "SE",
+        "hire_date": "2023-03-15T00:00:00Z"
+      }
+    },
+    "erik_admin@beatles.ai": {
+      "id": "erik_admin@beatles.ai",
+      "username": "erik_admin@beatles.ai",
+      "name": "Erik Johansson",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "erik_admin@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Data Scientist",
+        "manager_id": "george.harrison@beatles.ai",
+        "manager_name": "George Harrison",
+        "position_title": "Data Scientist",
+        "division": "Engineering",
+        "city": "Stockholm",
+        "state": "",
+        "country": "SE",
+        "hire_date": "2023-03-15T00:00:00Z"
+      }
+    },
+    "e.johansson@beatles.ai": {
+      "id": "e.johansson@beatles.ai",
+      "username": "e.johansson@beatles.ai",
+      "name": "Erik Johansson",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "e.johansson@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Data Scientist",
+        "manager_id": "george.harrison@beatles.ai",
+        "manager_name": "George Harrison",
+        "position_title": "Data Scientist",
+        "division": "Engineering",
+        "city": "Stockholm",
+        "state": "",
+        "country": "SE",
+        "hire_date": "2023-03-15T00:00:00Z"
+      }
+    },
+    "jane_admin@beatles.ai": {
+      "id": "jane_admin@beatles.ai",
+      "username": "jane_admin@beatles.ai",
+      "name": "Jane Doe",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "jane_admin@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Marketing Manager",
+        "manager_id": "ringo.starr@beatles.ai",
+        "manager_name": "Ringo Starr",
+        "position_title": "Marketing Manager",
+        "division": "Marketing",
+        "city": "San Francisco",
+        "state": "CA",
+        "country": "US",
+        "hire_date": "2021-04-12T00:00:00Z"
+      }
+    },
+    "jane_privilege@beatles.ai": {
+      "id": "jane_privilege@beatles.ai",
+      "username": "jane_privilege@beatles.ai",
+      "name": "Jane Doe",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "jane_privilege@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Marketing Manager",
+        "manager_id": "ringo.starr@beatles.ai",
+        "manager_name": "Ringo Starr",
+        "position_title": "Marketing Manager",
+        "division": "Marketing",
+        "city": "San Francisco",
+        "state": "CA",
+        "country": "US",
+        "hire_date": "2021-04-12T00:00:00Z"
+      }
+    },
+    "john_777@beatles.ai": {
+      "id": "john_777@beatles.ai",
+      "username": "john_777@beatles.ai",
+      "name": "John Smith",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "john_777@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Staff Engineer",
+        "manager_id": "george.harrison@beatles.ai",
+        "manager_name": "George Harrison",
+        "position_title": "Staff Software Engineer",
+        "division": "Engineering",
+        "city": "Austin",
+        "state": "TX",
+        "country": "US",
+        "hire_date": "2019-06-03T00:00:00Z"
+      }
+    },
+    "john_admin@beatles.ai": {
+      "id": "john_admin@beatles.ai",
+      "username": "john_admin@beatles.ai",
+      "name": "John Smith",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "john_admin@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Staff Engineer",
+        "manager_id": "george.harrison@beatles.ai",
+        "manager_name": "George Harrison",
+        "position_title": "Staff Software Engineer",
+        "division": "Engineering",
+        "city": "Austin",
+        "state": "TX",
+        "country": "US",
+        "hire_date": "2019-06-03T00:00:00Z"
+      }
+    },
+    "ringo_admin@beatles.ai": {
+      "id": "ringo_admin@beatles.ai",
+      "username": "ringo_admin@beatles.ai",
+      "name": "Ringo Starr",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "ringo_admin@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Director of Operations",
+        "manager_id": "paul.mccartney@beatles.ai",
+        "manager_name": "Paul McCartney",
+        "position_title": "Director, Operations",
+        "division": "Operations",
+        "city": "San Francisco",
+        "state": "CA",
+        "country": "US",
+        "hire_date": "2016-11-01T00:00:00Z"
+      }
+    },
+    "paul_admin@beatles.ai": {
+      "id": "paul_admin@beatles.ai",
+      "username": "paul_admin@beatles.ai",
+      "name": "Paul McCartney",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "paul_admin@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "VP Sales",
+        "manager_id": "",
+        "manager_name": "",
+        "position_title": "Vice President, Sales",
+        "division": "Sales",
+        "city": "London",
+        "state": "",
+        "country": "GB",
+        "hire_date": "2015-07-15T00:00:00Z"
+      }
+    },
+    "paul_privilege@beatles.ai": {
+      "id": "paul_privilege@beatles.ai",
+      "username": "paul_privilege@beatles.ai",
+      "name": "Paul McCartney",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "paul_privilege@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "VP Sales",
+        "manager_id": "",
+        "manager_name": "",
+        "position_title": "Vice President, Sales",
+        "division": "Sales",
+        "city": "London",
+        "state": "",
+        "country": "GB",
+        "hire_date": "2015-07-15T00:00:00Z"
+      }
+    },
+    "george_admin@beatles.ai": {
+      "id": "george_admin@beatles.ai",
+      "username": "george_admin@beatles.ai",
+      "name": "George Harrison",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "george_admin@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Engineering Manager",
+        "manager_id": "ringo.starr@beatles.ai",
+        "manager_name": "Ringo Starr",
+        "position_title": "Engineering Manager",
+        "division": "Engineering",
+        "city": "Seattle",
+        "state": "WA",
+        "country": "US",
+        "hire_date": "2017-03-22T00:00:00Z"
+      }
+    },
+    "yoko_privilege@beatles.ai": {
+      "id": "yoko_privilege@beatles.ai",
+      "username": "yoko_privilege@beatles.ai",
+      "name": "Yoko Ono",
+      "status": "ENABLED",
+      "hr_type": "EMPLOYEE",
+      "hris_attributes": {
+        "email": "yoko_privilege@beatles.ai",
+        "org_name": "Beatles Inc",
+        "business_title": "Design Lead",
+        "manager_id": "paul.mccartney@beatles.ai",
+        "manager_name": "Paul McCartney",
+        "position_title": "Lead Product Designer",
+        "division": "Design",
+        "city": "New York",
+        "state": "NY",
+        "country": "US",
+        "hire_date": "2020-01-20T00:00:00Z"
+      }
+    }
+  }
+}

@@ -85,14 +85,24 @@ class UserStatus(Enum):
 
 #### PrincipalType
 
-Type of principal in role assignments.
+Type of principal in role assignments. The values match the ingester's
+`config.PrincipalTypeMessage.PrincipalType`.
 
 ```python
 class PrincipalType(Enum):
-    HUMAN = "HUMAN"          # Human user
-    NHI = "NHI"              # Non-human identity (service account)
-    GROUP = "GROUP"          # Group of users
+    HUMAN = "HUMAN"                        # Human user
+    SERVICE_IDENTITY = "SERVICE_IDENTITY"  # Non-human identity (service account, bot, agent)
+    GROUP = "GROUP"                        # Group of users
+
+    NHI = "NHI"                            # Deprecated alias for SERVICE_IDENTITY
 ```
+
+Use `SERVICE_IDENTITY` for NHI assignments. The proto has no `NHI` value and the inventory
+upload check rejects it (`invalid value for enum field principalType: "NHI"`).
+`NHI` is still accepted for backward compatibility: `validate_inventory_consistency()`
+(which `CustomAppCsvTransformer.transform_and_export()` runs before writing) rewrites it to
+`SERVICE_IDENTITY` via `normalize_principal_types()`. Code that writes inventory JSON
+without validating must call `normalize_principal_types()` itself.
 
 #### RoleType
 
@@ -147,7 +157,8 @@ class PermissionAccessLevel(Enum):
 
 #### NhiType
 
-Type of non-human identity.
+Type of non-human identity. Not part of the ingester's `CustomAppNhi` message; see
+[CustomAppNhi](#customappnhi).
 
 ```python
 class NhiType(Enum):
@@ -183,6 +194,10 @@ user = CustomAppUser(
 )
 ```
 
+`hris_attributes.hire_date` and `termination_date` are `google.protobuf.Timestamp` fields
+in the ingester, so they must be RFC 3339 timestamps such as `2023-05-15T00:00:00Z`. A bare
+date (`2023-05-15`) fails the upload check with `invalid google.protobuf.Timestamp value`.
+
 #### CustomAppNhi
 
 Represents a non-human identity (service account, API key, etc.).
@@ -199,6 +214,14 @@ class CustomAppNhi:
     custodianId: Optional[str] = None
     status: Optional[str] = None
 ```
+
+The ingester's `CustomAppNhi` message has only `id`, `username`, `name`, `owner_id`,
+`custodian_id` and `status`. The ingester's own reader ignores the extra fields, but the
+inventory upload check rejects them (`unknown field "type"`). Because `type` defaults to
+`CUSTOM_APP_NHI`, pass `type=None` (and leave `is_external_client` false) so both are
+dropped on export, or use a dataclass with only the proto's fields, as the disconnected
+example does. NHI `status` uses the proto's `ExternalUserStatus`, not the users'
+`IdentityStatus`.
 
 #### CustomAppGroup
 
@@ -288,7 +311,7 @@ Represents a role assignment to a principal (user, group, or NHI).
 class CustomAppRoleAssignment:
     id: str
     principalId: str           # User/Group/NHI ID
-    principalType: str         # PrincipalType enum value
+    principalType: str         # PrincipalType: HUMAN, GROUP or SERVICE_IDENTITY
     roleId: str
     scopeId: Optional[str] = None
 ```
@@ -341,13 +364,15 @@ class CustomAppInventory:
 
 ### convert_to_andromeda_dict()
 
-Converts inventory dictionaries from snake_case to camelCase and removes empty values.
+Recursively removes empty values (`None`, `""`, `[]`, `{}`, `False`, `0`) from the
+`asdict()` output so they are left out of the JSON. Keys keep their snake_case dataclass
+names, which protobuf JSON parsing accepts. Because `False` is dropped, a boolean field
+that isn't in the proto disappears when false but is rejected when true.
 
 ```python
 def convert_to_andromeda_dict(obj: Any) -> Any:
     """
-    Recursively convert dictionary keys from snake_case to camelCase.
-    Removes empty values.
+    Recursively remove any items that are either empty or equal to null value
     """
 ```
 
@@ -471,12 +496,22 @@ def summarize(self) -> Dict[str, int]:
 
 #### Validation Methods
 
-The base class provides built-in validation:
+`transform_and_export()` calls `inventory_validation()` before writing. It runs
+`validate_inventory_consistency()` from `custom_app_models.py` and raises `ValueError` on
+any error. That function first normalizes legacy values (old access-level names, and the
+`NHI` principal type to `SERVICE_IDENTITY`), then checks:
 
-- `inventory_validation()`: Validates entire inventory
-- `_validate_users()`: Validates user status
-- `_validate_roles()`: Validates role types and permissions
-- `_validate_assignments()`: Validates assignment references
+- user status and HR type enums
+- NHI owner and custodian references
+- group member references
+- scope parents and types
+- role types and permission references
+- permission access levels
+- assignment role, scope and principal references
+- resource scopes and owners, agent devices and users
+
+These checks catch broken references; they do not check every field against the
+ingester's protos. See [Troubleshooting](#troubleshooting) for upload errors they miss.
 
 ---
 
@@ -858,6 +893,26 @@ def test_transformation():
 
 - Solution: Check output directory exists and has write permissions
 
+### Inventory upload errors
+
+The inventory upload check (`E10252 Invalid Andromeda Inventory JSON file`) parses the JSON
+against the ingester's protos strictly. The ingester's own reader is more lenient, so a file
+can ingest when run through a provider yet fail on upload. The proto messages are in
+`records/proto/andromeda/nonpublic/integrations/customapp/`.
+
+**`invalid google.protobuf.Timestamp value "2023-05-15"`**
+
+- HRIS `hire_date` / `termination_date` must be RFC 3339 timestamps: `2023-05-15T00:00:00Z`.
+
+**`unknown field "type"` (or `"is_external_client"`) under `nhis`**
+
+- The SDK's `CustomAppNhi` has fields the proto doesn't. See [CustomAppNhi](#customappnhi).
+
+**`invalid value for enum field principalType: "NHI"`**
+
+- Use `SERVICE_IDENTITY`, or run `validate_inventory_consistency()` /
+  `normalize_principal_types()` before writing. See [PrincipalType](#principaltype).
+
 ---
 
 ## Reference
@@ -866,4 +921,8 @@ def test_transformation():
 - **Utils**: `sdk/customapp/custom_app_utils.py`
 - **Base Class**: `sdk/customapp/csv_transformer.py`
 - **Examples**: `lib/python/sdk/custom_app_type1_sample/`
+- **Complete example app**: `lib/python/disconnected-example-app/`, a sample CSV app
+  (users and NHIs, a role/permission matrix, assignments) built on `CustomAppCsvTransformer`,
+  with sample data
 - **Mock Data**: `sdk/customapp/mock_data.json`
+- **Ingester protos**: `records/proto/andromeda/nonpublic/integrations/customapp/`

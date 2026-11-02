@@ -88,7 +88,8 @@ def _inventory(sdl=_NEW, data=None, error=None):
 
 
 def _query_text(inv):
-    return print_ast(inv.gql_client.execute.call_args[0][0])
+    query = inv.gql_client.execute.call_args[0][0]
+    return print_ast(getattr(query, "document", query))  # gql 4 wraps it in a GraphQLRequest
 
 
 def _error(data, errors):

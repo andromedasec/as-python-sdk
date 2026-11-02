@@ -64,7 +64,7 @@ def _inventory(formatted):
 
 def _query_text(inv):
     query = inv.gql_client.execute.call_args[0][0]
-    return print_ast(query)
+    return print_ast(getattr(query, "document", query))  # gql 4 wraps it in a GraphQLRequest
 
 
 def _edges(root, node):

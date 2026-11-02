@@ -79,10 +79,20 @@ class UserStatus(Enum):
     SUSPENDED = "SUSPENDED"
 
 class PrincipalType(Enum):
-    """Represents a principal type in the custom application inventory."""
+    """Represents a principal type in the custom application inventory.
+
+    Values match config.PrincipalTypeMessage.PrincipalType, except NHI: the proto
+    calls NHI principals SERVICE_IDENTITY, and the inventory upload check rejects
+    "NHI". NHI is still accepted as input for backward compatibility;
+    validate_inventory_consistency rewrites it to SERVICE_IDENTITY (see
+    normalize_principal_types).
+    """
     HUMAN = "HUMAN"
-    NHI = "NHI"
+    SERVICE_IDENTITY = "SERVICE_IDENTITY"
     GROUP = "GROUP"
+
+    # Deprecated alias for SERVICE_IDENTITY; normalized before export.
+    NHI = "NHI"
 
 class RoleType(Enum):
     """Represents a role type in the custom application inventory."""
@@ -519,6 +529,48 @@ class CustomAppMcpServer:
     # Only set by collectors whose config format carries an explicit OAuth indicator.
     # Matches customapp_agent.proto CustomAppMcpServer#9.
     uses_oauth: Optional[bool] = None
+    # Endpoint-collector extras (Claude RTR collector >= 1.3.0). Not in the proto
+    # (except tools): they are kept in the MDM snapshot JSON and discarded when
+    # protos are built.
+    # scope: which config source the server came from (user, local, project,
+    # claude_ai_connector, desktop, plugin:<name>, transcript_only).
+    scope: Optional[str] = None
+    # Calls to any of the server's tools seen in local transcripts.
+    call_count: Optional[int] = None
+    last_called: Optional[str] = None
+    # Tools the server exposes, as {"name", "last_used", "description"}; last_used is
+    # absent when the tool was never called and description when the collector found
+    # none (empty values are stripped from the inventory JSON). Matches
+    # customapp_agent.proto CustomAppMcpServer#10.
+    tools: List[Dict[str, Any]] = field(default_factory=list)
+    tools_as_of: Optional[str] = None
+    # Only the connector's sign-in tools are exposed: the user is not signed in.
+    tools_auth_only: Optional[bool] = None
+    # Where the server was seen: its config scope, "desktop_sessions" (Claude Desktop's
+    # remoteMcpServersConfig) and "transcript:<entrypoint>" (e.g. transcript:cli).
+    sources: List[str] = field(default_factory=list)
+
+
+@dataclass
+class CustomAppSkill:
+    """One Agent Skill (a SKILL.md package) installed for an agent on an endpoint.
+
+    Content is the SKILL.md text the ingester analyses (skillanalysis.AnalyzeSkill),
+    with secrets already redacted by the collector. Matches customapp_agent.proto
+    CustomAppSkill.
+    """
+    name: str
+    # Where the skill came from: personal, synced, or plugin:<plugin>@<marketplace>.
+    scope: Optional[str] = None
+    # SKILL.md path relative to the user's home directory.
+    path: Optional[str] = None
+    content: Optional[str] = None
+    # Original size in bytes when the collector cut the file; 0 when it sent all of it.
+    content_truncated_at: Optional[int] = None
+    bundled_files: List[str] = field(default_factory=list)
+    has_scripts: Optional[bool] = None
+    # Why content is absent (unreadable, host_budget, decode_failed); None when present.
+    content_omitted: Optional[str] = None
 
 
 @dataclass
@@ -541,6 +593,10 @@ class CustomAppAgent:
     # MCP servers configured on this install, structural shape only. The ingester
     # models each entry as an AgentConnection. Matches customapp_agent.proto#10.
     mcp_servers: List[CustomAppMcpServer] = field(default_factory=list)
+    # Agent Skills installed for this agent on its endpoint. The ingester runs the
+    # shared skill analyzer on each and models it as an AgentSkill.
+    # Matches customapp_agent.proto#11.
+    skills: List[CustomAppSkill] = field(default_factory=list)
 
 
 @dataclass
@@ -843,6 +899,11 @@ def load_inventory_from_json(data: dict) -> CustomAppInventory:
                     CustomAppMcpServer(**s) if isinstance(s, dict) else s
                     for s in agent_data['mcp_servers']
                 ]
+            if 'skills' in agent_data and isinstance(agent_data['skills'], list):
+                agent_data['skills'] = [
+                    CustomAppSkill(**s) if isinstance(s, dict) else s
+                    for s in agent_data['skills']
+                ]
             inventory.agents[agent_id] = CustomAppAgent(**agent_data)
 
     if 'child_applications' in data:
@@ -1023,7 +1084,7 @@ def _check_assignment_references(inventory: CustomAppInventory, strict_enums: bo
         if assignment.principal_type == PrincipalType.HUMAN.value:
             if assignment.principal_id not in inventory.users:
                 errors.append(f"Assignment '{assign_id}' principal_id '{assignment.principal_id}' not found in users (type=HUMAN)")
-        elif assignment.principal_type == PrincipalType.NHI.value:
+        elif assignment.principal_type in NHI_PRINCIPAL_TYPES:
             if assignment.principal_id not in inventory.nhis:
                 errors.append(f"Assignment '{assign_id}' principal_id '{assignment.principal_id}' not found in nhis (type=NHI)")
         elif assignment.principal_type == PrincipalType.GROUP.value:
@@ -1050,6 +1111,22 @@ def normalize_deprecated_access_levels(inventory: CustomAppInventory) -> None:
         mapped = _DEPRECATED_ACCESS_LEVEL_MAP.get(key)
         if mapped is not None:
             perm.access_level = mapped.value
+
+
+# Principal types that refer to an entry in inventory.nhis.
+NHI_PRINCIPAL_TYPES = (PrincipalType.SERVICE_IDENTITY.value, PrincipalType.NHI.value)
+
+
+def normalize_principal_types(inventory: CustomAppInventory) -> None:
+    """Rewrite the legacy NHI principal type to SERVICE_IDENTITY in place.
+
+    config.PrincipalTypeMessage has no NHI value; the ingester's streaming reader
+    maps it, but the inventory upload check parses the file strictly and rejects
+    "NHI" ("invalid value for enum field principalType"). Idempotent.
+    """
+    for assignment in inventory.assignments.values():
+        if assignment.principal_type == PrincipalType.NHI.value:
+            assignment.principal_type = PrincipalType.SERVICE_IDENTITY.value
 
 
 # Old-taxonomy label (config.AccessLevel proto name) -> new PermissionAccessLevel.
@@ -1084,6 +1161,8 @@ def validate_inventory_consistency(
     # Backward compatibility: transform old-taxonomy access levels to the new
     # taxonomy before enum checks so legacy inventories keep working.
     normalize_deprecated_access_levels(inventory)
+    # Likewise rewrite the SDK's legacy NHI principal type to the proto's SERVICE_IDENTITY.
+    normalize_principal_types(inventory)
 
     # Define all validation checks
     validation_checks = [
