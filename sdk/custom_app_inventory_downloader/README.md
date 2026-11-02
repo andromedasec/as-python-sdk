@@ -29,11 +29,12 @@ The module defines the following entity types:
 - `username`: Service identity username
 - `name`: Display name
 - `id`: Unique identifier
-- `type`: NHI type (CUSTOM_APP_NHI)
-- `is_external_client`: External client flag
 - `ownerId`: Owner user ID
 - `custodianId`: Custodian user ID
-- `status`: Status
+- `status`: Status (`ExternalUserStatus`, e.g. ENABLED, DISABLED)
+- `type`, `is_external_client`: SDK-only fields; the ingester's NHI message doesn't have them
+  and the inventory upload check rejects them, so leave `type=None` and
+  `is_external_client` false (both are then dropped on export)
 
 ### Groups (`CustomAppGroup`)
 
@@ -60,7 +61,7 @@ The module defines the following entity types:
 
 - `id`: Unique identifier
 - `principalId`: Principal ID (user/group/NHI)
-- `principalType`: Principal type (HUMAN, NHI, GROUP)
+- `principalType`: Principal type (HUMAN, SERVICE_IDENTITY, GROUP)
 - `roleId`: Assigned role ID
 - `scopeId`: Optional scope for scoped assignments
 
@@ -113,7 +114,6 @@ The module generates timestamped JSON files with the following structure:
       "username": "service-account-1",
       "name": "Service Account 1",
       "id": "app-uuid-001",
-      "type": "CUSTOM_APP_NHI",
       "ownerId": "owner@example.com",
       "custodianId": "custodian@example.com",
       "status": "ENABLED"
@@ -178,6 +178,11 @@ To add support for a new custom app inventory source:
 3. Map source data to the standard data classes
 4. Use the existing `transform_and_export()` method for output
 
+For a complete sample of a CSV-based app (users and NHIs, a role/permission matrix, role
+assignments) built on `CustomAppCsvTransformer`, see `lib/python/disconnected-example-app/`.
+The SDK's inventory format notes and common upload errors are in `sdk/customapp/README.md`
+(Troubleshooting).
+
 ### Mock Data
 
 The module includes comprehensive mock data for testing. The mock data demonstrates:
@@ -201,8 +206,11 @@ The module includes comprehensive mock data for testing. The mock data demonstra
 ### PrincipalType
 
 - `HUMAN`: Human user
-- `NHI`: Non-human identity (service account, app, etc.)
+- `SERVICE_IDENTITY`: Non-human identity (service account, app, etc.)
 - `GROUP`: Group of users
+- `NHI`: Deprecated alias for `SERVICE_IDENTITY`. The inventory upload check rejects it;
+  `validate_inventory_consistency()` rewrites it, but JSON written without validation (as
+  this module's mock-data downloader does) must use `SERVICE_IDENTITY`
 
 ### RoleType
 

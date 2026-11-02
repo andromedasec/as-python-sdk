@@ -316,6 +316,28 @@ def test_human_identities(ai: AndromedaInventory):
     assert hi
 
 
+@pytest.mark.parametrize("method", ["as_humans_identity_set_page",
+                                    "as_non_humans_identity_set_page"])
+def test_identity_set_page_and_its_group_breakdown(ai: AndromedaInventory, method: str):
+    """A page of identities comes back with ids and a total, and cohortAnalysis splits
+    exactly those identities into members and non-members of each group."""
+    nodes, total = getattr(ai, method)({}, 5, 0)
+    if not nodes:
+        _missing_fixture(f"{method}: tenant has no identities of this kind")
+    assert total >= len(nodes)
+    ids = [node["id"] for node in nodes]
+    assert all(ids)
+
+    breakdown = ai.as_identity_cohort_group_breakdown(
+        ids, page_size=10, with_member_ids=True, with_identities_with_none=True)
+    assert breakdown["found"] == len(set(ids))
+    assert 0 <= breakdown["identitiesWithNone"] <= breakdown["found"]
+    for edge in breakdown["groups"]:
+        assert edge["node"]["id"]
+        split = edge["members"]["identityIds"] + edge["nonMembers"]["identityIds"]
+        assert sorted(split) == sorted(set(ids))
+
+
 def test_events(ai: AndromedaInventory):
     """
     Test the events

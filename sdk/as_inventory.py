@@ -15,13 +15,21 @@ import warnings
 from collections import namedtuple, OrderedDict
 import requests
 from gql import Client, gql
-from graphql import build_client_schema, get_introspection_query
-from gql.dsl import (DSLQuery, dsl_gql, DSLSchema, DSLInlineFragment, DSLMetaField)
+from graphql import build_client_schema, coerce_input_value, get_introspection_query
+from gql.dsl import (DSLQuery, dsl_gql, DSLSchema, DSLInlineFragment, DSLMetaField,
+                     DSLVariableDefinitions)
 from gql.transport.requests import RequestsHTTPTransport
 from api.graphql import graphql_query_snippets as gql_snippets
 from gql.transport.exceptions import TransportQueryError
 from sdk.api_utils import APIUtils
 from sdk.gql_partial import execute_allow_partial, has_field, is_not_found
+
+try:
+    # graphql-core 3.3 reports invalid input through validate_input_value; 3.2 reports it
+    # through coerce_input_value's on_error.
+    from graphql.utilities import validate_input_value
+except ImportError:
+    validate_input_value = None
 
 logger = logging.getLogger(__name__)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
@@ -30,6 +38,28 @@ DEFAULT_PAGE_SIZE = 100
 # Nested connections (a user's providers, a provider's resolved assignments) are fetched
 # in a single page rather than paged independently — see _warn_on_nested_page_cap.
 NESTED_PAGE_SIZE = 100
+# Campaigns per part of an identity's UAR activity. One page: the tool reports the
+# server total beside it. Must match tools_common.tool_limits.UAR_MAX_PAGE_SIZE.
+UAR_IDENTITY_CAMPAIGNS_PAGE_SIZE = 25
+TOOL_APPLICATION_OWNERS_PAGE_SIZE = 10
+# Per-agent nested lists in fetch_agent_detail. One page each; the row carries the
+# server total beside it so a caller can say "first 25 of 140".
+AGENT_DETAIL_NESTED_PAGE_SIZE = 25
+# Owners listed per agent in fetch_agents_page.
+AGENT_LIST_OWNERS_PAGE_SIZE = 3
+
+# Scalar Agent fields an agent list row carries. Fields a USER may not read come back
+# null (the read runs with execute_allow_partial) and the caller drops them.
+AGENT_LIST_FIELDS = (
+    "id", "name", "type", "status", "riskLevel", "blastRisk", "blastRiskLevel",
+    "governanceState", "onboardingState", "isRegistered", "shadowAgentType",
+    "agentActive", "lastActivityAt", "numUsers", "numApplications", "numMcpServers",
+    "numLocalMcpServers", "usesSharedIdentity", "isPublishedExternal",
+    "isPublishedInternal", "endUserAuthType", "outboundIdentity", "invocationType",
+    "supportsAgentToAgent",
+)
+# Newer Agent fields, selected only when the server's schema has them.
+AGENT_OPTIONAL_FIELDS = ("region", "scopeName")
 
 # The schema cache is keyed per credential, so a long-lived process serving many
 # principals (the ai-agent pod) would otherwise retain one full introspected schema per
@@ -1199,6 +1229,189 @@ class AndromedaInventory(dict):
         partial_fn_itr = functools.partial(
             self.as_non_humans_identities_base_fn, filters)
         yield from self.as_gql_generic_itr(partial_fn_itr, page_size=page_size, start_skip=skip)
+
+    def as_humans_identity_set_page(
+            self, filters: dict | None, page_size: int = 100, skip: int = 0) -> tuple[list, int]:
+        """
+        One page of the human identities matching `filters`, with only the fields that name
+        them (id, name, email, username), for reading a whole set cheaply.
+        :param filters: IdentityFilters
+        :param page_size: identities per page
+        :param skip: identities to skip
+        :return: (identity nodes, how many identities match `filters`)
+        :raises ValueError: when `filters` is not a valid IdentityFilters
+        """
+        self._check_filters("IdentityFilters", filters)
+        ds = DSLSchema(self.gql_client.schema)
+        query = dsl_gql(DSLQuery(
+            ds.Query.Identities(
+                pageArgs={"pageSize": page_size, "skip": skip},
+                filters=filters or {},
+            ).select(
+                ds.IdentitiesConnection.edges.select(
+                    ds.IdentityEdge.node.select(
+                        ds.Identity.id, 
+                        ds.Identity.name, 
+                        ds.Identity.email, 
+                        ds.Identity.username,
+                    ),
+                ),
+                ds.IdentitiesConnection.pageInfo.select(ds.PageInfo.count),
+            )
+        ))
+        return self._identities_page(query, "Identities")
+
+    def as_non_humans_identity_set_page(
+            self, filters: dict | None, page_size: int = 100, skip: int = 0) -> tuple[list, int]:
+        """
+        One page of the non-human identities matching `filters`, with only the fields that
+        name them (id, username, serviceIdentityType), for reading a whole set cheaply.
+        :param filters: ServiceIdentityFilters
+        :param page_size: identities per page
+        :param skip: identities to skip
+        :return: (identity nodes, how many identities match `filters`)
+        :raises ValueError: when `filters` is not a valid ServiceIdentityFilters
+        """
+        self._check_filters("ServiceIdentityFilters", filters)
+        ds = DSLSchema(self.gql_client.schema)
+        query = dsl_gql(DSLQuery(
+            ds.Query.ServiceIdentities(
+                pageArgs={"pageSize": page_size, "skip": skip},
+                filters=filters or {},
+            ).select(
+                ds.ServiceIdentitiesConnection.edges.select(
+                    ds.ServiceIdentityEdge.node.select(
+                        ds.ServiceIdentity.id, 
+                        ds.ServiceIdentity.username,
+                        ds.ServiceIdentity.serviceIdentityType,
+                    ),
+                ),
+                ds.ServiceIdentitiesConnection.pageInfo.select(ds.PageInfo.count),
+            )
+        ))
+        return self._identities_page(query, "ServiceIdentities")
+
+    def as_identity_cohort_group_breakdown(
+            self, identity_ids: list[str], page_size: int = 100, skip: int = 0,
+            group_filters: dict | None = None, with_member_ids: bool = False,
+            with_identities_with_none: bool = False, membership: str = "RESOLVED") -> dict:
+        """
+        One page of the groups a set of identities (humans, NHIs or both) are members of,
+        each with how many of the set are members and how many are not, from cohortAnalysis.
+        The server counts the whole set at once, so the cost does not grow with the number
+        of groups the way reading each identity's membershipGroups does.
+        :param identity_ids: the set's identity IDs
+        :param page_size: groups per page, highest member count first
+        :param skip: groups to skip
+        :param group_filters: GroupsFilters narrowing the groups, e.g. {"id": {"equals": g}}
+        :param with_member_ids: also return the IDs of each group's members and non-members,
+            in the order of identity_ids
+        :param with_identities_with_none: also count the identities that are in no group
+        :param membership: RESOLVED (members of a group nested under it count too) or DIRECT
+        :return: {"found": identities of the tenant among identity_ids, "notFoundIds",
+            "identitiesWithNone" (None unless asked), "groups": [{"node", "members",
+            "nonMembers"}], "total": groups matching across all pages}
+        :raises ValueError: when `group_filters` is not a valid GroupsFilters
+        """
+        self._check_filters("GroupsFilters", group_filters)
+        ds = DSLSchema(self.gql_client.schema)
+        identity_set = [ds.IdentityCohortIdentitySet.count]
+        if with_member_ids:
+            identity_set.append(ds.IdentityCohortIdentitySet.identityIds)
+        groups = [ds.IdentityCohortGroups.breakdown(
+            filters=group_filters or {},
+            pageArgs={"pageSize": page_size, "skip": skip},
+        ).select(
+            ds.IdentityCohortGroupBreakdownConnection.edges.select(
+                ds.IdentityCohortGroupBreakdownEdge.node.select(
+                    ds.Group.id, 
+                    ds.Group.name, 
+                    ds.Group.groupType,
+                    ds.Group.provider.select(
+                        ds.Provider.id, 
+                        ds.Provider.name,
+                    ),
+                ),
+                ds.IdentityCohortGroupBreakdownEdge.members.select(*identity_set),
+                ds.IdentityCohortGroupBreakdownEdge.nonMembers.select(*identity_set),
+            ),
+            ds.IdentityCohortGroupBreakdownConnection.pageInfo.select(ds.PageInfo.count),
+        )]
+        if with_identities_with_none:
+            groups.append(ds.IdentityCohortGroups.identitiesWithNone)
+
+        # The IDs go in a variable, not inlined into the query text: a set can be thousands long.
+        variables = DSLVariableDefinitions()
+        operation = DSLQuery(
+            ds.Query.CohortAnalysis.select(
+                ds.CohortAnalysis.identities(cohort=variables.cohort).select(
+                    ds.IdentityCohort.resolved.select(
+                        ds.IdentityCohortResolution.found,
+                        ds.IdentityCohortResolution.notFoundIds,
+                    ),
+                    ds.IdentityCohort.groups(membership=membership).select(*groups),
+                )
+            )
+        )
+        operation.variable_definitions = variables
+        response = self.gql_client.execute(
+            dsl_gql(operation), variable_values={"cohort": {"identityIds": list(identity_ids)}},
+            get_execution_result=True).formatted
+        if response.get("errors"):
+            raise RuntimeError(f"CohortAnalysis query failed: {response['errors']}")
+
+        cohort = ((response.get("data") or {}).get("CohortAnalysis") or {}).get("identities") or {}
+        resolved = cohort.get("resolved") or {}
+        connection = (cohort.get("groups") or {}).get("breakdown") or {}
+        return {
+            "found": int(resolved.get("found") or 0),
+            "notFoundIds": resolved.get("notFoundIds") or [],
+            "identitiesWithNone": (cohort.get("groups") or {}).get("identitiesWithNone"),
+            "groups": [edge for edge in connection.get("edges") or [] if edge.get("node")],
+            "total": int((connection.get("pageInfo") or {}).get("count") or 0),
+        }
+
+    def _check_filters(self, input_type_name: str, filters: dict | None) -> None:
+        """Raise ValueError when `filters` has a field or value the schema's input type does
+        not define, or a field with no condition. The DSL drops unknown fields without a
+        word, which would silently widen the query to more identities than were asked for."""
+        problems: list[str] = []
+
+        def add_problem(path, error):
+            problems.append(f"{'.'.join(str(key) for key in path) or 'filters'}: {error.message}")
+
+        input_type = self.gql_client.schema.type_map[input_type_name]
+        if validate_input_value is not None:
+            validate_input_value(filters or {}, input_type,
+                                 lambda error, path: add_problem(path, error))
+        else:
+            coerce_input_value(filters or {}, input_type,
+                               lambda path, _value, error: add_problem(path, error))
+        problems.extend(f"{path}: has no condition" for path in self._empty_conditions(filters or {}))
+        if problems:
+            raise ValueError(f"invalid {input_type_name}: " + "; ".join(problems))
+
+    @staticmethod
+    def _empty_conditions(filters: dict, prefix: str = "") -> list[str]:
+        """Paths of the nested filter objects that are empty, and so filter nothing."""
+        empty = []
+        for key, value in filters.items():
+            path = f"{prefix}{key}"
+            if isinstance(value, dict):
+                empty.extend([path] if not value else
+                             AndromedaInventory._empty_conditions(value, f"{path}."))
+        return empty
+
+    def _identities_page(self, query, root: str) -> tuple[list, int]:
+        """Run an identity list query and return its nodes and total. Raises on GraphQL
+        errors so a failed page is never read as an empty one."""
+        response = self.gql_client.execute(query, get_execution_result=True).formatted
+        if response.get("errors"):
+            raise RuntimeError(f"{root} query failed: {response['errors']}")
+
+        connection = (response.get("data") or {}).get(root) or {}
+        nodes = [edge["node"] for edge in connection.get("edges") or [] if edge.get("node")]
+        return nodes, int((connection.get("pageInfo") or {}).get("count") or 0)
 
     def as_account_non_human_identities_base_fn(
             self, account_id: str, provider_id: str, filters: dict,
@@ -2587,6 +2800,8 @@ class AndromedaInventory(dict):
         scope_folder_fragment.on(ds.FolderScopeData)
         scope_population_fragment = DSLInlineFragment()
         scope_population_fragment.on(ds.PopulationScopeData)
+        scope_group_fragment = DSLInlineFragment()
+        scope_group_fragment.on(ds.GroupScopeData)
         query = dsl_gql(DSLQuery(
             ds.Query.Campaign(
                 id=campaign_id
@@ -2629,6 +2844,13 @@ class AndromedaInventory(dict):
                                         ds.PopulationScopeData.name(),
                                         ds.PopulationScopeData.id(),
                                         ds.PopulationScopeData.isInherited(),
+                                        DSLMetaField("__typename")
+                                    ),
+                                    # USER_GROUP_ASSIGNMENT reviews are scoped to the group
+                                    scope_group_fragment.select(
+                                        ds.GroupScopeData.name(),
+                                        ds.GroupScopeData.id(),
+                                        ds.GroupScopeData.isInherited(),
                                         DSLMetaField("__typename")
                                     )
                                 ),
@@ -3183,8 +3405,8 @@ class AndromedaInventory(dict):
         can carry several providers. Reading edges[0] at either level silently drops the
         rest, which reads downstream as "no such access" rather than as a truncation.
 
-        Each assignment is tagged with the provider it came from (setdefault, so a
-        providerName already on the assignment wins).
+        Each assignment is tagged with the provider it came from — id, name and type
+        (setdefault, so a value already on the assignment wins).
         """
         assignments = []
         for user_edge in user_edges or []:
@@ -3201,6 +3423,8 @@ class AndromedaInventory(dict):
                         assignment.setdefault('providerId', provider['id'])
                     if provider.get('name'):
                         assignment.setdefault('providerName', provider['name'])
+                    if provider.get('type'):
+                        assignment.setdefault('providerType', provider['type'])
                     scope = assignment.pop('scope', None) or {}
                     # Flattened rather than nested: consumers render these as columns,
                     # and a nested object costs tokens in the agent's tool responses.
@@ -3392,6 +3616,258 @@ class AndromedaInventory(dict):
         for user_edge in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
             for assignment in self._flatten_user_provider_assignments([user_edge]):
                 yield assignment
+
+    def _assignment_count_provider_edges(self, ds, assignment_filters: dict | None,
+                                         page_size: int, skip: int):
+        """Users(filters) -> one page of userProviderData, each with only the assignment
+        count. Shared by the identity-wide page and the per-user follow-up pages."""
+        return ds.User.userProviderData(
+            pageArgs={"pageSize": page_size, "skip": skip},
+        ).select(
+            ds.UserProviderDataConnection.edges.select(
+                ds.UserProviderDataEdge.node.select(
+                    ds.Provider.id, ds.Provider.name, ds.Provider.type,
+                ),
+                ds.UserProviderDataEdge.userProviderData.select(
+                    ds.UserProviderData.userResolvedAssignments(
+                        pageArgs={"pageSize": 1},
+                        filters=assignment_filters,
+                    ).select(
+                        ds.AccountPolicyUserResolvedAssignmentsConnection.pageInfo.select(
+                            ds.PageInfo.count,
+                        ),
+                    ),
+                ),
+            ),
+            ds.UserProviderDataConnection.pageInfo.select(ds.PageInfo.count),
+        )
+
+    def identity_assignment_totals_base_fn(self, identity_id: str, assignment_filters: dict | None,
+                                         page_size: int, skip: int) -> tuple:
+        """One page of an identity's Users with their first NESTED_PAGE_SIZE providers'
+        assignment counts. Returns (user edges, total Users)."""
+        ds = DSLSchema(self.gql_client.schema)
+        query = dsl_gql(DSLQuery(
+            ds.Query.Users(
+                pageArgs={"pageSize": page_size, "skip": skip},
+                filters={'identityId': {'equals': identity_id}},
+            ).select(
+                ds.UserConnection.edges.select(
+                    ds.UserEdge.node.select(
+                        ds.User.id,
+                        self._assignment_count_provider_edges(
+                            ds, assignment_filters, NESTED_PAGE_SIZE, 0),
+                    ),
+                ),
+                ds.UserConnection.pageInfo.select(ds.PageInfo.count),
+            )
+        ))
+        response = self.gql_client.execute(query, get_execution_result=True).formatted
+        users = (response.get("data") or {}).get("Users") or {}
+        return users.get("edges") or [], (users.get("pageInfo") or {}).get("count")
+
+    def user_provider_assignment_counts_base_fn(self, user_id: str, assignment_filters: dict | None,
+                                        skip: int) -> list:
+        """A user's provider edges from `skip` on — only for the rare user with more than
+        NESTED_PAGE_SIZE providers, whose rows the assignment query cannot return."""
+        ds = DSLSchema(self.gql_client.schema)
+        edges: list = []
+        while True:
+            query = dsl_gql(DSLQuery(
+                ds.Query.Users(filters={'id': {'equals': user_id}}).select(
+                    ds.UserConnection.edges.select(
+                        ds.UserEdge.node.select(
+                            self._assignment_count_provider_edges(
+                                ds, assignment_filters, NESTED_PAGE_SIZE, skip),
+                        ),
+                    ),
+                )
+            ))
+            response = self.gql_client.execute(query, get_execution_result=True).formatted
+            user_edges = ((response.get("data") or {}).get("Users") or {}).get("edges") or []
+            page = [edge for user_edge in user_edges
+                    for edge in (((user_edge.get("node") or {}).get("userProviderData") or {})
+                                 .get("edges") or [])]
+            edges.extend(page)
+            if len(page) < NESTED_PAGE_SIZE:
+                return edges
+            skip += len(page)
+
+    def fetch_identity_assignment_totals(self, identity_id: str,
+                                         assignment_filters: dict | None = None) -> list:
+        """Per-provider count of an identity's resolved assignments.
+
+        Reads the same path as as_identity_resolved_assignments_base_fn (Users ->
+        userProviderData -> userResolvedAssignments) with the same filters, so the totals
+        describe the same rows. Every User page is read, as the row query does. A provider
+        reached through several incarnations is summed. `truncated` is true when the row
+        query cannot return all of that provider's rows: one incarnation holds more than
+        NESTED_PAGE_SIZE assignments in it, or the provider sits past the first
+        NESTED_PAGE_SIZE providers of an incarnation (the row query reads only those).
+        """
+        totals: dict = {}
+
+        def add(provider_edge: dict, beyond_row_cap: bool) -> None:
+            provider = provider_edge.get("node") or {}
+            count = ((((provider_edge.get("userProviderData") or {})
+                       .get("userResolvedAssignments") or {})
+                      .get("pageInfo") or {}).get("count") or 0)
+            entry = totals.setdefault(provider.get("id"), {
+                "providerId": provider.get("id"),
+                "providerName": provider.get("name"),
+                "providerType": provider.get("type"),
+                "total": 0,
+                "truncated": False,
+            })
+            entry["total"] += count
+            entry["truncated"] = (entry["truncated"] or beyond_row_cap
+                                  or count > NESTED_PAGE_SIZE)
+
+        # Direct calls to the public *_base_fn methods, not as_gql_generic_itr(partial): the
+        # tool's RBAC attribution reads queries from public methods and the self.X_base_fn
+        # calls in them, and a function passed by name would hide its query.
+        user_edges: list = []
+        skip = 0
+        while True:
+            page, total_users = self.identity_assignment_totals_base_fn(
+                identity_id, assignment_filters, NESTED_PAGE_SIZE, skip)
+            user_edges.extend(page)
+            skip += len(page)
+            if (len(page) < NESTED_PAGE_SIZE
+                    or (total_users is not None and skip >= total_users)):
+                break
+        for user_edge in user_edges:
+            node = user_edge.get("node") or {}
+            connection = node.get("userProviderData") or {}
+            provider_edges = connection.get("edges") or []
+            for provider_edge in provider_edges:
+                add(provider_edge, beyond_row_cap=False)
+            provider_count = (connection.get("pageInfo") or {}).get("count") or 0
+            if provider_count > len(provider_edges) and node.get("id"):
+                for provider_edge in self.user_provider_assignment_counts_base_fn(
+                        node["id"], assignment_filters, len(provider_edges)):
+                    add(provider_edge, beyond_row_cap=True)
+        return list(totals.values())
+
+    def identity_indirect_counts_base_fn(self, identity_id: str, exclude_provider_types,
+                                 page_size: int, skip: int) -> tuple:
+        """One page of Identity.providersData with each provider's not-direct assignment
+        count. Returns (edges, total providers)."""
+        ds = DSLSchema(self.gql_client.schema)
+        query = dsl_gql(DSLQuery(
+            ds.Query.Identity(id=identity_id).select(
+                ds.Identity.providersData(
+                    pageArgs={"pageSize": page_size, "skip": skip},
+                    filters={"type": {"notIn": list(exclude_provider_types)}},
+                ).select(
+                    ds.IdentityProvidersDataConnection.edges.select(
+                        ds.IdentityProviderDataEdge.node.select(
+                            ds.IdentityProviderData.providerId,
+                            ds.IdentityProviderData.userResolvedAssignments(
+                                pageArgs={"pageSize": 1},
+                                filters={"significance": {"in": ["INDIRECT_ASSIGNMENT"]}},
+                            ).select(
+                                ds.AccountPolicyUserResolvedAssignmentsConnection.pageInfo.select(
+                                    ds.PageInfo.count,
+                                ),
+                            ),
+                        ),
+                    ),
+                    ds.IdentityProvidersDataConnection.pageInfo.select(ds.PageInfo.count),
+                ),
+            )
+        ))
+        response = self.gql_client.execute(query, get_execution_result=True).formatted
+        connection = (((response.get("data") or {}).get("Identity") or {})
+                      .get("providersData") or {})
+        return connection.get("edges") or [], (connection.get("pageInfo") or {}).get("count")
+
+    def fetch_identity_indirect_assignment_counts(self, identity_id: str,
+                                                  exclude_provider_types) -> dict:
+        """Per-provider count of an identity's assignments held through a group (not direct).
+
+        Uses significance INDIRECT_ASSIGNMENT, which only the Tachyon-backed providers
+        populate. The unified providers (Entra, Okta, ...) are excluded in the request
+        itself — on them the filter targets a column their query does not return.
+        Every providersData page is read. Returns {providerId: count}.
+        """
+        counts: dict = {}
+        skip = 0
+        while True:
+            # Direct call, see fetch_identity_assignment_totals.
+            edges, total_providers = self.identity_indirect_counts_base_fn(
+                identity_id, exclude_provider_types, NESTED_PAGE_SIZE, skip)
+            for edge in edges:
+                node = edge.get("node") or {}
+                if node.get("providerId"):
+                    counts[node["providerId"]] = (((node.get("userResolvedAssignments") or {})
+                                                   .get("pageInfo") or {}).get("count") or 0)
+            skip += len(edges)
+            if (len(edges) < NESTED_PAGE_SIZE
+                    or (total_providers is not None and skip >= total_providers)):
+                return counts
+
+    def fetch_identity_reviewer_campaigns(self, identity_id: str,
+                                          page_size: int = UAR_IDENTITY_CAMPAIGNS_PAGE_SIZE) -> dict | None:
+        """The campaigns an identity reviews, every reviewer status, with the identity's
+        own reviewer status and review counts by decision. One page, no pagination.
+
+        Returns the `Identity` object (None when no identity has that id). Raises on a
+        GraphQL error, so a failed read is never mistaken for "no such identity".
+        """
+        ds = DSLSchema(self.gql_client.schema)
+        query = dsl_gql(DSLQuery(
+            ds.Query.Identity(id=identity_id).select(
+                ds.Identity.accessReviewsData.select(
+                    ds.AccessReviewerData.reviewerCampaigns(pageArgs={"pageSize": page_size}).select(
+                        ds.AccessReviewerCampaignsConnection.pageInfo.select(ds.PageInfo.count),
+                        ds.AccessReviewerCampaignsConnection.edges.select(
+                            ds.AccessReviewerCampaignEdge.node.select(
+                                ds.Campaign.id, ds.Campaign.name, ds.Campaign.targetCompletionTime,
+                                ds.Campaign.status.select(ds.CampaignTransactionStatus.status),
+                            ),
+                            ds.AccessReviewerCampaignEdge.reviewerCampaignData.select(
+                                ds.AccessReviewerCampaignData.status.select(
+                                    ds.CampaignSnapshotReviewReviewerStatus.reviewerStatus,
+                                ),
+                                ds.AccessReviewerCampaignData.reviewerSummary.select(
+                                    ds.AccessReviewerCampaignSummary.reviewsGroupedByStatus.select(
+                                        ds.AccessReviewsGroupedByStatus.reviewStatus,
+                                        ds.AccessReviewsGroupedByStatus.count,
+                                    ),
+                                ),
+                            ),
+                        ),
+                    ),
+                ),
+            )
+        ))
+        return (self.gql_client.execute(query) or {}).get("Identity")
+
+    def fetch_identity_owned_campaigns(self, identity_id: str,
+                                       page_size: int = UAR_IDENTITY_CAMPAIGNS_PAGE_SIZE) -> dict | None:
+        """The campaigns an identity owns. One page, no pagination.
+
+        Returns the `Identity` object (None when no identity has that id). Raises on a
+        GraphQL error, as fetch_identity_reviewer_campaigns does.
+        """
+        ds = DSLSchema(self.gql_client.schema)
+        query = dsl_gql(DSLQuery(
+            ds.Query.Identity(id=identity_id).select(
+                ds.Identity.campaignOwnersData.select(
+                    ds.CampaignOwnersData.campaigns(pageArgs={"pageSize": page_size}).select(
+                        ds.CampaignsConnection.pageInfo.select(ds.PageInfo.count),
+                        ds.CampaignsConnection.edges.select(
+                            ds.CampaignEdge.node.select(
+                                ds.Campaign.id, ds.Campaign.name, ds.Campaign.targetCompletionTime,
+                                ds.Campaign.status.select(ds.CampaignTransactionStatus.status),
+                            ),
+                        ),
+                    ),
+                ),
+            )
+        ))
+        return (self.gql_client.execute(query) or {}).get("Identity")
 
     def as_user_providers_with_assignments_base_fn(
             self, user_id: str, username: str, filters: dict,
@@ -4851,9 +5327,13 @@ class AndromedaInventory(dict):
     def as_user_attribute_values_base_fn(self, key: str, value_filters: dict,
             page_size: int, skip: int) -> list:
         ds = DSLSchema(self.gql_client.schema)
+        # The key and its values must name the same identity type, or an NHI key is not found.
+        key_filters = {"key": {"equals": key}}
+        if "identityType" in value_filters:
+            key_filters["identityType"] = value_filters["identityType"]
         query = dsl_gql(DSLQuery(
             ds.Query.UserAttributes(
-                filters={"key": {"equals": key}}
+                filters=key_filters
             ).select(
                 ds.UserAttributeKeysConnection.edges.select(
                     ds.UserAttributeKeyEdge.node.select(
@@ -4885,12 +5365,16 @@ class AndromedaInventory(dict):
         return items
 
     def as_user_attribute_values_itr(self, key: str, value_filters: dict | None = None,
-            page_size: int = None, skip: int = 0) -> Generator[dict, None, None]:
-        """:param skip: row to start at among the key's values, applied server-side."""
+            page_size: int = None, skip: int = 0,
+            identity_type: str | None = None) -> Generator[dict, None, None]:
+        """:param skip: row to start at among the key's values, applied server-side.
+        :param identity_type: HUMAN or SERVICE; unset means HUMAN."""
         page_size = page_size if page_size else self.default_page_size
         effective_filters = {}
         if value_filters:
             effective_filters.update(value_filters)
+        if identity_type:
+            effective_filters["identityType"] = {"equals": identity_type}
         logger.debug("Fetching user attribute values key=%s value_filters=%s", key, effective_filters)
         partial_fn_itr = functools.partial(self.as_user_attribute_values_base_fn, key, effective_filters)
         yield from self.as_gql_generic_itr(partial_fn_itr, page_size=page_size, start_skip=skip)
@@ -4905,6 +5389,9 @@ class AndromedaInventory(dict):
         # as_user_attributes_itr, NOT here: as_gql_generic_itr ends pagination on
         # len(items) < page_size, so this function must return one item per key.
         value_filter = {"value": filters["value"]} if filters and "value" in filters else None
+        # The values of an NHI key are NHI values; without the type they read as human ones.
+        if filters and "identityType" in filters:
+            value_filter = {**(value_filter or {}), "identityType": filters["identityType"]}
         values_args = {"pageArgs": {"pageSize": 10}}
         if value_filter:
             values_args["filters"] = value_filter
@@ -5064,6 +5551,493 @@ class AndromedaInventory(dict):
         partial_fn_itr = functools.partial(self.as_agents_base_fn, filters)
         for item in self.as_gql_generic_itr(partial_fn_itr, page_size=page_size):
             yield item
+
+    def fetch_tool_applications_page(self, filters: dict | None,
+                                     page_size: int, skip: int) -> tuple:
+        """One page of agent tool applications, flattened for an LLM, plus pageInfo.count.
+
+        Owners are capped at TOOL_APPLICATION_OWNERS_PAGE_SIZE with their full count in
+        `owners_count`. agentAccessSummary is flattened into the row.
+        """
+        ds = DSLSchema(self.gql_client.schema)
+        summary = ds.ToolApplicationAgentAccessSummary
+        query = dsl_gql(DSLQuery(
+            ds.Query.ToolApplications(
+                pageArgs={"pageSize": page_size, "skip": skip},
+                filters=filters,
+            ).select(
+                ds.ToolApplicationsConnection.edges.select(
+                    ds.ToolApplicationEdge.node.select(
+                        ds.ToolApplication.id,
+                        ds.ToolApplication.name,
+                        ds.ToolApplication.toolType,
+                        ds.ToolApplication.provenance,
+                        ds.ToolApplication.origin,
+                        ds.ToolApplication.discoverySources,
+                        ds.ToolApplication.criticality,
+                        ds.ToolApplication.computedCriticality,
+                        ds.ToolApplication.applicationUnused,
+                        ds.ToolApplication.applicationLastUsedAt,
+                        ds.ToolApplication.agentAccessSummary.select(
+                            summary.numAgents, summary.numActiveAgents,
+                            summary.numSharedCredentials, summary.numRoles,
+                            summary.maxBlastRisk, summary.maxRiskLevel,
+                        ),
+                        ds.ToolApplication.owners(
+                            pageArgs={"pageSize": TOOL_APPLICATION_OWNERS_PAGE_SIZE},
+                        ).select(
+                            ds.OwnersConnection.edges.select(
+                                ds.OwnersEdge.node.select(
+                                    ds.Owners.identity.select(
+                                        ds.Identity.id, ds.Identity.name, ds.Identity.email,
+                                    ),
+                                ),
+                            ),
+                            ds.OwnersConnection.pageInfo.select(ds.PageInfo.count),
+                        ),
+                    ),
+                ),
+                ds.ToolApplicationsConnection.pageInfo.select(ds.PageInfo.count),
+            )
+        ))
+        response = self.gql_client.execute(query, get_execution_result=True).formatted
+        connection = (response.get("data") or {}).get("ToolApplications") or {}
+        rows = []
+        for edge in connection.get("edges") or []:
+            node = dict(edge.get("node") or {})
+            node.update(node.pop("agentAccessSummary", None) or {})
+            owners = node.pop("owners", None) or {}
+            node["owners"] = [
+                (owner_edge.get("node") or {}).get("identity") or {}
+                for owner_edge in owners.get("edges") or []
+            ]
+            node["owners_count"] = (owners.get("pageInfo") or {}).get("count") or len(node["owners"])
+            rows.append(node)
+        return rows, (connection.get("pageInfo") or {}).get("count")
+
+    # ------------------------------------------------------------------------------
+    # AI agent posture reads (Cosmos AISPM tools). Each returns plain dicts shaped for
+    # an LLM.
+    #
+    # Selections are declared as specs and built by _select from the caller's OWN
+    # introspected schema: the apiserver hides fields a role may not read from that
+    # role's introspection (a USER's Agent type has no riskLevel), so asking for one
+    # would fail before the request is sent. A field the schema lists but the server
+    # still refuses comes back null under execute_allow_partial; its dotted path is
+    # returned beside the rows. Either way the caller says some fields were withheld.
+    # ------------------------------------------------------------------------------
+
+    def _select(self, ds: DSLSchema, type_name: str, spec) -> list:
+        """DSL selections for `type_name`, keeping only fields the caller's schema has.
+
+        Each spec item is a field name, or (name, args or None, child type, child spec).
+        A nested field none of whose children survive is dropped too.
+        """
+        schema = self.gql_client.schema
+        selections = []
+        for item in spec:
+            if isinstance(item, str):
+                if has_field(schema, type_name, item):
+                    selections.append(getattr(getattr(ds, type_name), item))
+                continue
+            name, args, child_type, child_spec = item
+            if not has_field(schema, type_name, name):
+                continue
+            children = self._select(ds, child_type, child_spec)
+            if not children:
+                continue
+            field = getattr(getattr(ds, type_name), name)
+            if args:
+                field = field(**args)
+            selections.append(field.select(*children))
+        return selections
+
+    def _withheld(self, type_name: str, spec) -> list:
+        """Top-level names in `spec` the caller's schema does not show (role-hidden)."""
+        schema = self.gql_client.schema
+        names = [item if isinstance(item, str) else item[0] for item in spec]
+        return [n for n in names if not has_field(schema, type_name, n)]
+
+    def _run_query(self, ds: DSLSchema, query_name: str, root, args: dict, type_name: str,
+                   spec):
+        """Run one top-level query with a role-filtered selection.
+
+        `root` is a zero-argument callable returning the literal ds.Query.<name> field.
+        It stays a literal at every call site so tool RBAC attribution
+        (tools_common/tool_gql_inference.py) can read which query a method issues, and it
+        is only called once the caller's schema is known to have the query.
+
+        Returns (data, incomplete_paths, withheld_fields); data is None when the caller's
+        schema has no such query at all (an admin-only query for a USER, or an older
+        server)."""
+        if not has_field(self.gql_client.schema, "Query", query_name):
+            return None, [], []
+        selections = self._select(ds, type_name, spec)
+        if not selections:  # the role sees the query but none of the fields asked for
+            return None, [], []
+        query = dsl_gql(DSLQuery(root()(**args).select(*selections)))
+        data, incomplete = execute_allow_partial(self.gql_client, query)
+        return data.get(query_name) or {}, incomplete, []
+
+    @staticmethod
+    def _connection(edge_type: str, node_type: str, node_spec, page_info: bool = True):
+        spec = [("edges", None, edge_type, [("node", None, node_type, node_spec)])]
+        if page_info:
+            spec.append(("pageInfo", None, "PageInfo", ["count"]))
+        return spec
+
+    @staticmethod
+    def _owner_emails(owners: dict | None) -> list:
+        return [((edge.get("node") or {}).get("identity") or {}).get("email")
+                for edge in (owners or {}).get("edges") or []
+                if ((edge.get("node") or {}).get("identity") or {}).get("email")]
+
+    def _agent_list_spec(self) -> list:
+        owners = ("owners", {"pageArgs": {"pageSize": AGENT_LIST_OWNERS_PAGE_SIZE}},
+                  "OwnersConnection", self._connection(
+                      "OwnersEdge", "Owners", [("identity", None, "Identity", ["email"])]))
+        ops = ("opsInsights", None, "AgentOpsInsightData",
+               ["type", "level", "category", "isAccepted"])
+        return list(AGENT_LIST_FIELDS) + list(AGENT_OPTIONAL_FIELDS) + [ops, owners]
+
+    def _agents_query(self, ds: DSLSchema, filters, page_size: int, skip: int, node_spec,
+                      root):
+        """Agents(filters, pageArgs) with a role-filtered node selection.
+
+        Returns (connection or None, incomplete, withheld)."""
+        spec = self._connection("AgentEdge", "Agent", node_spec)
+        connection, incomplete, _ = self._run_query(
+            ds, "Agents", root,
+            {"pageArgs": {"pageSize": page_size, "skip": skip}, "filters": filters},
+            "AgentsConnection", spec)
+        # Optional fields are absent on older servers for every role: not withheld.
+        withheld = [n for n in self._withheld("Agent", node_spec)
+                    if n not in AGENT_OPTIONAL_FIELDS]
+        return connection, incomplete, withheld
+
+    def fetch_agents_page(self, filters: dict | None, page_size: int,
+                          skip: int = 0) -> tuple:
+        """One page of AI agents with their posture findings and owners.
+
+        Returns (rows, total, restricted): `restricted` lists the fields left out for the
+        caller's role (hidden from its schema, or refused by the server). Each row is the
+        scalar fields in AGENT_LIST_FIELDS the role may read, `opsInsights` (type, level,
+        category, isAccepted), the first AGENT_LIST_OWNERS_PAGE_SIZE owner emails and
+        `owners_count`.
+        """
+        ds = DSLSchema(self.gql_client.schema)
+        connection, incomplete, withheld = self._agents_query(
+            ds, filters, page_size, skip, self._agent_list_spec(), lambda: ds.Query.Agents)
+        rows = []
+        for edge in (connection or {}).get("edges") or []:
+            node = dict(edge.get("node") or {})
+            if "owners" in node:
+                owners = node.pop("owners", None)
+                node["owners"] = self._owner_emails(owners)
+                node["owners_count"] = ((owners or {}).get("pageInfo") or {}).get("count")
+            rows.append(node)
+        restricted = sorted(set(withheld) | {p.split(".")[-1] for p in incomplete
+                                             if not p.split(".")[-1].isdigit()})
+        return rows, ((connection or {}).get("pageInfo") or {}).get("count"), restricted
+
+    def _agent_detail_spec(self) -> list:
+        page = {"pageArgs": {"pageSize": AGENT_DETAIL_NESTED_PAGE_SIZE}}
+        c = self._connection
+        return self._agent_list_spec()[:-1] + [
+            "description", "createdAt",
+            ("owners", page, "OwnersConnection",
+             c("OwnersEdge", "Owners", [("identity", None, "Identity", ["email"])])),
+            ("excessiveAgencyExplanation", None, "AgentExcessiveAgencyExplanation", [
+                "hasExcessiveAgency", "drivingApplicationName", "bound",
+                ("applications", None, "AgentExcessiveAgencyApplication", [
+                    "applicationName", "state", "agentCapability", "accessorReach",
+                    "realizable", "capabilityMeasured"]),
+            ]),
+            ("applications", page, "AgentApplicationsConnection", [
+                ("edges", None, "AgentApplicationsEdge", [
+                    ("toolApplication", None, "ToolApplication", ["id", "name", "toolType"]),
+                    ("agentApplicationInfo", None, "AgentApplicationInfo", [
+                        ("connection", None, "ToolApplicationConnectionSummary",
+                         ["name", "authType"]),
+                        ("connectors", None, "AgentConnector",
+                         ["name", "authType", "credentialMode", "isShared", "transport",
+                          "status"]),
+                    ]),
+                ]),
+                ("pageInfo", None, "PageInfo", ["count"]),
+            ]),
+            ("topTools", {"pageArgs": {"pageSize": 10}}, "AgentTopTools", [
+                ("tools", None, "AgentToolUsage",
+                 ["toolName", "applicationName", "callCount", "lastUsed"])]),
+            ("usersWithAccess", {"pageArgs": {"pageSize": 10}}, "UserConnection",
+             c("UserEdge", "User", ["username"])),
+            ("models", page, "AgentModelsConnection",
+             c("AgentModelEdge", "AgentModel", ["name", "version", "provider", "kind"],
+               page_info=False)),
+            ("knowledgeBases", page, "KnowledgeBaseConnection",
+             c("KnowledgeBaseEdge", "KnowledgeBase", ["name", "type"])),
+            ("skills", page, "AgentSkillConnection",
+             c("AgentSkillEdge", "AgentSkill",
+               ["name", "riskLevel", "riskReasons", "referencedDomains",
+                "referencedMcpServers"])),
+            ("publishedChannels", page, "AgentPublishingChannelsConnection",
+             c("AgentPublishingChannelEdge", "AgentPublishingChannel", ["channelType", "name"],
+               page_info=False)),
+            ("registryRecord", None, "AgentRegistryRecord",
+             ["sponsorEmail", "firstSeenAt", "lastSeenAt", "revokedAt", "lastError"]),
+        ]
+
+    def fetch_agent_detail(self, agent_id: str) -> tuple:
+        """Everything Cosmos needs to explain one AI agent.
+
+        Returns (agent or None, restricted). The agent carries the list-row fields plus:
+        description, createdAt, excessiveAgencyExplanation (per application),
+        applications (tool application, connection, connectors), topTools, users with
+        access, models, knowledge bases, skills (with their risk reasons), publishing
+        channels, owners and the registry record — each only where the caller's role may
+        read it. Nested lists are one page of AGENT_DETAIL_NESTED_PAGE_SIZE with their
+        total count. `restricted` names the fields left out for the caller's role.
+        """
+        ds = DSLSchema(self.gql_client.schema)
+        connection, incomplete, withheld = self._agents_query(
+            ds, {"id": {"equals": agent_id}}, 1, 0, self._agent_detail_spec(),
+            lambda: ds.Query.Agents)
+        restricted = sorted(set(withheld) | {p.split(".")[-1] for p in incomplete
+                                             if not p.split(".")[-1].isdigit()})
+        edges = (connection or {}).get("edges") or []
+        if not edges:
+            return None, restricted
+        return self._flatten_agent_detail(dict(edges[0].get("node") or {})), restricted
+
+    @staticmethod
+    def _flatten_agent_detail(node: dict) -> dict:
+        """Turn the connection shapes of fetch_agent_detail into lists plus counts.
+        Fields the caller's role could not read are absent and stay absent."""
+        def nodes(conn: dict | None) -> list:
+            return [edge.get("node") for edge in (conn or {}).get("edges") or []
+                    if edge.get("node")]
+
+        def total(conn: dict | None):
+            return ((conn or {}).get("pageInfo") or {}).get("count")
+
+        if "applications" in node:
+            apps = node.pop("applications")
+            node["applications"] = [
+                {**(edge.get("toolApplication") or {}),
+                 "connection": (edge.get("agentApplicationInfo") or {}).get("connection"),
+                 "connectors": (edge.get("agentApplicationInfo") or {}).get("connectors") or []}
+                for edge in (apps or {}).get("edges") or []]
+            node["applications_count"] = total(apps)
+        if "topTools" in node:
+            node["topTools"] = (node.pop("topTools") or {}).get("tools") or []
+        if "usersWithAccess" in node:
+            users = node.pop("usersWithAccess")
+            node["usersWithAccess"] = [u.get("username") for u in nodes(users)
+                                       if u.get("username")]
+            node["usersWithAccess_count"] = total(users)
+        for key in ("models", "publishedChannels"):
+            if key in node:
+                node[key] = nodes(node.pop(key))
+        for key in ("knowledgeBases", "skills"):
+            if key in node:
+                conn = node.pop(key)
+                node[key] = nodes(conn)
+                node[f"{key}_count"] = total(conn)
+        if "owners" in node:
+            owners = node.pop("owners")
+            node["owners"] = AndromedaInventory._owner_emails(owners)
+            node["owners_count"] = total(owners)
+        return node
+
+    def fetch_data_freshness(self) -> dict:
+        """Tenant data freshness: when data was collected and processed, and the
+        per-provider sync health (the same read as the app's data-freshness chip).
+        Empty when the caller's role cannot read it."""
+        ds = DSLSchema(self.gql_client.schema)
+        issue = ("issue", None, "DataIssue", ["category", "message", "since"])
+        spec = [("processingStatus", None, "TenantDataProcessingStatus", [
+            ("dataFreshness", None, "TenantDataFreshness", [
+                "collectedAt", "processedAt", "processingState", "health", "updating", issue,
+                "sourcesTotal", "sourcesUpToDate", "sourcesNeedingAttention",
+                ("sources", None, "DataSourceFreshness", [
+                    "providerId", "providerName", "providerType",
+                    ("freshness", None, "DataFreshness", [
+                        "health", "collectedAt", "pendingCollectedAt", "lastAttemptAt", issue]),
+                ]),
+            ]),
+        ])]
+        data, _, _ = self._run_query(ds, "TenantData", lambda: ds.Query.TenantData, {},
+                                     "TenantData", spec)
+        return ((data or {}).get("processingStatus") or {}).get("dataFreshness") or {}
+
+    def _paged_rows(self, ds: DSLSchema, query_name: str, root, connection_type: str,
+                    edge_type: str, node_type: str, node_spec, filters, page_size: int,
+                    skip: int) -> tuple:
+        """One page of a top-level connection query. Returns (rows, total); ([], None)
+        when the caller's schema has no such query."""
+        data, _, _ = self._run_query(
+            ds, query_name, root, {"pageArgs": {"pageSize": page_size, "skip": skip},
+                                   "filters": filters},
+            connection_type, self._connection(edge_type, node_type, node_spec))
+        rows = [edge.get("node") for edge in (data or {}).get("edges") or [] if edge.get("node")]
+        return rows, ((data or {}).get("pageInfo") or {}).get("count")
+
+    def fetch_gateway_events_page(self, filters: dict | None, page_size: int,
+                                  skip: int = 0) -> tuple:
+        """One page of agent gateway events (tool calls through the Andromeda gateway),
+        newest first as the server returns them. Returns (rows, total)."""
+        ds = DSLSchema(self.gql_client.schema)
+        return self._paged_rows(ds, "GatewayEvents", lambda: ds.Query.GatewayEvents, "GatewayEventsConnection",
+                                "GatewayEventEdge", "GatewayEvent", [
+                                    "timestamp", "agentId", "agentName", "applicationId",
+                                    "applicationName", "toolName", "status", "outcome",
+                                    "errorReason", "policyId", "delegatorSubject",
+                                    "credentialMode", "gatewayId", "sessionId", "latencyMs"],
+                                filters, page_size, skip)
+
+    def fetch_agent_access_policies_page(self, filters: dict | None, page_size: int,
+                                         skip: int = 0) -> tuple:
+        """One page of agent access policies (per application, per tool) with their
+        tool effects and guardrails. Returns (rows, total)."""
+        ds = DSLSchema(self.gql_client.schema)
+        return self._paged_rows(ds, "AgentAppAccessPolicies", lambda: ds.Query.AgentAppAccessPolicies, "AgentAppAccessPolicyConnection",
+                                "AgentAppAccessPolicyEdge", "AgentAppAccessPolicy", [
+                                    "id", "name", "kind", "origin", "applicationId",
+                                    "applicationName", "blastRisk", "blastRiskLevel",
+                                    "exceedsApplicationDefault", "toolsExceedingDefault",
+                                    "updatedAt",
+                                    ("actions", None, "McpToolAction", ["name", "effect"]),
+                                    ("guardrails", None, "McpToolGuardrail",
+                                     ["tool", "paramPath", "operator", "values", "outcome",
+                                      "message"]),
+                                ], filters, page_size, skip)
+
+    def fetch_agent_assignments_page(self, filters: dict | None, page_size: int,
+                                     skip: int = 0) -> tuple:
+        """One page of agent policy assignments: which policy or bundle is bound to
+        which agents (runtime principal) and users (subject), and where the binding
+        came from (authored, bundle, discovered on the platform, owned agents).
+        Returns (rows, total)."""
+        ds = DSLSchema(self.gql_client.schema)
+        rows, total = self._paged_rows(
+            ds, "AgentConfiguredAssignments", lambda: ds.Query.AgentConfiguredAssignments,
+            "AgentConfiguredAssignmentConnection",
+            "AgentConfiguredAssignmentEdge", "AgentConfiguredAssignment", [
+                "policyId", "policyName", "bundleId", "bundleName", "bindingSource",
+                "runtimePrincipalName", "runtimePrincipalType", "subjectPrincipalName",
+                "subjectPrincipalType", "blastRisk", "syncStatus",
+                ("toolApplication", None, "ToolApplication", ["id", "name"]),
+            ], filters, page_size, skip)
+        for node in rows:
+            app = node.pop("toolApplication", None) or {}
+            node["applicationId"], node["applicationName"] = app.get("id"), app.get("name")
+        return rows, total
+
+    def has_agent_policy_usage(self) -> bool:
+        """Whether this apiserver serves agent access-policy usage to this caller."""
+        return has_field(self.gql_client.schema, "Query", "AgentAccessPolicyUsageSummaries")
+
+    _POLICY_USAGE_SUMMARY_FIELDS = (
+        "policyId", "policyName", "applicationId", "callCount", "allowedCount",
+        "deniedCount", "jitCount", "lastUsed", "toolsGranted", "toolsUsed",
+        "bindingsTotal", "bindingsUsed", "distinctAgents", "unused", "origin",
+        ("opsInsights", None, "PolicyOpsInsightData", ["type", "level"]),
+    )
+
+    def fetch_agent_policy_usage_summaries(self, application_id: str | None,
+                                           window_days: int) -> dict:
+        """Usage of every agent access policy (optionally one application's) over the
+        last `window_days`, computed from gateway events, with the policy insights
+        (Over-Privileged, Unused, Unused / No Resource Scope)."""
+        ds = DSLSchema(self.gql_client.schema)
+        args = {"windowDays": window_days}
+        if application_id:
+            args["applicationId"] = application_id
+        data, _, _ = self._run_query(
+            ds, "AgentAccessPolicyUsageSummaries",
+            lambda: ds.Query.AgentAccessPolicyUsageSummaries, args,
+            "AgentAccessPolicyUsageSummariesResponse",
+            [("policies", None, "AgentAccessPolicyUsageSummary",
+              list(self._POLICY_USAGE_SUMMARY_FIELDS)), "windowStart", "dataSince"])
+        return data or {}
+
+    def fetch_agent_policy_usage(self, policy_id: str, window_days: int) -> dict:
+        """One agent access policy's usage broken down by tool, binding and resource."""
+        ds = DSLSchema(self.gql_client.schema)
+        data, _, _ = self._run_query(
+            ds, "AgentAccessPolicyUsage", lambda: ds.Query.AgentAccessPolicyUsage,
+            {"policyId": policy_id, "windowDays": window_days},
+            "AgentAccessPolicyUsageResponse", [
+                ("summary", None, "AgentAccessPolicyUsageSummary",
+                 list(self._POLICY_USAGE_SUMMARY_FIELDS)),
+                ("tools", None, "AgentAccessPolicyToolUsage",
+                 ["toolName", "granted", "effect", "callCount", "allowedCount", "deniedCount",
+                  "jitCount", "lastUsed", "unused"]),
+                ("bindings", None, "AgentAccessPolicyBindingUsage",
+                 ["bindingId", "agentId", "agentGroupId", "userGroupId", "callCount",
+                  "lastUsed", "distinctAgents", "unused"]),
+                ("resources", None, "AgentAccessPolicyResourceUsage",
+                 ["resourcePath", "withinPolicyScope", "callCount", "lastUsed"]),
+                "unusedResourceScopes", "windowStart", "dataSince",
+            ])
+        return data or {}
+
+    def fetch_agent_identities_page(self, filters: dict | None, page_size: int,
+                                    skip: int = 0) -> tuple:
+        """One page of the identities AI agents run as (service accounts, app
+        registrations, keys), with risk and the shared / over-privileged / inactive
+        flags. Returns (rows, total)."""
+        ds = DSLSchema(self.gql_client.schema)
+        rows, total = self._paged_rows(
+            ds, "AgentIdentities", lambda: ds.Query.AgentIdentities,
+            "AgentIdentitiesConnection", "AgentIdentityEdge",
+            "AgentIdentity", [
+                "id", "name", "type", "state", "riskLevel", "blastRisk", "blastRiskLevel",
+                "lastActivityAt", "activityCount",
+                ("significanceData", None, "AgentIdentitySignificanceData",
+                 ["isSharedAcrossAgents", "isOverprivileged", "hasAdminPrivileges",
+                  "hasPrivilegeLeak", "isInactive"]),
+            ], filters, page_size, skip)
+        for node in rows:
+            node.update(node.pop("significanceData", None) or {})
+        return rows, total
+
+    def has_application_discovered_tools(self) -> bool:
+        """Whether this apiserver serves ToolApplication.discoveredTools to this caller."""
+        return has_field(self.gql_client.schema, "ToolApplication", "discoveredTools")
+
+    def fetch_application_discovered_tools(self, application_id: str,
+                                           page_size: int = 100) -> tuple:
+        """The tools the platform's own (inventory-discovered) policies grant agents on
+        one application, deduplicated by name, with the agents granted each tool, its
+        risk and access level. Returns (rows, total)."""
+        ds = DSLSchema(self.gql_client.schema)
+        tools_spec = ("discoveredTools", {"pageArgs": {"pageSize": page_size}},
+                      "ToolApplicationDiscoveredToolsConnection",
+                      self._connection("ToolApplicationDiscoveredToolEdge",
+                                       "ToolApplicationDiscoveredTool",
+                                       ["name", "accessLevel", "riskLevel",
+                                        ("agents", None, "ToolApplicationDiscoveredToolAgent",
+                                         ["id", "name"])]))
+        rows, _ = self._paged_rows(ds, "ToolApplications", lambda: ds.Query.ToolApplications, "ToolApplicationsConnection",
+                                   "ToolApplicationEdge", "ToolApplication", [tools_spec],
+                                   {"id": {"equals": application_id}}, 1, 0)
+        if not rows:
+            return [], 0
+        tools = rows[0].get("discoveredTools") or {}
+        found = [edge.get("node") for edge in tools.get("edges") or [] if edge.get("node")]
+        return found, (tools.get("pageInfo") or {}).get("count")
+
+    def fetch_events_page(self, filters: dict | None, page_size: int,
+                          skip: int = 0) -> tuple:
+        """One page of Andromeda events (audit and system events) with the total.
+        Returns (rows, total)."""
+        ds = DSLSchema(self.gql_client.schema)
+        return self._paged_rows(ds, "AndromedaEvents", lambda: ds.Query.AndromedaEvents, "AndromedaEventsConnection",
+                                "AndromedaEventsEdge", "AndromedaEventsNode", [
+                                    "time", "name", "type", "subtype", "level", "actor",
+                                    "actingVia", "eventPrimaryKey", "data"],
+                                filters, page_size, skip)
 
     def as_resources_base_fn(self, filters: dict | None,
             page_size: int = 100, skip: int = 0) -> list:

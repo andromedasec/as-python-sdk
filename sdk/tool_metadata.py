@@ -44,6 +44,18 @@ uar_admin_tier = requires_roles(
 """Admin tier plus UAR_ADMIN — for tools owned by the UAR management surface."""
 
 
+uar_write_tier = requires_roles(
+    _ApiRole.ANDROMEDA_ADMIN, _ApiRole.ADMIN, _ApiRole.UAR_ADMIN,
+)
+"""UAR management write tier: ANDROMEDA_ADMIN, ADMIN, UAR_ADMIN.
+
+The write counterpart of uar_admin_tier. UAR_ADMIN owns the UAR management surface,
+so it must be able to create/update/delete campaign templates and campaigns, matching
+the server REST policy for those endpoints. admin_write_tier (ADMIN only) wrongly
+excluded UAR_ADMIN, letting it run the whole setup interview and then be denied at the
+write. ADMIN_READ_ONLY is write-excluded here, as the server also excludes it."""
+
+
 def uses_iterators(*method_names: str):
     """Annotate a tool with the as_inventory method names it calls."""
     def decorator(fn):

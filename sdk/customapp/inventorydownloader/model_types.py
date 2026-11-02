@@ -17,6 +17,7 @@ from sdk.customapp.custom_app_models import (
     CustomAppRole,
     CustomAppRoleAssignmentV2,
     CustomAppScopeV2,
+    CustomAppSkill,
     CustomAppUserHRISAttributes,
     CustomAppUserV2,
     Tag,
@@ -71,6 +72,11 @@ def _construct_agent(data: dict) -> CustomAppAgent:
         data["mcp_servers"] = [
             CustomAppMcpServer(**s) if isinstance(s, dict) else s
             for s in data["mcp_servers"]
+        ]
+    if isinstance(data.get("skills"), list):
+        data["skills"] = [
+            CustomAppSkill(**s) if isinstance(s, dict) else s
+            for s in data["skills"]
         ]
     return CustomAppAgent(**data)
 
